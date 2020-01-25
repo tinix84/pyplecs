@@ -1,9 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='pyplecs',
     version='',
-    packages=['tests', 'pyplecs'],
+    # packages=['tests', 'pyplecs'],
+    packages=find_packages(),
     url='',
     license='',
     author='riccardo tinivella',

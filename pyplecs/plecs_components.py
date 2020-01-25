@@ -4,13 +4,16 @@ Created on Wed Oct 23 17:51:58 2019
 
 @author: tinivella
 """
-class MosfetWithDiodePlecsMdl():
+
+
+class MosfetWithDiodePlecsMdl:
     """Define python virtual twin of plecs mosfet component """
+
     def __init__(self):
         """The constructor."""
         self.name = 'foo'
         self.name_plecs = 'MosfetWithDiode'
-        self.parameter = {}
+        self.parameter = dict()
         self.parameter['Ron'] = 1e-6
 
     def load_param(self, param_dict):
@@ -24,6 +27,7 @@ class MosfetWithDiodePlecsMdl():
     def load_to_plecs(self, serverObj):
         for key, value in self.parameter.items():
             serverObj.server.plecs.set(serverObj.modelName + '/' + self.name, key, str(value))
+
 
 class TurnOnDelayPlecsMdl():
     def __init__(self):
@@ -52,7 +56,7 @@ class ResistorPlecsMdl():
         """The constructor."""
         self.name = 'foo'
         self.name_plecs = 'Resistor'
-        self.parameter = {}
+        self.parameter = dict()
         self.parameter['R'] = 1e-3
 
     def load_param(self, param_dict):
@@ -75,7 +79,7 @@ class CapacitorPlecsMdl():
         """The constructor."""
         self.name = 'foo'
         self.name_plecs = 'Capacitor'
-        self.parameter = {}
+        self.parameter = dict()
         self.parameter['C'] = 1e-15
         self.parameter['v_init'] = 0
 
@@ -100,7 +104,7 @@ class InductorPlecsMdl():
         """The constructor."""
         self.name = 'foo'
         self.name_plecs = 'Inductor'
-        self.parameter = {}
+        self.parameter = dict()
         self.parameter['L'] = 1e-6
         self.parameter['i_init'] = 0
 
@@ -125,7 +129,7 @@ class TransformerPlecsMdl():
         """The constructor."""
         self.name = 'foo'
         self.name_plecs = 'Transformer'
-        self.parameter = {}
+        self.parameter = dict()
         self.parameter['Windings'] = [1, 1]
         self.parameter['n'] = [1, 1]
         self.parameter['Lm'] = 1e-3
@@ -144,6 +148,7 @@ class TransformerPlecsMdl():
     def load_to_plecs(self, serverObj):
         for key, value in self.parameter.items():
             serverObj.server.plecs.set(serverObj.modelName + '/' + self.name, key, str(value))
+
 
 def load_all_comp_to_plecs(server, componentList):
     for item in componentList:

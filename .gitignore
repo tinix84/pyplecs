@@ -8,3 +8,8 @@
 /pyplecs/__pycache__
 /tests/__pycache__
 /utils/MacroCreatorPortable
+tests/OLD/
+utils/
+pyplecs.egg-info/
+*.old
+.idea/
