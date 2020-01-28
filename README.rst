@@ -1,6 +1,10 @@
 Python Plecs Repository
 ========================
 
+.. image:: https://api.codacy.com/project/badge/Grade/af9810b2dc32406b93312e5dfcbebd8a
+   :alt: Codacy Badge
+   :target: https://app.codacy.com/manual/tinix84/pyplecs?utm_source=github.com&utm_medium=referral&utm_content=tinix84/pyplecs&utm_campaign=Badge_Grade_Settings
+
 For python lovers and not, 
 
 I wrote a python package to automatize the python simulations
