@@ -1,4 +1,4 @@
-Python Plecs Repository
+﻿Python Plecs Repository
 ========================
 
 For python lovers and not, 
@@ -32,6 +32,3 @@ If you want to use but you find bugs please let me know...
 
 ---------------
 
-
-
-✨🍰✨

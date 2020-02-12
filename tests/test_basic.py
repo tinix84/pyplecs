@@ -3,16 +3,23 @@
 from context import pyplecs
 
 import unittest
+import time
+from pywinauto.application import Application
+import os
 
+from pathlib import Path
 
 class BasicTestSuite(unittest.TestCase):
     """Basic test cases."""
 
     def test01_absolute_truth_and_meaning(self):
+        """[summary]
+        """
         assert True
 
     def test02_pywinauto_with_notepad(self):
-        from pywinauto.application import Application
+        """[summary]
+        """
         # Run a target application
         app = Application().start("notepad.exe")
         # Select a menu item
@@ -23,7 +30,8 @@ class BasicTestSuite(unittest.TestCase):
         app.UntitledNotepad.Edit.type_keys("pywinauto Works!", with_spaces=True)
 
     def test03_plecs_app_open_highpriority(self):
-        import time
+        """[summary]
+        """
         plecs42 = pyplecs.PlecsApp()
         plecs42.kill_plecs()
         time.sleep(1)
@@ -32,13 +40,10 @@ class BasicTestSuite(unittest.TestCase):
         plecs42.set_plecs_high_priority()
 
     def test04_pyplecs_xrpc_server(self):
-        import os
-        import time
-        sim_path = os.path.dirname(os.path.abspath(__file__))
-        print(sim_path)
-        sim_name = "//..//data//simple_buck.plecs"
-        print(sim_name)
-        full_sim_name = sim_path + sim_name
+        """[summary]
+        """
+        sim_file_path_obj = Path('../data/simple_buck.plecs')
+        full_sim_name = str(sim_file_path_obj.absolute())
         plecs_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
 
         plecs42 = pyplecs.PlecsApp()
@@ -48,12 +53,10 @@ class BasicTestSuite(unittest.TestCase):
         pyplecs.PlecsServer(plecs_mdl.folder, plecs_mdl.simulation_name)
 
     def test05_pyplecs_generate_variants(self):
-        import os
-        sim_path = os.path.dirname(os.path.abspath(__file__))
-        print(sim_path)
-        sim_name = "//..//data//simple_buck.plecs"
-        print(sim_name)
-        full_sim_name = sim_path + sim_name
+        """[summary]
+        """
+        sim_file_path_obj = Path('../data/simple_buck.plecs')
+        full_sim_name = str(sim_file_path_obj.absolute())
         buck_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
 
         ModelVars = dict()
@@ -70,13 +73,10 @@ class BasicTestSuite(unittest.TestCase):
                                            variant_vars=ModelVars)
 
     def test06_sequential_simulation_server_same_file(self):
-        import os
-        import time
-        sim_path = os.path.dirname(os.path.abspath(__file__))
-        print(sim_path)
-        sim_name = "//..//data//simple_buck.plecs"
-        print(sim_name)
-        full_sim_name = sim_path + sim_name
+        """[summary]
+        """
+        sim_file_path_obj = Path('../data/simple_buck.plecs')
+        full_sim_name = str(sim_file_path_obj.absolute())
         plecs_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
 
         input("Press Enter to continue with next sim 00...")
@@ -107,14 +107,10 @@ class BasicTestSuite(unittest.TestCase):
         plecs_server.run_sim_with_datastream(param_dict=ModelVars)
 
     def test07_sequential_simulation_server_different_file(self):
-        import os
-        import time
-
-        sim_path = os.path.dirname(os.path.abspath(__file__))
-        print(sim_path)
-        sim_name = "//..//data//simple_buck.plecs"
-        print(sim_name)
-        full_sim_name = sim_path + sim_name
+        """[summary]
+        """
+        sim_file_path_obj = Path('../data/simple_buck.plecs')
+        full_sim_name = str(sim_file_path_obj.absolute())
         buck_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
 
         ModelVars = dict()
@@ -153,18 +149,16 @@ class BasicTestSuite(unittest.TestCase):
         input("Press Enter to continue with next sim...")
 
     def test_gui_cmds(self):
+        """[summary]
+        """
         plecs42 = pyplecs.PlecsApp()
         plecs42.open_plecs()
 
     def test_gui_simulation(self):
-        import os
-        import time
-
-        sim_path = os.path.dirname(os.path.abspath(__file__))
-        print(sim_path)
-        sim_name = "//..//data//simple_buck.plecs"
-        print(sim_name)
-        full_sim_name = sim_path + sim_name
+        """[summary]
+        """
+        sim_file_path_obj = Path('../data/simple_buck.plecs')
+        full_sim_name = str(sim_file_path_obj.absolute())
         buck_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
 
         ModelVars = dict()
@@ -212,3 +206,5 @@ class BasicTestSuite(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    # test=BasicTestSuite()
+    # test.test04_pyplecs_xrpc_server()
