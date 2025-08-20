@@ -1,7 +1,20 @@
-__pycache__
+# Byte-compiled / optimized / DLL files
+# remove __pycache__ for all folders and subfolders
+__pycache__/
+pyplecs/webgui/__pycache__/
+/pyplecs/__pycache__/
+/tests/__pycache__/
+
+# other
 pyplecs.egg-info/
 .pytest_cache/
 .venv/
+
+# remove build artifacts
+/dist
+/build
+*.egg-info
+
 
 /utils/guipropview-x64
 /utils/winlister-x64
@@ -10,8 +23,7 @@ pyplecs.egg-info/
 /utils/MacroCreatorPortable/x86/MacroCreator
 /utils/gui-inspect-tool-master
 /utils/py_inspect-master
-/pyplecs/__pycache__
-/tests/__pycache__
+
 /utils/MacroCreatorPortable
 tests/OLD/
 
@@ -19,3 +31,4 @@ utils/
 
 *.old
 .idea/
+
