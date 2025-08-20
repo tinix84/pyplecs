@@ -24,7 +24,7 @@ Plecs {
   AlgebraicLoopWithStateMachineMsg "2"
   AssertionAction "1"
   InitializationCommands "%% input\nT_sim = 1e-3; % simulation time\ndt = 1e-6"
-"; \t%sample time for .mat files\nVi = 250;\nIi_max = 25;\nVo_ref = 25;\n\nfs = 100e"
+"; \t%sample time for .mat files\nVi = 250;\nIi_max = 250;\nVo_ref = 250;\n\nfs = 100e"
 "3; % Switching frequency (Hz)\nLo=10e-6; % inductance\nCo=100e-6; % inductanc"
 "e\n\nLdm=1e-6; %Input cap ind.\nCdm=10e-6; %Input cap filter\nron=100e-3;\n\n"
 "%% preprocessing\nD=Vo_ref/Vi\nPo=Vi*Ii_max;\nRo=Vo_ref^2/Po\n"

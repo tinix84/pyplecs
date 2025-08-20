@@ -14,9 +14,8 @@ import copy
 
 import scipy.io as sio
 
-command = r"C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe"
-command = r"C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe"
-# command = r"C:\Users\tinix\Documents\Plexim\PLECS 4.3 (64 bit)\PLECS.exe"
+# Import configuration system
+from .config import ConfigManager
 
 def load_mat_file(file):
     param = sio.loadmat(file)
@@ -86,11 +85,45 @@ def generate_variant_plecs_mdl(src_mdl, variant_name: str, variant_vars: dict):
 
 
 class PlecsApp:
-    def __init__(self):
-        self.command = command
+    def __init__(self, config_path=None):
+        """Initialize PlecsApp with configuration-based PLECS path detection.
+        
+        Args:
+            config_path: Optional path to config file. If None, uses default locations.
+        """
+        self.config_manager = ConfigManager(config_path)
+        self.command = self._find_plecs_executable()
         self.app = pywinauto.application.Application(backend='uia')
         self.app.start(self.command)
         self.app_gui = self.app.connect(path=self.command)
+    
+    def _find_plecs_executable(self):
+        """Find PLECS executable from configuration or common locations."""
+        # First try paths from config
+        for path in self.config_manager.plecs.executable_paths:
+            if Path(path).exists():
+                return path
+        
+        # Fallback to common installation paths
+        common_paths = [
+            r"D:/Plexim/PLECS 4.7 (64 bit)/PLECS.exe",  # Current system path
+            r"D:/Plexim/PLECS 4.7 (64 bit)/plecs.exe",  # Lowercase variant
+            r"C:/Program Files/Plexim/PLECS 4.7 (64 bit)/plecs.exe",
+            r"C:/Program Files/Plexim/PLECS 4.6 (64 bit)/plecs.exe",
+            r"C:/Program Files/Plexim/PLECS 4.5 (64 bit)/plecs.exe",
+            r"C:/Program Files/Plexim/PLECS 4.4 (64 bit)/plecs.exe",
+            r"C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe",
+            r"C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe",
+            r"D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe",
+        ]
+        
+        for path in common_paths:
+            if Path(path).exists():
+                return path
+        
+        raise FileNotFoundError(
+            "PLECS executable not found. Please update config/default.yml with correct path."
+        )
 
     #    @staticmethod
     def set_plecs_high_priority(self):
@@ -104,12 +137,10 @@ class PlecsApp:
     #    @staticmethod
     def open_plecs(self):
         try:
-            pid = subprocess.Popen([command], creationflags=psutil.ABOVE_NORMAL_PRIORITY_CLASS).pid
+            pid = subprocess.Popen([self.command], creationflags=psutil.ABOVE_NORMAL_PRIORITY_CLASS).pid
         except Exception:
             print('Plecs opening problem')
-	#return pid
-
-    #    @staticmethod
+    #return pid    #    @staticmethod
     def kill_plecs(self):
         proc_iter = psutil.process_iter(attrs=["pid", "name"])
         for p in proc_iter:

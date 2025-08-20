@@ -1,0 +1,18 @@
+2025-08-20T22:58:44.7989138+02:00 - Starting advanced Windows installer
+2025-08-20T22:58:44.8023380+02:00 - Project root: D:\git\pyplecs
+2025-08-20T22:58:44.8123556+02:00 - Python found: D:\git\pyplecs\.venv\Scripts\python.exe
+2025-08-20T22:58:44.9110359+02:00 - venv already exists at D:\git\pyplecs\.venv
+2025-08-20T22:58:44.9184888+02:00 - Activating venv and installing dependencies
+2025-08-20T22:58:48.1260341+02:00 - Found PLECS at: D:\Plexim\PLECS 4.7 (64 bit)\PLECS.exe
+2025-08-20T22:58:48.1333759+02:00 - Updating config/default.yml with PLECS path: D:\Plexim\PLECS 4.7 (64 bit)\PLECS.exe
+2025-08-20T22:58:48.2282220+02:00 - Installer finished
+2025-08-20T22:59:38.4766899+02:00 - Starting advanced Windows installer
+2025-08-20T22:59:38.4878197+02:00 - Project root: D:\git\pyplecs
+2025-08-20T22:59:38.4968703+02:00 - Python found: D:\git\pyplecs\.venv\Scripts\python.exe
+2025-08-20T22:59:38.5055026+02:00 - venv already exists at D:\git\pyplecs\.venv
+2025-08-20T22:59:38.5119915+02:00 - Activating venv and installing dependencies
+2025-08-20T22:59:40.8282982+02:00 - Found PLECS at: D:\Plexim\PLECS 4.7 (64 bit)\PLECS.exe
+2025-08-20T22:59:40.8368207+02:00 - Updating config/default.yml with PLECS path: D:\Plexim\PLECS 4.7 (64 bit)\PLECS.exe
+2025-08-20T22:59:40.9266518+02:00 - Running smoke tests
+2025-08-20T22:59:42.5829934+02:00 - Smoke tests passed successfully
+2025-08-20T22:59:42.5921678+02:00 - Installer finished

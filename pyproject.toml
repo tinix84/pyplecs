@@ -18,3 +18,10 @@ include-package-data = true
 [project.scripts]
 pyplecs-setup = "pyplecs.cli.installer:main"
 pyplecs-gui = "pyplecs.webgui:run_app"
+
+[project.optional-dependencies]
+# Optional extras users can install via: pip install .[parquet]
+parquet = ["pyarrow>=5.0.0"]
+yaml = ["pyyaml>=6.0"]
+# Full feature set for convenience (parquet storage, yaml support, windows GUI automation)
+full = ["pyarrow>=5.0.0", "pyyaml>=6.0", "pywinauto>=0.6.8"]

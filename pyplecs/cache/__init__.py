@@ -10,8 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
+# pyarrow/parquet are optional; import them lazily when parquet operations are used
 
 from ..config import get_config
 
@@ -261,7 +260,12 @@ class SimulationResultStore:
         """Store data in Parquet format."""
         file_path = self.storage_dir / f"{simulation_hash}.parquet"
         compression = self.config.cache.compression
-        
+        try:
+            import pyarrow as pa
+            import pyarrow.parquet as pq
+        except Exception as e:
+            raise RuntimeError("pyarrow is required to store parquet files. Install pyarrow in your environment.") from e
+
         table = pa.Table.from_pandas(data)
         pq.write_table(table, file_path, compression=compression)
     
@@ -272,9 +276,11 @@ class SimulationResultStore:
             return None
         
         try:
+            import pyarrow.parquet as pq
             table = pq.read_table(file_path)
             return table.to_pandas()
         except Exception:
+            # If pyarrow is not installed or read fails, return None and let caller handle missing data
             return None
     
     def _store_hdf5(self, simulation_hash: str, data: pd.DataFrame) -> None:

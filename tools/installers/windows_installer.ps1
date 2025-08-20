@@ -18,13 +18,11 @@ param(
     [string]$PythonUrl = 'https://www.python.org/ftp/python/3.10.12/python-3.10.12-amd64.exe',
     [string]$Checksum = '',
     [switch]$SkipAuthSignatureCheck,
-    [switch]$RunTests
+    [switch]$RunTests,
+    [switch]$ForceVenv
 )
 
 # Logging
-$logFile = Join-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Definition) -ChildPath '..\installer_windows.log'
-$logFile = (Resolve-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Definition)).Path + '\installer_windows.log'
-$statusFile = (Resolve-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Definition)).Path + '\installer_windows_status.json'
 function Log { param($msg) Write-Output $msg; Try { Add-Content -Path $logFile -Value ("$(Get-Date -Format o) - $msg") } Catch { Write-Output "Failed to write to log: $msg" } }
 
 # Utilities
@@ -82,10 +80,20 @@ function Ensure-Admin {
 }
 
 # Begin
-Log "Starting advanced Windows installer"
-$projRoot = (Resolve-Path -Path (Join-Path -Path (Split-Path -Parent $MyInvocation.MyCommand.Definition) -ChildPath '..')).Path
-Log "Project root: $projRoot"
+
+# Compute project root (installers -> tools -> project root)
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$scriptDirResolved = (Resolve-Path -Path $scriptDir).Path
+$toolsDir = Split-Path -Parent $scriptDirResolved
+$projRoot = Split-Path -Parent $toolsDir
 Set-Location -Path $projRoot
+
+# Initialize log and status files inside project tools folder
+$logFile = Join-Path -Path $projRoot -ChildPath 'tools\installer_windows.log'
+$statusFile = Join-Path -Path $projRoot -ChildPath 'tools\installer_windows_status.json'
+function Log { param($msg) Write-Output $msg; Try { Add-Content -Path $logFile -Value ("$(Get-Date -Format o) - $msg") } Catch { Write-Output "Failed to write to log: $msg" } }
+Log "Starting advanced Windows installer"
+Log "Project root: $projRoot"
 
 # initialize status
 $global:ExitCode = 0
@@ -135,19 +143,43 @@ if (-not $python) {
 
 # 2) Create venv
 $venvPath = Join-Path -Path $projRoot -ChildPath '.venv'
+if ((Test-Path $venvPath) -and $ForceVenv) {
+    Log "Force flag set: removing existing venv at $venvPath"
+    try { Remove-Item -Recurse -Force -Path $venvPath -ErrorAction Stop; Log "Removed existing venv." } catch { Log "Failed to remove existing venv: $_" }
+}
 if (-not (Test-Path $venvPath)) {
     Log "Creating venv at $venvPath"
-    & python -m venv $venvPath
+    try {
+        $venvResult = & python -m venv $venvPath 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Log "[ERROR] venv creation failed with exit code $LASTEXITCODE. Output: $venvResult"
+            $global:ExitCode = 9; $global:StatusMessage = 'venv_creation_failed'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode
+        } else {
+            Log "venv created successfully at $venvPath"
+        }
+    } catch {
+        Log "[EXCEPTION] Exception during venv creation: $_"
+        $global:ExitCode = 9; $global:StatusMessage = 'venv_creation_exception'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode
+    }
+} else {
+    Log "venv already exists at $venvPath"
 }
 
 # 3) Activate and install requirements
 $activate = Join-Path -Path $venvPath -ChildPath 'Scripts\Activate.ps1'
 if (Test-Path $activate) {
-    Log "Activating venv"
-    & powershell -NoProfile -ExecutionPolicy Bypass -Command "& '$activate'; python -m pip install --upgrade pip; python -m pip install fastapi uvicorn[standard] jinja2 pandas pyyaml pywin32 pywinauto --quiet"
-    if ($LASTEXITCODE -ne 0) { Log "pip install inside venv failed"; $global:ExitCode = 5; $global:StatusMessage = 'pip_install_failed'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode }
+    Log "Activating venv and installing dependencies"
+    $venvPython = Join-Path $venvPath 'Scripts\python.exe'
+    try {
+        & $venvPython -m pip install --upgrade pip
+        & $venvPython -m pip install fastapi uvicorn[standard] jinja2 pandas pyyaml pywin32 pywinauto --progress-bar off
+        if ($LASTEXITCODE -ne 0) { Log "pip install inside venv failed with exit code $LASTEXITCODE"; $global:ExitCode = 5; $global:StatusMessage = 'pip_install_failed'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode }
+    } catch {
+        Log "Exception during pip install in venv: $_"
+        $global:ExitCode = 5; $global:StatusMessage = 'pip_install_exception'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode
+    }
 } else {
-    Log "Activate script not found in venv"
+    Log "Activate script not found in venv: $activate"
     $global:ExitCode = 6; $global:StatusMessage = 'activate_missing'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode
 }
 
@@ -157,11 +189,24 @@ if ($PlecsPath) {
     $found = $PlecsPath
 } else {
     # search common paths
-    $c1 = 'C:\\Program Files\\Plexim\\PLECS 4.7 (64 bit)\\plecs.exe'
-    $c2 = 'C:\\Program Files\\Plexim\\PLECS 4.6 (64 bit)\\plecs.exe'
-    $c3 = 'D:\\OneDrive\\Documenti\\Plexim\\PLECS 4.7 (64 bit)\\plecs.exe'
+    $commonPaths = @(
+        'C:\Program Files\Plexim\PLECS 4.7 (64 bit)\plecs.exe',
+        'C:\Program Files\Plexim\PLECS 4.6 (64 bit)\plecs.exe',
+        'C:\Program Files\Plexim\PLECS 4.5 (64 bit)\plecs.exe',
+        'D:\OneDrive\Documenti\Plexim\PLECS 4.7 (64 bit)\plecs.exe',
+        'D:\Plexim\PLECS 4.7 (64 bit)\PLECS.exe',
+        'D:\Plexim\PLECS 4.7 (64 bit)\plecs.exe',
+        'D:\Plexim\PLECS 4.6 (64 bit)\PLECS.exe',
+        'D:\Plexim\PLECS 4.6 (64 bit)\plecs.exe'
+    )
     $found = $null
-    foreach ($p in @($c1,$c2,$c3)) { if (Test-Path $p) { $found = $p; break } }
+    foreach ($p in $commonPaths) { 
+        if (Test-Path $p) { 
+            $found = $p
+            Log "Found PLECS at: $found"
+            break 
+        } 
+    }
     if (-not $found) {
         if (-not $Yes) {
             $u = Read-Host "Non ho trovato PLECS. Inserisci il percorso completo a plecs.exe (o premi ENTER per saltare)"
@@ -172,7 +217,7 @@ if ($PlecsPath) {
 
 if ($found) {
     Log "Updating config/default.yml with PLECS path: $found"
-    python - <<PY
+    $pyCode = @"
 import yaml, pathlib
 cfg_path=pathlib.Path('config/default.yml')
 if not cfg_path.exists():
@@ -184,18 +229,30 @@ try:
 except Exception:
     cfg = {}
 cfg.setdefault('plecs', {})
-cfg['plecs']['executable_paths'] = [r'%found%']
+cfg['plecs']['executable_paths'] = [r'$found']
 with open(cfg_path,'w',encoding='utf-8') as f:
     yaml.dump(cfg, f, default_flow_style=False, sort_keys=False)
 print('updated')
-PY
+"@
+    $tempPy = Join-Path $env:TEMP 'update_config.py'
+    Set-Content -Path $tempPy -Value $pyCode -Encoding UTF8
+    $venvPython = Join-Path $venvPath 'Scripts\python.exe'
+    & $venvPython $tempPy
+    Remove-Item $tempPy -ErrorAction SilentlyContinue
 }
 
 # 5) Run tests if requested
 if ($RunTests) {
-    Log "Running pytest tests/test_basic.py"
-    & powershell -NoProfile -ExecutionPolicy Bypass -Command "& '$activate'; python -m pytest tests/test_basic.py -q"
-    if ($LASTEXITCODE -ne 0) { Log "Tests failed"; $global:ExitCode = 8; $global:StatusMessage = 'tests_failed'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode }
+    Log "Running smoke tests"
+    $venvPython = Join-Path $venvPath 'Scripts\python.exe'
+    try {
+        & $venvPython -m pytest tests/test_smoke.py -v
+        if ($LASTEXITCODE -ne 0) { Log "Smoke tests failed with exit code $LASTEXITCODE"; $global:ExitCode = 8; $global:StatusMessage = 'tests_failed'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode }
+        Log "Smoke tests passed successfully"
+    } catch {
+        Log "Exception during smoke tests: $_"
+        $global:ExitCode = 8; $global:StatusMessage = 'tests_exception'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode
+    }
 }
 
 Log "Installer finished"

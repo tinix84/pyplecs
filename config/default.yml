@@ -1,202 +1,133 @@
-# PyPLECS Configuration File
-# ==========================
-
-# Application Settings
 app:
-  name: "PyPLECS"
-  version: "0.1.0"
+  name: PyPLECS
+  version: 0.1.0
   debug: false
-
-# PLECS Application Settings
 plecs:
-  # Default installation paths - will be auto-detected
   executable_paths:
-    # - "C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe"
-    # - "C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe"
-    - "D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe"
-    # - "/mnt/d/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe"
-    # - "/usr/local/bin/plecs"  # Linux path
-  
-  # XML-RPC Server Settings
+  - D:\Plexim\PLECS 4.7 (64 bit)\PLECS.exe
   xmlrpc:
-    host: "localhost"
+    host: localhost
     port: 1080
     timeout: 30
-  
-  # Process Priority Settings
-  priority: "HIGH_PRIORITY_CLASS"
-  
-  # Default simulation settings
+  priority: HIGH_PRIORITY_CLASS
   simulation:
-    timeout: 300  # seconds
+    timeout: 300
     auto_save: true
-    save_format: "mat"
-
-# Simulation Orchestration
+    save_format: mat
 orchestration:
   max_concurrent_simulations: 4
   queue_size: 100
   retry_attempts: 3
-  retry_delay: 5  # seconds
-
-# Cache Settings
+  retry_delay: 5
 cache:
   enabled: true
-  type: "file"  # Options: file, redis, memory
-  directory: "./cache"
-  ttl: 3600  # Time to live in seconds
-  
-  # Simulation result storage
+  type: file
+  directory: ./cache
+  ttl: 3600
   storage:
-    timeseries_format: "parquet"  # Options: parquet, hdf5, csv
-    metadata_format: "json"       # Options: json, yaml
-    compression: "snappy"         # For parquet: snappy, gzip, lz4
-    
-  # Hash calculation settings
+    timeseries_format: parquet
+    metadata_format: json
+    compression: snappy
   hash:
-    algorithm: "sha256"
+    algorithm: sha256
     include_files: true
     include_parameters: true
-    exclude_fields: ["timestamp", "run_id"]
-
-# Optimizer Interface
+    exclude_fields:
+    - timestamp
+    - run_id
 optimizer:
   enabled: true
   algorithms:
-    - "scipy_minimize"
-    - "genetic_algorithm"
-    - "particle_swarm"
-    - "bayesian_optimization"
-  
-  # Default optimization settings
+  - scipy_minimize
+  - genetic_algorithm
+  - particle_swarm
+  - bayesian_optimization
   defaults:
     max_iterations: 100
     tolerance: 1e-6
     population_size: 50
-
-# Web GUI Settings
 webgui:
   enabled: true
-  host: "0.0.0.0"
+  host: 0.0.0.0
   port: 8080
-  static_files: "./static"
-  templates: "./templates"
-  
-  # Authentication (optional)
+  static_files: ./static
+  templates: ./templates
   auth:
     enabled: false
-    secret_key: "your-secret-key-here"
-  
-  # Real-time monitoring
+    secret_key: your-secret-key-here
   monitoring:
-    refresh_interval: 1000  # milliseconds
+    refresh_interval: 1000
     max_history_points: 1000
-
-# REST API Settings
 api:
   enabled: true
-  host: "0.0.0.0"
+  host: 0.0.0.0
   port: 8081
-  prefix: "/api/v1"
-  
-  # API Rate limiting
+  prefix: /api/v1
   rate_limit:
     enabled: true
     requests_per_minute: 100
-  
-  # Documentation
   docs:
     enabled: true
     swagger_ui: true
-
-# Logging Configuration
 logging:
-  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  
-  # File logging
+  level: INFO
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
   file:
     enabled: true
-    path: "./logs/pyplecs.log"
-    max_size: "10MB"
+    path: ./logs/pyplecs.log
+    max_size: 10MB
     backup_count: 5
-    rotation: "time"  # Options: time, size
-  
-  # Console logging
+    rotation: time
   console:
     enabled: true
-    level: "INFO"
-  
-  # Structured logging for analysis
+    level: INFO
   structured:
     enabled: true
-    format: "json"
-    path: "./logs/structured.jsonl"
-
-# MCP Server Settings
+    format: json
+    path: ./logs/structured.jsonl
 mcp:
   enabled: true
-  name: "pyplecs-mcp"
-  version: "1.0.0"
-  
-  # Server configuration
+  name: pyplecs-mcp
+  version: 1.0.0
   server:
-    transport: "stdio"  # Options: stdio, sse, websocket
-    host: "localhost"
+    transport: stdio
+    host: localhost
     port: 3000
-  
-  # Available tools/capabilities
   tools:
-    - "simulation_runner"
-    - "parameter_optimizer"
-    - "result_analyzer"
-    - "model_validator"
-
-# Database Settings (for advanced features)
+  - simulation_runner
+  - parameter_optimizer
+  - result_analyzer
+  - model_validator
 database:
   enabled: false
-  type: "sqlite"  # Options: sqlite, postgresql, mysql
-  url: "sqlite:///./pyplecs.db"
-  
-  # Connection settings
+  type: sqlite
+  url: sqlite:///./pyplecs.db
   pool_size: 5
   max_overflow: 10
-  echo: false  # SQL query logging
-
-# Model Default Variables
+  echo: false
 model_defaults:
   Vi: 0.0
   Vo: 0.0
-  
-  # Component defaults
   mosfet:
     Ron: 1e-6
-  
   inductor:
     L: 1e-6
     R: 1e-3
-  
   capacitor:
     C: 1e-6
     ESR: 1e-3
-
-# File Paths and Directories
 paths:
-  models: "./models"
-  results: "./results" 
-  cache: "./cache"
-  logs: "./logs"
-  temp: "./temp"
-  static: "./static"
-  templates: "./templates"
-
-# Development Settings
+  models: ./models
+  results: ./results
+  cache: ./cache
+  logs: ./logs
+  temp: ./temp
+  static: ./static
+  templates: ./templates
 development:
   auto_reload: true
   debug_mode: true
   profiling: false
-  
-# Production Settings  
 production:
   workers: 4
   worker_connections: 1000

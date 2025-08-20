@@ -1,0 +1,61 @@
+2025-08-20T22:14:47.8445239+02:00 - Starting advanced Windows installer
+2025-08-20T22:14:47.8487986+02:00 - Project root: D:\git\pyplecs\tools
+2025-08-20T22:14:47.8605792+02:00 - Python found: C:\Users\tinix84\AppData\Local\Microsoft\WindowsApps\python.exe
+2025-08-20T22:14:47.8659897+02:00 - Creating venv at D:\git\pyplecs\tools\.venv
+2025-08-20T22:14:47.9677976+02:00 - Activate script not found in venv
+2025-08-20T22:17:30.9237957+02:00 - Starting advanced Windows installer
+2025-08-20T22:17:30.9361371+02:00 - Project root: D:\git\pyplecs\tools
+2025-08-20T22:17:30.9479805+02:00 - Python found: C:\Users\tinix84\AppData\Local\Programs\Python\Python313\python.exe
+2025-08-20T22:17:30.9549211+02:00 - Creating venv at D:\git\pyplecs\tools\.venv
+2025-08-20T22:17:36.6312774+02:00 - Activating venv
+2025-08-20T22:18:23.2241926+02:00 - Installer finished
+2025-08-20T22:18:48.5435708+02:00 - Starting advanced Windows installer
+2025-08-20T22:18:48.5508430+02:00 - Project root: D:\git\pyplecs\tools
+2025-08-20T22:18:48.5605448+02:00 - Python found: C:\Users\tinix84\AppData\Local\Programs\Python\Python313\python.exe
+2025-08-20T22:18:48.5666444+02:00 - Activating venv
+2025-08-20T22:19:31.2620681+02:00 - Updating config/default.yml with PLECS path: "D:\Plexim\PLECS 4.7 (64 bit)\PLECS.exe"
+2025-08-20T22:19:31.3439781+02:00 - Installer finished
+2025-08-20T22:21:15.0860965+02:00 - Starting advanced Windows installer
+2025-08-20T22:21:15.0929699+02:00 - Project root: D:\git\pyplecs\tools
+2025-08-20T22:21:15.1019937+02:00 - Python found: C:\Users\tinix84\AppData\Local\Programs\Python\Python313\python.exe
+2025-08-20T22:21:15.1084152+02:00 - Activating venv
+2025-08-20T22:21:31.9602396+02:00 - Updating config/default.yml with PLECS path: "D:\Plexim\PLECS 4.7 (64 bit)\PLECS.exe"
+2025-08-20T22:21:32.0702776+02:00 - Installer finished
+2025-08-20T22:23:49.2650660+02:00 - Starting advanced Windows installer
+2025-08-20T22:23:49.2740208+02:00 - Project root: D:\git\pyplecs\tools
+2025-08-20T22:23:49.2851052+02:00 - Python found: C:\Users\tinix84\AppData\Local\Programs\Python\Python313\python.exe
+2025-08-20T22:23:49.2926689+02:00 - Activating venv
+2025-08-20T22:24:28.5338918+02:00 - Installer finished
+2025-08-20T22:24:35.3408420+02:00 - Starting advanced Windows installer
+2025-08-20T22:24:35.3494036+02:00 - Project root: D:\git\pyplecs\tools
+2025-08-20T22:24:35.3584239+02:00 - Python found: C:\Users\tinix84\AppData\Local\Programs\Python\Python313\python.exe
+2025-08-20T22:24:35.3652444+02:00 - Activating venv
+2025-08-20T22:25:52.5290358+02:00 - Installer finished
+2025-08-20T22:25:58.8157396+02:00 - Starting advanced Windows installer
+2025-08-20T22:25:58.8226001+02:00 - Project root: D:\git\pyplecs\tools
+2025-08-20T22:25:58.8311160+02:00 - Python found: C:\Users\tinix84\AppData\Local\Programs\Python\Python313\python.exe
+2025-08-20T22:25:58.8372473+02:00 - Creating venv at D:\git\pyplecs\tools\.venv
+2025-08-20T22:26:03.1845881+02:00 - Activating venv
+2025-08-20T22:27:11.0458045+02:00 - Installer finished
+2025-08-20T22:27:18.5644742+02:00 - Starting advanced Windows installer
+2025-08-20T22:27:18.5711692+02:00 - Project root: D:\git\pyplecs\tools
+2025-08-20T22:27:18.5796037+02:00 - Python found: C:\Users\tinix84\AppData\Local\Programs\Python\Python313\python.exe
+2025-08-20T22:27:18.5858517+02:00 - Creating venv at D:\git\pyplecs\tools\.venv
+2025-08-20T22:27:23.1196036+02:00 - Activating venv
+2025-08-20T22:27:46.0960210+02:00 - pip install inside venv failed
+2025-08-20T22:29:44.4988402+02:00 - Starting advanced Windows installer
+2025-08-20T22:29:44.5138083+02:00 - Project root: D:\git\pyplecs\tools
+2025-08-20T22:29:44.5295222+02:00 - Python found: C:\Users\tinix84\AppData\Local\Programs\Python\Python313\python.exe
+2025-08-20T22:29:44.5377946+02:00 - Creating venv at D:\git\pyplecs\tools\.venv using: python -m venv D:\git\pyplecs\tools\.venv
+2025-08-20T22:29:48.9605819+02:00 - [OK] venv created successfully.
+2025-08-20T22:29:48.9702130+02:00 - Activating venv
+2025-08-20T22:30:16.7901091+02:00 - Installer finished
+2025-08-20T22:30:42.0193911+02:00 - Starting advanced Windows installer
+2025-08-20T22:30:42.0313040+02:00 - Script dir: D:\git\pyplecs\tools\installers
+2025-08-20T22:30:42.0371546+02:00 - Tools dir: D:\git\pyplecs\tools
+2025-08-20T22:30:42.0432385+02:00 - Project root: D:\git\pyplecs
+2025-08-20T22:30:42.0566506+02:00 - Python found: C:\Users\tinix84\AppData\Local\Programs\Python\Python313\python.exe
+2025-08-20T22:30:42.0648285+02:00 - Creating venv at D:\git\pyplecs\.venv using: python -m venv D:\git\pyplecs\.venv
+2025-08-20T22:30:46.5635853+02:00 - [OK] venv created successfully.
+2025-08-20T22:30:46.5727139+02:00 - Activating venv
+2025-08-20T22:31:15.0565443+02:00 - Installer finished
