@@ -232,3 +232,14 @@ python -m pyplecs.cli.installer create-config
 python -m pyplecs.cli.installer check-all
 ```
 
+### Windows installer (double-clickable)
+
+- `tools/installers/windows_installer.bat` è ora un installer interattivo pensato per essere eseguito con doppio click e guida l'utente attraverso:
+   - Verifica presenza di Python e possibilità di scaricarlo/avviarne l'installer (richiede interazione GUI).
+   - Creazione di una virtualenv `.venv` nel progetto.
+   - Attivazione della venv e installazione delle dipendenze Python principali (fastapi, uvicorn, jinja2, pandas, pyyaml, pywinauto).
+   - Ricerca dei percorsi PLECS comuni; se non trovati chiede all'utente il percorso e aggiorna `config/default.yml` automaticamente.
+   - Opzione per eseguire `pytest tests/test_basic.py` per verificare l'integrazione con `pywinauto` e PLECS (richiede PLECS/Windows GUI).
+
+Note: Lo script è conservativo: quando possibile usa i canali ufficiali (download Python dal sito ufficiale) e non forza installazioni di sistema senza conferma.
+
