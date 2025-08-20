@@ -11,9 +11,11 @@ app:
 plecs:
   # Default installation paths - will be auto-detected
   executable_paths:
-    - "C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe"
-    - "C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe"
-    - "/usr/local/bin/plecs"  # Linux path
+    # - "C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe"
+    # - "C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe"
+    - "D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe"
+    # - "/mnt/d/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe"
+    # - "/usr/local/bin/plecs"  # Linux path
   
   # XML-RPC Server Settings
   xmlrpc:

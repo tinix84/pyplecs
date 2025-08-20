@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}Simulations - PyPLECS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-play"></i> Simulations</h1>
+        <p class="text-muted">Manage and monitor PLECS simulations</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newSimModal">
+            <i class="fas fa-plus"></i> New Simulation
+        </button>
+        <button class="btn btn-outline-secondary" onclick="loadSimulations()">
+            <i class="fas fa-refresh"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="searchFilter" placeholder="Search by model file or task ID">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="statusFilter">
+            <option value="">All Status</option>
+            <option value="queued">Queued</option>
+            <option value="running">Running</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="cachedFilter">
+            <label class="form-check-label" for="cachedFilter">
+                Show only cached results
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Simulations Table -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th width="10%">Status</th>
+                        <th width="15%">Task ID</th>
+                        <th width="25%">Model File</th>
+                        <th width="15%">Parameters</th>
+                        <th width="10%">Created</th>
+                        <th width="10%">Duration</th>
+                        <th width="5%">Cache</th>
+                        <th width="10%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="simulations-table">
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">Loading simulations...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <nav aria-label="Simulations pagination">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- Pagination will be populated by JavaScript -->
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- New Simulation Modal -->
+<div class="modal fade" id="newSimModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Simulation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newSimForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="newModelFile" class="form-label">Model File</label>
+                                <input type="text" class="form-control" id="newModelFile" 
+                                       value="demo_model.plecs" required>
+                                <div class="form-text">Path to the PLECS model file</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="newPriority" class="form-label">Priority</label>
+                                <select class="form-select" id="newPriority">
+                                    <option value="LOW">Low</option>
+                                    <option value="NORMAL" selected>Normal</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="CRITICAL">Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newSimTime" class="form-label">Simulation Time (seconds)</label>
+                        <input type="number" class="form-control" id="newSimTime" 
+                               value="0.001" step="0.000001" min="0">
+                        <div class="form-text">Leave empty for model default</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Parameters</label>
+                        <div id="parameters-container">
+                            <div class="row mb-2">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control param-name" placeholder="Parameter name" value="Vi">
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="number" class="form-control param-value" placeholder="Value" value="12" step="any">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" class="form-control param-unit" placeholder="Unit" value="V">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeParameter(this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control param-name" placeholder="Parameter name" value="Vo">
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="number" class="form-control param-value" placeholder="Value" value="5" step="any">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" class="form-control param-unit" placeholder="Unit" value="V">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeParameter(this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addParameter()">
+                            <i class="fas fa-plus"></i> Add Parameter
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newOutputVars" class="form-label">Output Variables (comma-separated)</label>
+                        <input type="text" class="form-control" id="newOutputVars" 
+                               placeholder="e.g., output_voltage, output_current">
+                        <div class="form-text">Specific variables to capture in results</div>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="newUseCache" checked>
+                        <label class="form-check-label" for="newUseCache">
+                            Use cache (if available)
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitNewSimulation()">
+                    <i class="fas fa-play"></i> Start Simulation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Simulation Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Simulation Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="details-content">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentSimulations = [];
+    let filteredSimulations = [];
+    let currentPage = 1;
+    const simulationsPerPage = 10;
+    
+    // Load simulations from API
+    async function loadSimulations() {
+        try {
+            const response = await fetch('/api/simulations');
+            const data = await response.json();
+            currentSimulations = data.simulations || [];
+            applyFilters();
+        } catch (error) {
+            console.error('Error loading simulations:', error);
+        }
+    }
+    
+    // Apply filters to simulations
+    function applyFilters() {
+        const searchTerm = document.getElementById('searchFilter').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
+        const cachedFilter = document.getElementById('cachedFilter').checked;
+        
+        filteredSimulations = currentSimulations.filter(sim => {
+            // Search filter
+            const matchesSearch = !searchTerm || 
+                sim.task_id.toLowerCase().includes(searchTerm) ||
+                (sim.model_file && sim.model_file.toLowerCase().includes(searchTerm));
+            
+            // Status filter
+            const matchesStatus = !statusFilter || sim.status === statusFilter;
+            
+            // Cached filter
+            const matchesCached = !cachedFilter || sim.cached;
+            
+            return matchesSearch && matchesStatus && matchesCached;
+        });
+        
+        currentPage = 1;
+        renderSimulations();
+        renderPagination();
+    }
+    
+    // Render simulations table
+    function renderSimulations() {
+        const tbody = document.getElementById('simulations-table');
+        const startIndex = (currentPage - 1) * simulationsPerPage;
+        const endIndex = startIndex + simulationsPerPage;
+        const pageSimulations = filteredSimulations.slice(startIndex, endIndex);
+        
+        if (pageSimulations.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No simulations found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = pageSimulations.map(sim => {
+            const parameters = Object.entries(sim.parameters || {}).slice(0, 3);
+            const paramText = parameters.map(([k, v]) => `${k}=${v}`).join(', ');
+            const moreParams = Object.keys(sim.parameters || {}).length > 3 ? '...' : '';
+            
+            return `
+                <tr>
+                    <td>
+                        <span class="badge status-badge ${getStatusBadgeClass(sim.status)}">${sim.status}</span>
+                    </td>
+                    <td>
+                        <code class="small">${sim.task_id.substring(0, 8)}</code>
+                        <button class="btn btn-link btn-sm p-0 ms-1" onclick="copyToClipboard('${sim.task_id}')" title="Copy full ID">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <small>${sim.model_file || 'Unknown'}</small>
+                    </td>
+                    <td>
+                        <small class="text-muted">${paramText}${moreParams}</small>
+                    </td>
+                    <td>
+                        <small>${formatTimestamp(sim.created_at)}</small>
+                    </td>
+                    <td>
+                        <small>${sim.execution_time ? formatDuration(sim.execution_time) : '-'}</small>
+                    </td>
+                    <td class="text-center">
+                        ${sim.cached ? '<i class="fas fa-check text-success" title="Cached"></i>' : 
+                          '<i class="fas fa-times text-muted" title="Not cached"></i>'}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewDetails('${sim.task_id}')" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${sim.status === 'running' || sim.status === 'queued' ? 
+                              `<button class="btn btn-outline-danger" onclick="cancelSimulation('${sim.task_id}')" title="Cancel">
+                                 <i class="fas fa-stop"></i>
+                               </button>` : ''}
+                            ${sim.status === 'completed' ? 
+                              `<button class="btn btn-outline-success" onclick="downloadResults('${sim.task_id}')" title="Download Results">
+                                 <i class="fas fa-download"></i>
+                               </button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    // Render pagination
+    function renderPagination() {
+        const pagination = document.getElementById('pagination');
+        const totalPages = Math.ceil(filteredSimulations.length / simulationsPerPage);
+        
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        let html = '';
+        
+        // Previous button
+        html += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>
+            </li>
+        `;
+        
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                html += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                    </li>
+                `;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+        }
+        
+        // Next button
+        html += `
+            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>
+            </li>
+        `;
+        
+        pagination.innerHTML = html;
+    }
+    
+    // Change page
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredSimulations.length / simulationsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderSimulations();
+            renderPagination();
+        }
+    }
+    
+    // Add parameter row
+    function addParameter() {
+        const container = document.getElementById('parameters-container');
+        const newRow = document.createElement('div');
+        newRow.className = 'row mb-2';
+        newRow.innerHTML = `
+            <div class="col-md-4">
+                <input type="text" class="form-control param-name" placeholder="Parameter name">
+            </div>
+            <div class="col-md-4">
+                <input type="number" class="form-control param-value" placeholder="Value" step="any">
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control param-unit" placeholder="Unit">
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeParameter(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(newRow);
+    }
+    
+    // Remove parameter row
+    function removeParameter(button) {
+        button.closest('.row').remove();
+    }
+    
+    // Submit new simulation
+    async function submitNewSimulation() {
+        const formData = {
+            model_file: document.getElementById('newModelFile').value,
+            simulation_time: parseFloat(document.getElementById('newSimTime').value) || null,
+            priority: document.getElementById('newPriority').value,
+            use_cache: document.getElementById('newUseCache').checked,
+            parameters: {},
+            output_variables: []
+        };
+        
+        // Collect parameters
+        const paramRows = document.querySelectorAll('#parameters-container .row');
+        paramRows.forEach(row => {
+            const name = row.querySelector('.param-name').value;
+            const value = parseFloat(row.querySelector('.param-value').value);
+            if (name && !isNaN(value)) {
+                formData.parameters[name] = value;
+            }
+        });
+        
+        // Collect output variables
+        const outputVars = document.getElementById('newOutputVars').value;
+        if (outputVars) {
+            formData.output_variables = outputVars.split(',').map(v => v.trim()).filter(v => v);
+        }
+        
+        try {
+            const response = await fetch('/api/simulations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Close modal and refresh list
+                const modal = bootstrap.Modal.getInstance(document.getElementById('newSimModal'));
+                modal.hide();
+                setTimeout(loadSimulations, 500);
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        } catch (error) {
+            alert(`Network error: ${error.message}`);
+        }
+    }
+    
+    // View simulation details
+    async function viewDetails(taskId) {
+        try {
+            // Get task details
+            const simResponse = await fetch('/api/simulations');
+            const simData = await simResponse.json();
+            const simulation = simData.simulations.find(s => s.task_id === taskId);
+            
+            if (!simulation) {
+                alert('Simulation not found');
+                return;
+            }
+            
+            let html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Basic Information</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Task ID:</strong></td><td><code>${simulation.task_id}</code></td></tr>
+                            <tr><td><strong>Status:</strong></td><td><span class="badge ${getStatusBadgeClass(simulation.status)}">${simulation.status}</span></td></tr>
+                            <tr><td><strong>Model File:</strong></td><td>${simulation.model_file}</td></tr>
+                            <tr><td><strong>Created:</strong></td><td>${formatTimestamp(simulation.created_at)}</td></tr>
+                            <tr><td><strong>Started:</strong></td><td>${simulation.started_at ? formatTimestamp(simulation.started_at) : '-'}</td></tr>
+                            <tr><td><strong>Completed:</strong></td><td>${simulation.completed_at ? formatTimestamp(simulation.completed_at) : '-'}</td></tr>
+                            <tr><td><strong>Execution Time:</strong></td><td>${simulation.execution_time ? formatDuration(simulation.execution_time) : '-'}</td></tr>
+                            <tr><td><strong>Cached:</strong></td><td>${simulation.cached ? 'Yes' : 'No'}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Parameters</h6>
+                        <table class="table table-sm">
+            `;
+            
+            Object.entries(simulation.parameters || {}).forEach(([key, value]) => {
+                html += `<tr><td><strong>${key}:</strong></td><td>${value}</td></tr>`;
+            });
+            
+            html += '</table></div></div>';
+            
+            // If completed, try to get results
+            if (simulation.status === 'completed') {
+                try {
+                    const resultResponse = await fetch(`/api/simulations/${taskId}/result`);
+                    const resultData = await resultResponse.json();
+                    
+                    if (resultResponse.ok && resultData.timeseries_data) {
+                        html += `
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6>Results Summary</h6>
+                                    <p><strong>Data Points:</strong> ${resultData.timeseries_data.data.length}</p>
+                                    <p><strong>Variables:</strong> ${resultData.timeseries_data.columns.join(', ')}</p>
+                                    
+                                    <h6>Result Preview</h6>
+                                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                        <table class="table table-sm table-striped">
+                                            <thead>
+                                                <tr>${resultData.timeseries_data.columns.map(col => `<th>${col}</th>`).join('')}</tr>
+                                            </thead>
+                                            <tbody>
+                                                ${resultData.timeseries_data.data.slice(0, 10).map(row => 
+                                                    `<tr>${row.map(val => `<td>${typeof val === 'number' ? val.toExponential(3) : val}</td>`).join('')}</tr>`
+                                                ).join('')}
+                                                ${resultData.timeseries_data.data.length > 10 ? '<tr><td colspan="100%" class="text-center text-muted">... and more</td></tr>' : ''}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    html += '<div class="alert alert-warning">Could not load result data</div>';
+                }
+            }
+            
+            if (simulation.error) {
+                html += `
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Error Information</h6>
+                            <div class="alert alert-danger">${simulation.error}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('details-content').innerHTML = html;
+            
+            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+            modal.show();
+            
+        } catch (error) {
+            alert(`Error loading details: ${error.message}`);
+        }
+    }
+    
+    // Cancel simulation
+    async function cancelSimulation(taskId) {
+        if (!confirm('Are you sure you want to cancel this simulation?')) return;
+        
+        try {
+            const response = await fetch(`/api/simulations/${taskId}`, { method: 'DELETE' });
+            const result = await response.json();
+            
+            if (response.ok) {
+                setTimeout(loadSimulations, 500);
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        } catch (error) {
+            alert(`Network error: ${error.message}`);
+        }
+    }
+    
+    // Download results
+    async function downloadResults(taskId) {
+        try {
+            const response = await fetch(`/api/simulations/${taskId}/result`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `simulation_${taskId.substring(0, 8)}_results.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                alert(`Error: ${data.error}`);
+            }
+        } catch (error) {
+            alert(`Network error: ${error.message}`);
+        }
+    }
+    
+    // Copy to clipboard
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Show brief feedback
+            const tooltip = new bootstrap.Tooltip(event.target, {
+                title: 'Copied!',
+                trigger: 'manual'
+            });
+            tooltip.show();
+            setTimeout(() => tooltip.dispose(), 1000);
+        });
+    }
+    
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSimulations();
+        
+        // Filter event listeners
+        document.getElementById('searchFilter').addEventListener('input', applyFilters);
+        document.getElementById('statusFilter').addEventListener('change', applyFilters);
+        document.getElementById('cachedFilter').addEventListener('change', applyFilters);
+        
+        // WebSocket listeners for real-time updates
+        window.pyplecsWS.on('task_started', () => setTimeout(loadSimulations, 100));
+        window.pyplecsWS.on('task_completed', () => setTimeout(loadSimulations, 100));
+        window.pyplecsWS.on('task_failed', () => setTimeout(loadSimulations, 100));
+    });
+</script>
+{% endblock %}
