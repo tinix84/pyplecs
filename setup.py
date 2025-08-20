@@ -28,6 +28,7 @@ setup(
             'pyplecs-api=pyplecs.api:main',
             'pyplecs-gui=pyplecs.webgui:main',
             'pyplecs-mcp=pyplecs.mcp:main',
+            'pyplecs-setup=pyplecs.cli.installer:main',
         ],
     },
     classifiers=[

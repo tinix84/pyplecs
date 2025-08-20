@@ -1,3 +1,8 @@
+__pycache__
+pyplecs.egg-info/
+.pytest_cache/
+.venv/
+
 /utils/guipropview-x64
 /utils/winlister-x64
 /utils/depends22_x64
@@ -9,7 +14,8 @@
 /tests/__pycache__
 /utils/MacroCreatorPortable
 tests/OLD/
+
 utils/
-pyplecs.egg-info/
+
 *.old
 .idea/

@@ -210,3 +210,25 @@ Il sistema è configurato per PLECS 4.7 ed è pronto per l'integrazione con simu
 - Responsive design mobile-friendly
 
 **Ultimo Test**: 20/08/2025 - Tutti i componenti web GUI verificati e funzionanti.
+
+## 🛠️ Nuovi strumenti di installazione e setup
+
+- `pyplecs-setup` (entrypoint CLI): semplice helper per creare la config di base e verificare l'installazione.
+   - Comandi utili:
+      - `pyplecs-setup create-config` -> scrive `./config/default.yml` minimale
+      - `pyplecs-setup check-windows` -> esegue controlli conservativi su Windows
+      - `pyplecs-setup check-macos` -> esegue controlli conservativi su macOS
+
+- Script helper in `tools/installers/`:
+   - `tools/installers/windows_installer.bat` -> lancia `pyplecs-setup` su Windows
+   - `tools/installers/macos_installer.sh` -> lancia `pyplecs-setup` su macOS
+
+- Script di avvio spostato in `tools/start_webgui.py` per mantenere la root pulita.
+
+Esempio rapido:
+
+```bash
+python -m pyplecs.cli.installer create-config
+python -m pyplecs.cli.installer check-all
+```
+

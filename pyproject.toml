@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyplecs"
+version = "0.1.0"
+description = "Advanced PLECS simulation automation with web UI and API"
+readme = "README.md"
+authors = [ { name = "riccardo tinivella", email = "tinix84@gmail.com" }]
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+
+[tool.setuptools]
+packages = ["pyplecs"]
+include-package-data = true
+
+[project.scripts]
+pyplecs-setup = "pyplecs.cli.installer:main"
+pyplecs-gui = "pyplecs.webgui:run_app"
