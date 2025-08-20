@@ -1,19 +1,203 @@
-# Minimal PyPLECS generated config
+# PyPLECS Configuration File
+# ==========================
+
+# Application Settings
 app:
   name: "PyPLECS"
   version: "0.1.0"
+  debug: false
 
+# PLECS Application Settings
 plecs:
-  executable_paths: []
+  # Default installation paths - will be auto-detected
+  executable_paths:
+    # - "C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe"
+    # - "C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe"
+    - "D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe"
+    # - "/mnt/d/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe"
+    # - "/usr/local/bin/plecs"  # Linux path
+  
+  # XML-RPC Server Settings
+  xmlrpc:
+    host: "localhost"
+    port: 1080
+    timeout: 30
+  
+  # Process Priority Settings
+  priority: "HIGH_PRIORITY_CLASS"
+  
+  # Default simulation settings
+  simulation:
+    timeout: 300  # seconds
+    auto_save: true
+    save_format: "mat"
 
+# Simulation Orchestration
+orchestration:
+  max_concurrent_simulations: 4
+  queue_size: 100
+  retry_attempts: 3
+  retry_delay: 5  # seconds
+
+# Cache Settings
+cache:
+  enabled: true
+  type: "file"  # Options: file, redis, memory
+  directory: "./cache"
+  ttl: 3600  # Time to live in seconds
+  
+  # Simulation result storage
+  storage:
+    timeseries_format: "parquet"  # Options: parquet, hdf5, csv
+    metadata_format: "json"       # Options: json, yaml
+    compression: "snappy"         # For parquet: snappy, gzip, lz4
+    
+  # Hash calculation settings
+  hash:
+    algorithm: "sha256"
+    include_files: true
+    include_parameters: true
+    exclude_fields: ["timestamp", "run_id"]
+
+# Optimizer Interface
+optimizer:
+  enabled: true
+  algorithms:
+    - "scipy_minimize"
+    - "genetic_algorithm"
+    - "particle_swarm"
+    - "bayesian_optimization"
+  
+  # Default optimization settings
+  defaults:
+    max_iterations: 100
+    tolerance: 1e-6
+    population_size: 50
+
+# Web GUI Settings
 webgui:
   enabled: true
   host: "0.0.0.0"
   port: 8080
+  static_files: "./static"
+  templates: "./templates"
+  
+  # Authentication (optional)
+  auth:
+    enabled: false
+    secret_key: "your-secret-key-here"
+  
+  # Real-time monitoring
+  monitoring:
+    refresh_interval: 1000  # milliseconds
+    max_history_points: 1000
 
+# REST API Settings
+api:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8081
+  prefix: "/api/v1"
+  
+  # API Rate limiting
+  rate_limit:
+    enabled: true
+    requests_per_minute: 100
+  
+  # Documentation
+  docs:
+    enabled: true
+    swagger_ui: true
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # File logging
+  file:
+    enabled: true
+    path: "./logs/pyplecs.log"
+    max_size: "10MB"
+    backup_count: 5
+    rotation: "time"  # Options: time, size
+  
+  # Console logging
+  console:
+    enabled: true
+    level: "INFO"
+  
+  # Structured logging for analysis
+  structured:
+    enabled: true
+    format: "json"
+    path: "./logs/structured.jsonl"
+
+# MCP Server Settings
+mcp:
+  enabled: true
+  name: "pyplecs-mcp"
+  version: "1.0.0"
+  
+  # Server configuration
+  server:
+    transport: "stdio"  # Options: stdio, sse, websocket
+    host: "localhost"
+    port: 3000
+  
+  # Available tools/capabilities
+  tools:
+    - "simulation_runner"
+    - "parameter_optimizer"
+    - "result_analyzer"
+    - "model_validator"
+
+# Database Settings (for advanced features)
+database:
+  enabled: false
+  type: "sqlite"  # Options: sqlite, postgresql, mysql
+  url: "sqlite:///./pyplecs.db"
+  
+  # Connection settings
+  pool_size: 5
+  max_overflow: 10
+  echo: false  # SQL query logging
+
+# Model Default Variables
+model_defaults:
+  Vi: 0.0
+  Vo: 0.0
+  
+  # Component defaults
+  mosfet:
+    Ron: 1e-6
+  
+  inductor:
+    L: 1e-6
+    R: 1e-3
+  
+  capacitor:
+    C: 1e-6
+    ESR: 1e-3
+
+# File Paths and Directories
 paths:
-  results: "./results"
+  models: "./models"
+  results: "./results" 
   cache: "./cache"
   logs: "./logs"
+  temp: "./temp"
   static: "./static"
   templates: "./templates"
+
+# Development Settings
+development:
+  auto_reload: true
+  debug_mode: true
+  profiling: false
+  
+# Production Settings  
+production:
+  workers: 4
+  worker_connections: 1000
+  keepalive: 2
