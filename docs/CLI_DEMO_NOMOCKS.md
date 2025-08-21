@@ -196,3 +196,56 @@ Expected failures (GUI automation, interactive tests requiring user input)
 API mismatches in older test files
 Cache implementation details (DataFrame vs dict format)
 The core functionality you requested is fully tested and working in the pytest suite!
+
+
+======================================================================================
+status 2025.08.21 16:33
+
+Detailed Analysis of Failed Tests
+1. Cache Implementation Issues
+Problem: The cache system is failing due to mismatches between expected data formats (DataFrame vs dictionary).
+Relevant Code:
+test_cache_integration in test_end_to_end_cli.py uses mock data stored in a DataFrame format.
+Cache configuration in default.yml specifies storage formats (parquet for timeseries, json for metadata).
+Potential Causes:
+Inconsistent handling of data formats during storage and retrieval.
+Lack of validation for data integrity when caching results.
+Next Steps:
+Create synthetic test cases with mock data in both formats.
+Validate cache storage and retrieval mechanisms using mocks.
+Ensure compatibility between cache configuration and test data formats.
+2. API Mismatches
+Problem: Older test files are failing due to mismatches in expected API behavior.
+Relevant Code:
+xml_rcp_plecs.md documents various RPC commands and their expected behavior.
+test_basic.py and test_end_to_end_cli.py include tests for XML-RPC integration.
+Potential Causes:
+Changes in the PLECS RPC interface or command syntax.
+Outdated test cases not aligned with the current API documentation.
+Next Steps:
+Update test cases to match the latest API documentation.
+Use synthetic data and mocks to simulate API responses.
+Validate all RPC commands against the documented behavior.
+3. Expected Failures
+Problem: GUI automation and interactive tests requiring user input are failing as expected.
+Relevant Code:
+test09_gui_simulation in README.md mentions GUI-based tests.
+Potential Causes:
+These tests are inherently non-automatable without advanced GUI testing tools.
+Next Steps:
+Document these failures as expected in the test suite.
+Explore tools like Pywinauto or Selenium for partial automation.
+Action Plan
+Cache Tests:
+
+Develop synthetic test cases for cache storage and retrieval.
+Mock cache interactions to isolate issues.
+Validate compatibility with configuration settings.
+API Tests:
+
+Update test cases to align with the latest API documentation.
+Use mocks to simulate API responses and validate behavior.
+GUI Tests:
+
+Document expected failures.
+Investigate GUI testing tools for partial automation.
