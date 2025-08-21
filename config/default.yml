@@ -5,6 +5,17 @@ app:
 plecs:
   executable_paths:
   - D:\Plexim\PLECS 4.7 (64 bit)\PLECS.exe
+  # Fallback common installation paths for systems where executable_paths is not set
+  fallback_paths:
+  - D:/Plexim/PLECS 4.7 (64 bit)/PLECS.exe
+  - D:/Plexim/PLECS 4.7 (64 bit)/plecs.exe
+  - C:/Program Files/Plexim/PLECS 4.7 (64 bit)/plecs.exe
+  - C:/Program Files/Plexim/PLECS 4.6 (64 bit)/plecs.exe
+  - C:/Program Files/Plexim/PLECS 4.5 (64 bit)/plecs.exe
+  - C:/Program Files/Plexim/PLECS 4.4 (64 bit)/plecs.exe
+  - C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe
+  - C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe
+  - D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe
   xmlrpc:
     host: localhost
     port: 1080

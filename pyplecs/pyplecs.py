@@ -99,30 +99,34 @@ class PlecsApp:
     
     def _find_plecs_executable(self):
         """Find PLECS executable from configuration or common locations."""
-        # First try paths from config
-        for path in self.config_manager.plecs.executable_paths:
+        # First try explicit paths from config (if present)
+        try:
+            exe_paths = list(self.config_manager.plecs.executable_paths or [])
+        except Exception:
+            exe_paths = []
+
+        for path in exe_paths:
             if Path(path).exists():
                 return path
-        
-        # Fallback to common installation paths
-        common_paths = [
-            r"D:/Plexim/PLECS 4.7 (64 bit)/PLECS.exe",  # Current system path
-            r"D:/Plexim/PLECS 4.7 (64 bit)/plecs.exe",  # Lowercase variant
-            r"C:/Program Files/Plexim/PLECS 4.7 (64 bit)/plecs.exe",
-            r"C:/Program Files/Plexim/PLECS 4.6 (64 bit)/plecs.exe",
-            r"C:/Program Files/Plexim/PLECS 4.5 (64 bit)/plecs.exe",
-            r"C:/Program Files/Plexim/PLECS 4.4 (64 bit)/plecs.exe",
-            r"C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe",
-            r"C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe",
-            r"D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe",
-        ]
-        
-        for path in common_paths:
+
+        # Next, try fallback paths defined in config (keeps defaults in YAML)
+        try:
+            fallback = list(self.config_manager.plecs.fallback_paths or [])
+        except Exception:
+            fallback = []
+
+        for path in fallback:
             if Path(path).exists():
                 return path
-        
+
+        # As last resort, search on PATH for a plecs executable name
+        for candidate in ("PLECS.exe", "plecs.exe", "PLECS", "plecs"):
+            exe = shutil.which(candidate)
+            if exe:
+                return exe
+
         raise FileNotFoundError(
-            "PLECS executable not found. Please update config/default.yml with correct path."
+            "PLECS executable not found. Please update config/default.yml (plecs.executable_paths or plecs.fallback_paths) with the correct path."
         )
 
     #    @staticmethod
@@ -328,14 +332,3 @@ class GenericConverterPlecsMdl:
         self._fullname = path_obj
         self._model_name = self._name.replace('.plecs', '')
 
-
-# if __name__ == "__main__":
-#    plecs42 = PlecsApp()
-#    plecs42.kill_plecs()
-#    time.sleep(1)
-#    plecs42.open_plecs()
-#    time.sleep(1)
-#    plecs42.set_plecs_high_priority()
-#
-#    sim_path = "./"
-#    sim_name = "simple_buck.plecs"
