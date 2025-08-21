@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PyPLECS{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link href="/static/style.css" rel="stylesheet">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- WebSocket Connection Status -->
+    <div id="websocket-status" class="websocket-status">
+        <span class="badge bg-secondary">
+            <i class="fas fa-wifi"></i> Connecting...
+        </span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-microchip"></i> PyPLECS
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/simulations">
+                            <i class="fas fa-play"></i> Simulations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cache">
+                            <i class="fas fa-database"></i> Cache
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/settings">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <span class="navbar-text">
+                            <i class="fas fa-server"></i> 
+                            <span id="worker-count">-</span> Workers
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- WebSocket Connection -->
+    <script>
+        class PyPLECSWebSocket {
+            constructor() {
+                this.ws = null;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+                this.reconnectDelay = 1000;
+                this.callbacks = {};
+                this.connect();
+            }
+            
+            connect() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws`;
+                
+                try {
+                    this.ws = new WebSocket(wsUrl);
+                    
+                    this.ws.onopen = () => {
+                        console.log('WebSocket connected');
+                        this.reconnectAttempts = 0;
+                        this.updateConnectionStatus('connected');
+                        
+                        // Send ping every 30 seconds to keep connection alive
+                        setInterval(() => {
+                            if (this.ws.readyState === WebSocket.OPEN) {
+                                this.ws.send('ping');
+                            }
+                        }, 30000);
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        if (event.data === 'pong') return;
+                        
+                        try {
+                            const data = JSON.parse(event.data);
+                            this.handleMessage(data);
+                        } catch (e) {
+                            console.error('Error parsing WebSocket message:', e);
+                        }
+                    };
+                    
+                    this.ws.onclose = () => {
+                        console.log('WebSocket disconnected');
+                        this.updateConnectionStatus('disconnected');
+                        this.attemptReconnect();
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        this.updateConnectionStatus('error');
+                    };
+                    
+                } catch (error) {
+                    console.error('Error creating WebSocket:', error);
+                    this.updateConnectionStatus('error');
+                    this.attemptReconnect();
+                }
+            }
+            
+            attemptReconnect() {
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    this.updateConnectionStatus('reconnecting');
+                    
+                    setTimeout(() => {
+                        console.log(`Reconnection attempt ${this.reconnectAttempts}`);
+                        this.connect();
+                    }, this.reconnectDelay * this.reconnectAttempts);
+                } else {
+                    this.updateConnectionStatus('failed');
+                }
+            }
+            
+            updateConnectionStatus(status) {
+                const statusElement = document.getElementById('websocket-status');
+                if (!statusElement) return;
+                
+                const badge = statusElement.querySelector('.badge');
+                badge.className = 'badge';
+                
+                switch (status) {
+                    case 'connected':
+                        badge.classList.add('bg-success');
+                        badge.innerHTML = '<i class="fas fa-wifi"></i> Connected';
+                        break;
+                    case 'disconnected':
+                        badge.classList.add('bg-warning');
+                        badge.innerHTML = '<i class="fas fa-wifi"></i> Disconnected';
+                        break;
+                    case 'reconnecting':
+                        badge.classList.add('bg-info');
+                        badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reconnecting...';
+                        break;
+                    case 'error':
+                        badge.classList.add('bg-danger');
+                        badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+                        break;
+                    case 'failed':
+                        badge.classList.add('bg-danger');
+                        badge.innerHTML = '<i class="fas fa-times"></i> Connection Failed';
+                        break;
+                }
+            }
+            
+            handleMessage(data) {
+                // Trigger callbacks for specific message types
+                if (this.callbacks[data.type]) {
+                    this.callbacks[data.type].forEach(callback => callback(data));
+                }
+                
+                // Global message handler
+                if (this.callbacks['*']) {
+                    this.callbacks['*'].forEach(callback => callback(data));
+                }
+            }
+            
+            on(messageType, callback) {
+                if (!this.callbacks[messageType]) {
+                    this.callbacks[messageType] = [];
+                }
+                this.callbacks[messageType].push(callback);
+            }
+            
+            off(messageType, callback) {
+                if (this.callbacks[messageType]) {
+                    const index = this.callbacks[messageType].indexOf(callback);
+                    if (index > -1) {
+                        this.callbacks[messageType].splice(index, 1);
+                    }
+                }
+            }
+        }
+        
+        // Global WebSocket instance
+        window.pyplecsWS = new PyPLECSWebSocket();
+        
+        // Utility functions
+        window.formatTimestamp = function(timestamp) {
+            return new Date(timestamp * 1000).toLocaleString();
+        };
+        
+        window.formatDuration = function(seconds) {
+            if (seconds < 60) {
+                return `${seconds.toFixed(2)}s`;
+            } else if (seconds < 3600) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes}m ${remainingSeconds.toFixed(0)}s`;
+            } else {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                return `${hours}h ${minutes}m`;
+            }
+        };
+        
+        window.getStatusBadgeClass = function(status) {
+            const classes = {
+                'queued': 'bg-secondary',
+                'running': 'bg-primary pulse',
+                'completed': 'bg-success',
+                'failed': 'bg-danger',
+                'cancelled': 'bg-warning'
+            };
+            return classes[status] || 'bg-secondary';
+        };
+        
+        // Update worker count from WebSocket messages
+        window.pyplecsWS.on('stats_update', function(data) {
+            const workerCountElement = document.getElementById('worker-count');
+            if (workerCountElement && data.stats && data.stats.workers) {
+                const workers = Object.keys(data.stats.workers);
+                workerCountElement.textContent = workers.length;
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

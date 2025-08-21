@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyplecs"
+version = "0.1.0"
+description = "Advanced PLECS simulation automation with web UI and API"
+readme = "README.md"
+authors = [ { name = "riccardo tinivella", email = "tinix84@gmail.com" }]
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+
+[tool.setuptools]
+packages = ["pyplecs"]
+include-package-data = true
+
+[project.scripts]
+pyplecs-setup = "pyplecs.cli.installer:main"
+pyplecs-gui = "pyplecs.webgui:run_app"
+
+[project.optional-dependencies]
+# Optional extras users can install via: pip install .[parquet]
+parquet = ["pyarrow>=5.0.0"]
+yaml = ["pyyaml>=6.0"]
+# Full feature set for convenience (parquet storage, yaml support, windows GUI automation)
+full = ["pyarrow>=5.0.0", "pyyaml>=6.0", "pywinauto>=0.6.8"]

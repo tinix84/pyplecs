@@ -6,6 +6,7 @@ import pywinauto
 from pathlib import Path
 
 import xmlrpc.client
+import logging
 
 import psutil
 import subprocess
@@ -14,9 +15,8 @@ import copy
 
 import scipy.io as sio
 
-command = r"C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe"
-command = r"C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe"
-# command = r"C:\Users\tinix\Documents\Plexim\PLECS 4.3 (64 bit)\PLECS.exe"
+# Import configuration system
+from .config import ConfigManager
 
 def load_mat_file(file):
     param = sio.loadmat(file)
@@ -24,6 +24,7 @@ def load_mat_file(file):
     del param['__version__']
     del param['__globals__']
     return param
+
 
 def save_mat_file(file_name, data):
     sio.savemat(file_name, data, format='5')
@@ -77,8 +78,9 @@ def generate_variant_plecs_file(scr_filename: str, dst_filename: str, modelvars:
 def generate_variant_plecs_mdl(src_mdl, variant_name: str, variant_vars: dict):
     variant_mdl = copy.deepcopy(src_mdl)
     src_path_obj = Path(src_mdl.filename)
-    variant_mdl.filename = str(src_path_obj.parent / variant_name / src_path_obj.name).replace('.plecs',
-                                                                                               f'{variant_name}.plecs')
+    # create folder/name for the variant model and replace extension
+    variant_path = src_path_obj.parent / variant_name / src_path_obj.name
+    variant_mdl.filename = str(variant_path).replace('.plecs', f'{variant_name}.plecs')
     generate_variant_plecs_file(scr_filename=src_mdl.filename, dst_filename=variant_mdl.filename,
                                 modelvars=variant_vars)
 
@@ -86,11 +88,49 @@ def generate_variant_plecs_mdl(src_mdl, variant_name: str, variant_vars: dict):
 
 
 class PlecsApp:
-    def __init__(self):
-        self.command = command
+    def __init__(self, config_path=None):
+        """Initialize PlecsApp with configuration-based PLECS path detection.
+        
+        Args:
+            config_path: Optional path to config file. If None, uses default locations.
+        """
+        self.config_manager = ConfigManager(config_path)
+        self.command = self._find_plecs_executable()
         self.app = pywinauto.application.Application(backend='uia')
         self.app.start(self.command)
         self.app_gui = self.app.connect(path=self.command)
+    
+    def _find_plecs_executable(self):
+        """Find PLECS executable from configuration or common locations."""
+        # First try explicit paths from config (if present)
+        try:
+            exe_paths = list(self.config_manager.plecs.executable_paths or [])
+        except Exception:
+            exe_paths = []
+
+        for path in exe_paths:
+            if Path(path).exists():
+                return path
+
+        # Next, try fallback paths defined in config (keeps defaults in YAML)
+        try:
+            fallback = list(self.config_manager.plecs.fallback_paths or [])
+        except Exception:
+            fallback = []
+
+        for path in fallback:
+            if Path(path).exists():
+                return path
+
+        # As last resort, search on PATH for a plecs executable name
+        for candidate in ("PLECS.exe", "plecs.exe", "PLECS", "plecs"):
+            exe = shutil.which(candidate)
+            if exe:
+                return exe
+
+        raise FileNotFoundError(
+            "PLECS executable not found. Please update config/default.yml (plecs.executable_paths or plecs.fallback_paths) with the correct path."
+        )
 
     #    @staticmethod
     def set_plecs_high_priority(self):
@@ -104,18 +144,20 @@ class PlecsApp:
     #    @staticmethod
     def open_plecs(self):
         try:
-            pid = subprocess.Popen([command], creationflags=psutil.ABOVE_NORMAL_PRIORITY_CLASS).pid
+            pid = subprocess.Popen([self.command], creationflags=psutil.ABOVE_NORMAL_PRIORITY_CLASS).pid
         except Exception:
             print('Plecs opening problem')
-	#return pid
-
-    #    @staticmethod
+    #return pid    #    @staticmethod
     def kill_plecs(self):
         proc_iter = psutil.process_iter(attrs=["pid", "name"])
         for p in proc_iter:
             if p.info["name"] == "PLECS.exe":
                 # print (p.pid)
-                p.kill()
+                try:
+                    p.kill()
+                except psutil.NoSuchProcess:
+                    # Process already terminated or PID reused; ignore
+                    continue
 
     #    @staticmethod
     def get_plecs_cpu(self):
@@ -216,6 +258,109 @@ class PlecsServer:
     def set_value(self, ref, parameter, value):
         self.server.plecs.set(self.modelName + '/' + ref, parameter, str(value))
 
+    def get(self, componentPath, parameter=None):
+        """
+        Wrapper for plecs.get. If parameter is provided returns the specific
+        parameter value, otherwise returns the dict/struct of all parameters
+        for the component path.
+        """
+        if parameter is None:
+            return self.server.plecs.get(componentPath)
+        return self.server.plecs.get(componentPath, parameter)
+
+    def get_model_variables(self):
+        """Return a list of model variable names.
+
+        Attempt to call the RPC helper `plecs.getModelVariables()` on the
+        connected server. If the method is not available (Fault -32601) or
+        the RPC object doesn't expose it, fall back to parsing the local
+        .plecs model file using `plecs_parser.parse_plecs_file()` and return
+        the keys of the `init_vars` dict.
+        """
+        logger = logging.getLogger(__name__)
+        # First try RPC call if available
+        try:
+            if hasattr(self.server, 'plecs') and hasattr(self.server.plecs, 'getModelVariables'):
+                try:
+                    mv = self.server.plecs.getModelVariables()
+                    if isinstance(mv, (list, tuple)):
+                        return list(mv)
+                    return mv
+                except xmlrpc.client.Fault as f:
+                    # -32601 = method not found; log and fall back
+                    if getattr(f, 'faultCode', None) != -32601:
+                        logger.error('RPC fault when calling getModelVariables: %s', f)
+                        raise
+                    logger.debug('RPC does not expose getModelVariables (fault -32601). Falling back to parser.')
+        except AttributeError:
+            logger.debug('RPC proxy does not expose getModelVariables attribute; falling back to parser.')
+
+        # Fallback: attempt to locate the local .plecs file in several places
+        try:
+            from .plecs_parser import parse_plecs_file
+
+            candidates = []
+            # prefer explicit sim_path when provided
+            if getattr(self, 'sim_path', None):
+                candidates.append(Path(self.sim_path) / (self.sim_name or ''))
+            # direct sim_name (may be absolute or relative)
+            if self.sim_name:
+                candidates.append(Path(self.sim_name))
+                candidates.append(Path.cwd() / self.sim_name)
+
+            # try repository data folder relative to this file (repo_root/data)
+            repo_root = Path(__file__).resolve().parents[2]
+            candidates.append(repo_root / 'data' / (self.sim_name or ''))
+
+            # search candidates for existence, and as a last resort try to find
+            # a .plecs file with the same stem anywhere under the repo
+            model_file = None
+            for c in candidates:
+                try:
+                    if c and c.exists():
+                        model_file = c
+                        break
+                except Exception:
+                    continue
+
+            if model_file is None and self.sim_name:
+                stem = Path(self.sim_name).stem
+                for p in repo_root.rglob('*.plecs'):
+                    if p.stem == stem:
+                        model_file = p
+                        break
+
+            if model_file is None:
+                raise FileNotFoundError(f"Could not locate .plecs file for model '{self.sim_name}'")
+
+            logger.debug('Using model file %s for parser fallback', model_file)
+            parsed = parse_plecs_file(str(model_file))
+            return list(parsed.get('init_vars', {}).keys())
+        except Exception as e:
+            logger.error('Failed to retrieve model variables via RPC or parser: %s', e)
+            raise RuntimeError('Could not retrieve model variables via RPC or parser') from e
+
+    def list_model_variables(self):
+        """Return tuple (ok, vars_or_error). ok=True on success and vars is list.
+
+        On failure ok=False and the second element is an error message.
+        """
+        try:
+            vars = self.get_model_variables()
+            return True, vars
+        except Exception as e:
+            return False, str(e)
+
+    def export_scope_csv(self, scope_path, file_name, time_range=None):
+        """
+    Wrapper for plecs.scope(scope_path, 'ExportCSV', file_name[, time_range]).
+    If time_range is provided it should be an iterable like [t1, t2].
+    Returns whatever the RPC server returns (usually None or a file path).
+        """
+        if time_range is None:
+            return self.server.plecs.scope(scope_path, 'ExportCSV', file_name)
+        return self.server.plecs.scope(scope_path, 'ExportCSV', file_name, time_range)
+
     def run_sim_with_datastream(self, param_dict=None):
         """
         Kick off PLECS simulation with specified
@@ -227,6 +372,42 @@ class PlecsServer:
         else:
             self.load_modelvars(model_vars=param_dict)
             return self.server.plecs.simulate(self.modelName, self.optStruct)
+
+    def simulate_batch(self, optStructs, callback=None):
+        """
+        Run multiple simulations by passing a list (1xN) of option structures
+        to the PLECS RPC simulate command. This mirrors the documented
+        behaviour where plecs.simulate(modelName, optStructs) returns a list
+        of results.
+
+        If `callback` is provided (a Python callable), it will be invoked for
+        each result as callback(index, result) and the list of callback return
+        values will be returned. If no callback is provided, the raw list of
+        results from the XML-RPC call is returned.
+
+        Note: the callback is executed locally after receiving the results
+        from the RPC server (the RPC API does not support sending a remote
+        function pointer via xmlrpc.client), but this provides the same
+        convenience for client-side aggregation.
+        """
+        if not isinstance(optStructs, (list, tuple)):
+            raise TypeError("optStructs must be a list or tuple of option structs")
+
+        # Call remote simulate with the list of optStructs
+        results = self.server.plecs.simulate(self.modelName, list(optStructs))
+
+        # If no callback provided return raw results
+        if callback is None:
+            return results
+
+        if not callable(callback):
+            raise TypeError("callback must be callable")
+
+        callback_outputs = []
+        for idx, res in enumerate(results):
+            callback_outputs.append(callback(idx, res))
+
+        return callback_outputs
 
 
 class GenericConverterPlecsMdl:
@@ -297,14 +478,3 @@ class GenericConverterPlecsMdl:
         self._fullname = path_obj
         self._model_name = self._name.replace('.plecs', '')
 
-
-# if __name__ == "__main__":
-#    plecs42 = PlecsApp()
-#    plecs42.kill_plecs()
-#    time.sleep(1)
-#    plecs42.open_plecs()
-#    time.sleep(1)
-#    plecs42.set_plecs_high_priority()
-#
-#    sim_path = "./"
-#    sim_name = "simple_buck.plecs"

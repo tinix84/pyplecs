@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PyPLECS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+        <p class="text-muted">Real-time monitoring of PyPLECS simulation system</p>
+    </div>
+</div>
+
+<!-- System Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted">Total Simulations</p>
+                        <h3 class="card-title mb-0" id="total-simulations">-</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="fas fa-play fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stats success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted">Completed</p>
+                        <h3 class="card-title mb-0" id="completed-simulations">-</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stats warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted">Queue Size</p>
+                        <h3 class="card-title mb-0" id="queue-size">-</h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stats danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted">Cache Hit Rate</p>
+                        <h3 class="card-title mb-0" id="cache-hit-rate">-</h3>
+                    </div>
+                    <div class="text-info">
+                        <i class="fas fa-database fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Workers and Queue Status -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-server"></i> Worker Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="workers-container">
+                    <p class="text-muted">Loading worker information...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Performance Chart</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-history"></i> Recent Simulations</h5>
+                <a href="/simulations" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Model File</th>
+                                <th>Started</th>
+                                <th>Duration</th>
+                                <th>Cache</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-simulations">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Loading simulations...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-terminal"></i> System Log</h5>
+            </div>
+            <div class="card-body">
+                <div id="system-log" class="sim-log bg-dark text-light p-3 rounded">
+                    <div class="text-success">[INFO] PyPLECS Dashboard initialized</div>
+                    <div class="text-info">[INFO] WebSocket connection established</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Modal -->
+<div class="modal fade" id="quickSimModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Simulation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickSimForm">
+                    <div class="mb-3">
+                        <label for="modelFile" class="form-label">Model File</label>
+                        <input type="text" class="form-control" id="modelFile" value="demo_model.plecs">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="inputVoltage" class="form-label">Input Voltage (V)</label>
+                                <input type="number" class="form-control" id="inputVoltage" value="12" step="0.1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="outputVoltage" class="form-label">Output Voltage (V)</label>
+                                <input type="number" class="form-control" id="outputVoltage" value="5" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="inductance" class="form-label">Inductance (µH)</label>
+                        <input type="number" class="form-control" id="inductance" value="100" step="0.1">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select class="form-select" id="priority">
+                            <option value="LOW">Low</option>
+                            <option value="NORMAL" selected>Normal</option>
+                            <option value="HIGH">High</option>
+                            <option value="CRITICAL">Critical</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitQuickSimulation()">
+                    <i class="fas fa-play"></i> Start Simulation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Button -->
+<button class="btn btn-primary btn-lg position-fixed bottom-0 end-0 m-4 rounded-circle" 
+        data-bs-toggle="modal" data-bs-target="#quickSimModal" 
+        style="width: 60px; height: 60px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+    <i class="fas fa-plus"></i>
+</button>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let performanceChart;
+    let performanceData = {
+        labels: [],
+        datasets: [{
+            label: 'Simulations/min',
+            data: [],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    };
+    
+    // Initialize performance chart
+    function initPerformanceChart() {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: performanceData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    },
+                    x: {
+                        display: false
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Update dashboard statistics
+    function updateStats(stats) {
+        document.getElementById('total-simulations').textContent = stats.total_submitted || 0;
+        document.getElementById('completed-simulations').textContent = stats.total_completed || 0;
+        document.getElementById('queue-size').textContent = stats.queue_size || 0;
+        
+        // Calculate cache hit rate
+        const totalCached = stats.total_cached_hits || 0;
+        const totalSubmitted = stats.total_submitted || 1;
+        const hitRate = ((totalCached / totalSubmitted) * 100).toFixed(1);
+        document.getElementById('cache-hit-rate').textContent = `${hitRate}%`;
+    }
+    
+    // Update workers display
+    function updateWorkers(workers) {
+        const container = document.getElementById('workers-container');
+        if (!workers) return;
+        
+        let html = '';
+        Object.entries(workers).forEach(([workerId, worker]) => {
+            const statusClass = worker.is_busy ? 'worker-busy' : 'worker-idle';
+            const statusText = worker.is_busy ? 'Busy' : 'Idle';
+            const currentTask = worker.current_task ? ` (${worker.current_task})` : '';
+            
+            html += `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <span class="worker-status ${statusClass}"></span>
+                        <strong>${workerId}</strong>
+                        <small class="text-muted">${statusText}${currentTask}</small>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">
+                            ${worker.tasks_completed} completed, ${worker.tasks_failed} failed
+                        </small>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html || '<p class="text-muted">No workers available</p>';
+    }
+    
+    // Load recent simulations
+    async function loadRecentSimulations() {
+        try {
+            const response = await fetch('/api/simulations');
+            const data = await response.json();
+            const tbody = document.getElementById('recent-simulations');
+            
+            if (data.simulations && data.simulations.length > 0) {
+                tbody.innerHTML = data.simulations.slice(0, 5).map(sim => `
+                    <tr>
+                        <td>
+                            <span class="badge status-badge ${getStatusBadgeClass(sim.status)}">${sim.status}</span>
+                        </td>
+                        <td>
+                            <small>${sim.model_file || 'Unknown'}</small>
+                        </td>
+                        <td>
+                            <small>${sim.started_at ? formatTimestamp(sim.started_at) : '-'}</small>
+                        </td>
+                        <td>
+                            <small>${sim.execution_time ? formatDuration(sim.execution_time) : '-'}</small>
+                        </td>
+                        <td>
+                            ${sim.cached ? '<i class="fas fa-check text-success"></i>' : '<i class="fas fa-times text-muted"></i>'}
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No simulations found</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error loading simulations:', error);
+        }
+    }
+    
+    // Submit quick simulation
+    async function submitQuickSimulation() {
+        const formData = {
+            model_file: document.getElementById('modelFile').value,
+            parameters: {
+                Vi: parseFloat(document.getElementById('inputVoltage').value),
+                Vo: parseFloat(document.getElementById('outputVoltage').value),
+                L: parseFloat(document.getElementById('inductance').value) * 1e-6
+            },
+            priority: document.getElementById('priority').value,
+            use_cache: true
+        };
+        
+        try {
+            const response = await fetch('/api/simulations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('quickSimModal'));
+                modal.hide();
+                
+                // Add to log
+                addToLog(`[INFO] Simulation ${result.task_id} submitted`, 'text-success');
+                
+                // Refresh recent simulations
+                setTimeout(loadRecentSimulations, 500);
+            } else {
+                addToLog(`[ERROR] Failed to submit simulation: ${result.error}`, 'text-danger');
+            }
+        } catch (error) {
+            addToLog(`[ERROR] Network error: ${error.message}`, 'text-danger');
+        }
+    }
+    
+    // Add message to system log
+    function addToLog(message, cssClass = 'text-info') {
+        const log = document.getElementById('system-log');
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.className = cssClass;
+        logEntry.textContent = `[${timestamp}] ${message}`;
+        
+        log.appendChild(logEntry);
+        log.scrollTop = log.scrollHeight;
+        
+        // Keep only last 50 entries
+        while (log.children.length > 50) {
+            log.removeChild(log.firstChild);
+        }
+    }
+    
+    // WebSocket event handlers
+    window.pyplecsWS.on('stats_update', function(data) {
+        if (data.stats) {
+            updateStats(data.stats);
+            updateWorkers(data.stats.workers);
+            
+            // Update performance chart
+            const now = new Date().toLocaleTimeString();
+            performanceData.labels.push(now);
+            performanceData.datasets[0].data.push(data.stats.total_completed || 0);
+            
+            // Keep only last 20 data points
+            if (performanceData.labels.length > 20) {
+                performanceData.labels.shift();
+                performanceData.datasets[0].data.shift();
+            }
+            
+            performanceChart.update('none');
+        }
+    });
+    
+    window.pyplecsWS.on('task_started', function(data) {
+        addToLog(`Simulation started: ${data.task_id}`, 'text-info');
+        setTimeout(loadRecentSimulations, 100);
+    });
+    
+    window.pyplecsWS.on('task_completed', function(data) {
+        const cacheText = data.cached ? ' (cached)' : '';
+        addToLog(`Simulation completed: ${data.task_id} in ${formatDuration(data.execution_time)}${cacheText}`, 'text-success');
+        setTimeout(loadRecentSimulations, 100);
+    });
+    
+    window.pyplecsWS.on('task_failed', function(data) {
+        addToLog(`Simulation failed: ${data.task_id} - ${data.error}`, 'text-danger');
+        setTimeout(loadRecentSimulations, 100);
+    });
+    
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        initPerformanceChart();
+        loadRecentSimulations();
+        
+        // Refresh data every 5 seconds
+        setInterval(loadRecentSimulations, 5000);
+    });
+</script>
+{% endblock %}

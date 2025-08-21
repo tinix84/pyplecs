@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}Cache Management - PyPLECS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-database"></i> Cache Management</h1>
+        <p class="text-muted">Monitor and manage simulation result cache</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-outline-warning" onclick="clearCache()">
+            <i class="fas fa-trash"></i> Clear Cache
+        </button>
+        <button class="btn btn-outline-secondary" onclick="loadCacheStats()">
+            <i class="fas fa-refresh"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Cache Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-stats">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted">Total Entries</p>
+                        <h3 class="card-title mb-0" id="cache-entries">-</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="fas fa-file fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stats success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted">Cache Size</p>
+                        <h3 class="card-title mb-0" id="cache-size">-</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-hdd fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stats warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted">Hit Rate</p>
+                        <h3 class="card-title mb-0" id="hit-rate">-</h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="fas fa-bullseye fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-stats danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="card-category text-muted">Cache Directory</p>
+                        <p class="card-title mb-0 small" id="cache-directory">-</p>
+                    </div>
+                    <div class="text-info">
+                        <i class="fas fa-folder fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cache Configuration -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-cog"></i> Cache Configuration</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Enabled:</strong></td>
+                        <td><span id="cache-enabled" class="badge">-</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Type:</strong></td>
+                        <td><span id="cache-type">-</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>TTL:</strong></td>
+                        <td><span id="cache-ttl">-</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Timeseries Format:</strong></td>
+                        <td><span id="timeseries-format">-</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Metadata Format:</strong></td>
+                        <td><span id="metadata-format">-</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Compression:</strong></td>
+                        <td><span id="compression">-</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hash Algorithm:</strong></td>
+                        <td><span id="hash-algorithm">-</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Storage Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="storageChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cache Hit/Miss Statistics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Cache Performance Over Time</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cache Operations Log -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-history"></i> Recent Cache Operations</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearCacheLog()">
+                    Clear Log
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="cache-log" class="sim-log bg-light p-3 rounded" style="height: 300px;">
+                    <div class="text-muted">[INFO] Cache monitoring initialized</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cache Management Modal -->
+<div class="modal fade" id="cacheManagementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cache Management</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This action will permanently delete all cached simulation results.
+                    Active simulations will not be affected, but future simulations will need to run from scratch.
+                </div>
+                
+                <p>Current cache statistics:</p>
+                <ul>
+                    <li><strong>Entries:</strong> <span id="modal-cache-entries">-</span></li>
+                    <li><strong>Size:</strong> <span id="modal-cache-size">-</span></li>
+                    <li><strong>Directory:</strong> <code id="modal-cache-directory">-</code></li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmClearCache()">
+                    <i class="fas fa-trash"></i> Clear All Cache
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let storageChart;
+    let performanceChart;
+    let cacheStats = {};
+    
+    // Initialize charts
+    function initCharts() {
+        // Storage breakdown chart
+        const storageCtx = document.getElementById('storageChart').getContext('2d');
+        storageChart = new Chart(storageCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Timeseries Data', 'Metadata', 'Cache Indexes'],
+                datasets: [{
+                    data: [70, 20, 10],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Performance chart
+        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        performanceChart = new Chart(performanceCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Cache Hits',
+                    data: [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Cache Misses',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Load cache statistics
+    async function loadCacheStats() {
+        try {
+            const response = await fetch('/api/cache/stats');
+            const data = await response.json();
+            cacheStats = data;
+            
+            // Update statistics cards
+            document.getElementById('cache-entries').textContent = data.total_entries || 0;
+            document.getElementById('cache-size').textContent = data.total_size_mb ? `${data.total_size_mb} MB` : '0 MB';
+            document.getElementById('cache-directory').textContent = data.cache_directory || 'Unknown';
+            
+            // Load system stats for hit rate
+            loadSystemStats();
+            
+        } catch (error) {
+            console.error('Error loading cache stats:', error);
+            addToCacheLog('[ERROR] Failed to load cache statistics', 'text-danger');
+        }
+    }
+    
+    // Load system statistics for hit rate calculation
+    async function loadSystemStats() {
+        try {
+            const response = await fetch('/api/status');
+            const data = await response.json();
+            
+            if (data.stats) {
+                const hitRate = data.stats.total_cached_hits || 0;
+                const totalSubmitted = data.stats.total_submitted || 1;
+                const rate = ((hitRate / totalSubmitted) * 100).toFixed(1);
+                document.getElementById('hit-rate').textContent = `${rate}%`;
+            }
+            
+        } catch (error) {
+            console.error('Error loading system stats:', error);
+        }
+    }
+    
+    // Load cache configuration
+    async function loadCacheConfig() {
+        // This would typically come from the API, but for now we'll use WebSocket data
+        // or make assumptions based on the config
+        
+        // Set placeholder values - these should come from the actual config
+        document.getElementById('cache-enabled').innerHTML = '<span class="badge bg-success">Enabled</span>';
+        document.getElementById('cache-type').textContent = 'File-based';
+        document.getElementById('cache-ttl').textContent = '1 hour';
+        document.getElementById('timeseries-format').textContent = 'Parquet';
+        document.getElementById('metadata-format').textContent = 'JSON';
+        document.getElementById('compression').textContent = 'Snappy';
+        document.getElementById('hash-algorithm').textContent = 'SHA-256';
+    }
+    
+    // Clear cache
+    function clearCache() {
+        // Update modal with current stats
+        document.getElementById('modal-cache-entries').textContent = cacheStats.total_entries || 0;
+        document.getElementById('modal-cache-size').textContent = cacheStats.total_size_mb ? `${cacheStats.total_size_mb} MB` : '0 MB';
+        document.getElementById('modal-cache-directory').textContent = cacheStats.cache_directory || 'Unknown';
+        
+        // Show confirmation modal
+        const modal = new bootstrap.Modal(document.getElementById('cacheManagementModal'));
+        modal.show();
+    }
+    
+    // Confirm cache clearing
+    async function confirmClearCache() {
+        try {
+            const response = await fetch('/api/cache/clear', { method: 'POST' });
+            const result = await response.json();
+            
+            if (response.ok) {
+                addToCacheLog('[INFO] Cache cleared successfully', 'text-success');
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('cacheManagementModal'));
+                modal.hide();
+                
+                // Refresh stats
+                setTimeout(loadCacheStats, 500);
+            } else {
+                addToCacheLog(`[ERROR] Failed to clear cache: ${result.error}`, 'text-danger');
+            }
+        } catch (error) {
+            addToCacheLog(`[ERROR] Network error: ${error.message}`, 'text-danger');
+        }
+    }
+    
+    // Add message to cache log
+    function addToCacheLog(message, cssClass = 'text-info') {
+        const log = document.getElementById('cache-log');
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.className = cssClass;
+        logEntry.textContent = `[${timestamp}] ${message}`;
+        
+        log.appendChild(logEntry);
+        log.scrollTop = log.scrollHeight;
+        
+        // Keep only last 50 entries
+        while (log.children.length > 50) {
+            log.removeChild(log.firstChild);
+        }
+    }
+    
+    // Clear cache log
+    function clearCacheLog() {
+        document.getElementById('cache-log').innerHTML = '<div class="text-muted">[INFO] Cache log cleared</div>';
+    }
+    
+    // Update performance chart with new data
+    function updatePerformanceChart(stats) {
+        const now = new Date().toLocaleTimeString();
+        
+        performanceChart.data.labels.push(now);
+        performanceChart.data.datasets[0].data.push(stats.total_cached_hits || 0);
+        performanceChart.data.datasets[1].data.push((stats.total_submitted || 0) - (stats.total_cached_hits || 0));
+        
+        // Keep only last 20 data points
+        if (performanceChart.data.labels.length > 20) {
+            performanceChart.data.labels.shift();
+            performanceChart.data.datasets[0].data.shift();
+            performanceChart.data.datasets[1].data.shift();
+        }
+        
+        performanceChart.update('none');
+    }
+    
+    // WebSocket event handlers
+    window.pyplecsWS.on('stats_update', function(data) {
+        if (data.stats) {
+            updatePerformanceChart(data.stats);
+            
+            // Update hit rate
+            const hitRate = data.stats.total_cached_hits || 0;
+            const totalSubmitted = data.stats.total_submitted || 1;
+            const rate = ((hitRate / totalSubmitted) * 100).toFixed(1);
+            document.getElementById('hit-rate').textContent = `${rate}%`;
+        }
+    });
+    
+    window.pyplecsWS.on('task_completed', function(data) {
+        if (data.cached) {
+            addToCacheLog(`[CACHE HIT] Task ${data.task_id.substring(0, 8)} served from cache`, 'text-success');
+        } else {
+            addToCacheLog(`[CACHE MISS] Task ${data.task_id.substring(0, 8)} result cached`, 'text-info');
+        }
+        
+        // Refresh cache stats after a delay
+        setTimeout(loadCacheStats, 1000);
+    });
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        initCharts();
+        loadCacheStats();
+        loadCacheConfig();
+        
+        // Refresh stats periodically
+        setInterval(loadCacheStats, 30000); // Every 30 seconds
+    });
+</script>
+{% endblock %}

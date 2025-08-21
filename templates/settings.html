@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - PyPLECS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="fas fa-cog"></i> Settings & Configuration</h1>
+        <p class="text-muted">Manage PyPLECS system configuration</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-primary" onclick="saveSettings()">
+            <i class="fas fa-save"></i> Save Changes
+        </button>
+        <button class="btn btn-outline-secondary" onclick="resetSettings()">
+            <i class="fas fa-undo"></i> Reset
+        </button>
+    </div>
+</div>
+
+<!-- Configuration Sections -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-microchip"></i> PLECS Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="plecs-executable" class="form-label">PLECS Executable Path</label>
+                            <input type="text" class="form-control" id="plecs-executable" 
+                                   value="D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe">
+                            <div class="form-text">Path to the PLECS executable for simulation execution</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="plecs-timeout" class="form-label">Simulation Timeout (seconds)</label>
+                            <input type="number" class="form-control" id="plecs-timeout" value="300">
+                            <div class="form-text">Maximum time to wait for simulation completion</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="temp-directory" class="form-label">Temporary Directory</label>
+                            <input type="text" class="form-control" id="temp-directory" value="./temp">
+                            <div class="form-text">Directory for temporary simulation files</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="max-parallel" class="form-label">Max Parallel Simulations</label>
+                            <input type="number" class="form-control" id="max-parallel" value="4">
+                            <div class="form-text">Maximum number of concurrent simulations</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-database"></i> Cache Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="cache-enabled" checked>
+                        <label class="form-check-label" for="cache-enabled">
+                            Enable Result Caching
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="cache-directory" class="form-label">Cache Directory</label>
+                    <input type="text" class="form-control" id="cache-directory" value="./cache">
+                </div>
+                <div class="mb-3">
+                    <label for="cache-ttl" class="form-label">Cache TTL (hours)</label>
+                    <input type="number" class="form-control" id="cache-ttl" value="24">
+                </div>
+                <div class="mb-3">
+                    <label for="timeseries-format" class="form-label">Timeseries Format</label>
+                    <select class="form-select" id="timeseries-format">
+                        <option value="parquet" selected>Parquet</option>
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tasks"></i> Orchestration Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="max-workers" class="form-label">Maximum Workers</label>
+                    <input type="number" class="form-control" id="max-workers" value="4">
+                </div>
+                <div class="mb-3">
+                    <label for="queue-size" class="form-label">Queue Size</label>
+                    <input type="number" class="form-control" id="queue-size" value="100">
+                </div>
+                <div class="mb-3">
+                    <label for="retry-attempts" class="form-label">Retry Attempts</label>
+                    <input type="number" class="form-control" id="retry-attempts" value="3">
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="auto-scaling" checked>
+                        <label class="form-check-label" for="auto-scaling">
+                            Enable Auto-scaling
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-globe"></i> Web GUI Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="web-host" class="form-label">Host</label>
+                            <input type="text" class="form-control" id="web-host" value="127.0.0.1">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="web-port" class="form-label">Port</label>
+                            <input type="number" class="form-control" id="web-port" value="8001">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="log-level" class="form-label">Log Level</label>
+                            <select class="form-select" id="log-level">
+                                <option value="DEBUG">Debug</option>
+                                <option value="INFO" selected>Info</option>
+                                <option value="WARNING">Warning</option>
+                                <option value="ERROR">Error</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="static-files" class="form-label">Static Files Directory</label>
+                            <input type="text" class="form-control" id="static-files" value="./static">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="templates-dir" class="form-label">Templates Directory</label>
+                            <input type="text" class="form-control" id="templates-dir" value="./templates">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>PyPLECS Version:</strong><br>
+                        <span class="text-muted">1.0.0</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Python Version:</strong><br>
+                        <span class="text-muted" id="python-version">Loading...</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>FastAPI Version:</strong><br>
+                        <span class="text-muted" id="fastapi-version">Loading...</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Config File:</strong><br>
+                        <span class="text-muted">config/default.yml</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Actions Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Save Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Some settings require a server restart to take effect.
+                </div>
+                <p>Do you want to save the configuration changes?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmSaveSettings()">
+                    <i class="fas fa-save"></i> Save Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Load system information
+    function loadSystemInfo() {
+        // Mock system info - in a real implementation this would come from the API
+        document.getElementById('python-version').textContent = '3.10.12';
+        document.getElementById('fastapi-version').textContent = '0.104.1';
+    }
+    
+    // Save settings
+    function saveSettings() {
+        const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+        modal.show();
+    }
+    
+    // Confirm save settings
+    async function confirmSaveSettings() {
+        try {
+            // Collect all settings
+            const settings = {
+                plecs: {
+                    executable: document.getElementById('plecs-executable').value,
+                    timeout: parseInt(document.getElementById('plecs-timeout').value),
+                    temp_directory: document.getElementById('temp-directory').value,
+                    max_parallel: parseInt(document.getElementById('max-parallel').value)
+                },
+                cache: {
+                    enabled: document.getElementById('cache-enabled').checked,
+                    directory: document.getElementById('cache-directory').value,
+                    ttl_hours: parseInt(document.getElementById('cache-ttl').value),
+                    timeseries_format: document.getElementById('timeseries-format').value
+                },
+                orchestration: {
+                    max_workers: parseInt(document.getElementById('max-workers').value),
+                    queue_size: parseInt(document.getElementById('queue-size').value),
+                    retry_attempts: parseInt(document.getElementById('retry-attempts').value),
+                    auto_scaling: document.getElementById('auto-scaling').checked
+                },
+                webgui: {
+                    host: document.getElementById('web-host').value,
+                    port: parseInt(document.getElementById('web-port').value),
+                    log_level: document.getElementById('log-level').value,
+                    static_files: document.getElementById('static-files').value,
+                    templates: document.getElementById('templates-dir').value
+                }
+            };
+            
+            // In a real implementation, this would POST to /api/settings
+            console.log('Settings to save:', settings);
+            
+            // Show success message
+            showAlert('Settings saved successfully!', 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+            modal.hide();
+            
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            showAlert('Failed to save settings: ' + error.message, 'danger');
+        }
+    }
+    
+    // Reset settings to defaults
+    function resetSettings() {
+        if (confirm('Are you sure you want to reset all settings to defaults?')) {
+            // Reset all form fields to default values
+            document.getElementById('plecs-executable').value = 'D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe';
+            document.getElementById('plecs-timeout').value = '300';
+            document.getElementById('temp-directory').value = './temp';
+            document.getElementById('max-parallel').value = '4';
+            
+            document.getElementById('cache-enabled').checked = true;
+            document.getElementById('cache-directory').value = './cache';
+            document.getElementById('cache-ttl').value = '24';
+            document.getElementById('timeseries-format').value = 'parquet';
+            
+            document.getElementById('max-workers').value = '4';
+            document.getElementById('queue-size').value = '100';
+            document.getElementById('retry-attempts').value = '3';
+            document.getElementById('auto-scaling').checked = true;
+            
+            document.getElementById('web-host').value = '127.0.0.1';
+            document.getElementById('web-port').value = '8001';
+            document.getElementById('log-level').value = 'INFO';
+            document.getElementById('static-files').value = './static';
+            document.getElementById('templates-dir').value = './templates';
+            
+            showAlert('Settings reset to defaults', 'info');
+        }
+    }
+    
+    // Show alert message
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at the top of the content
+        const content = document.querySelector('.container-fluid');
+        content.insertBefore(alertDiv, content.firstChild);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSystemInfo();
+    });
+</script>
+{% endblock %}
