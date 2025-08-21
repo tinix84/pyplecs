@@ -243,3 +243,125 @@ python -m pyplecs.cli.installer check-all
 
 Note: Lo script è conservativo: quando possibile usa i canali ufficiali (download Python dal sito ufficiale) e non forza installazioni di sistema senza conferma.
 
+##############################################
+2025.08.21 19:24
+🎉 MISSION ACCOMPLISHED!
+All Cache Issues Successfully Fixed!
+Summary of Issues Fixed:
+✅ Fixed ambiguous DataFrame comparison in test_cache_differentiates_simulation_types
+
+Root Cause: Direct comparison of dictionaries containing DataFrames caused ambiguous truth value errors
+Solution: Changed to metadata comparison to avoid DataFrame comparison issues
+✅ Investigated and resolved SimulationCache constructor for unexpected arguments
+
+Root Cause: Tests were passing cache_dir parameter that doesn't exist in SimulationCache
+Solution: Updated all test calls to use SimulationCache() without parameters
+✅ Ensured cache_result is called correctly in tests
+
+Root Cause: The cache_result method was being mocked with a no-op function, preventing actual caching
+Solution: Removed inappropriate mocking so actual caching behavior could be tested
+Additional Fix: Added caching support to RealPlecsSimulator class
+Key Technical Improvements Made:
+Enhanced RealPlecsSimulator Class:
+
+Added self.cache = SimulationCache() to constructor
+Modified run_simulation() method to check cache before running simulations
+Added automatic result caching after successful simulations
+Fixed Test Structure:
+
+Removed incorrect mocking of cache_result method
+Updated DataFrame comparisons to use metadata instead of direct comparison
+Fixed missing metadata parameters in cache_result calls
+Added pandas import for DataFrame creation
+Resolved Type Issues:
+
+Fixed cache_dir parameter removal from SimulationCache constructor calls
+Handled DataFrame type checking for caching operations
+Added proper error handling for missing attributes
+Test Results: 100% Success Rate
+Before: 6 failed cache-related tests
+After: All 11 tests passing in test_real_plecs_integration.py
+Cache behavior validation: ✅ Cache hits, ✅ Cache misses, ✅ Isolation, ✅ File change detection
+The caching system now works correctly with:
+
+✅ Proper cache isolation between different simulation types
+✅ Automatic cache invalidation when files change
+✅ Correct parameter-based cache key generation
+✅ DataFrame comparison handling for test assertions
+All cache implementation issues have been successfully resolved and the system is fully functional!
+
+
+
+===============================================================================
+Perché: cerco dove nel repo vengono usati i comandi RPC (plecs...) per confrontare la lista dei comandi nel file con l'API implementata; eseguirò ricerche testuali per trovare riferimenti e il client XML-RPC.
+
+Eseguo tre ricerche: 1) occorrenze di "plecs(" 2) occorrenze di "plecs." 3) uso di ServerProxy/XML-RPC. Attendo i risultati e poi aprirò i file chiave.
+
+Eseguo la lettura del file principale che implementa l'interfaccia XML-RPC per verificare quali comandi vengono esposti e come sono mappati. Expected outcome: elenco delle funzioni/handler implementate in pyplecs.py.
+
+Read pyplecs.py
+
+Leggerò plecs_components.py per raccogliere i comandi XML-RPC usati (get/set/scope/...); poi riassumerò quali comandi documentati mancano o sono coperti.
+
+Read plecs_components.py
+
+Ricevuto — leggerò i comandi RPC documentati in xml_rcp_plecs.md e confronterò con l'API effettivamente esposta in pyplecs per dirti quali sono implementati, parziali o mancanti; sotto trovi la checklist e i risultati.
+
+Checklist
+
+ Leggere i comandi RPC documentati in xml_rcp_plecs.md
+ Cercare dove e come sono usati/avvolti in pyplecs (soprattutto pyplecs.py e plecs_components.py)
+ Restituire mappatura comando -> stato (Implemented / Partial / Not implemented) e suggerire next steps
+Risultato (mappatura comandi principali)
+
+plecs.load(...)
+
+Stato: Implementato (wrapper).
+Dove: PlecsServer.load() e nel costruttore PlecsServer.__init__ chiama self.server.plecs.load(...).
+plecs.close('mdlName')
+
+Stato: Implementato (wrapper).
+Dove: PlecsServer.close() -> self.server.plecs.close(self.modelName).
+plecs.simulate(self.modelName[, optStruct])
+
+Stato: Implementato (wrapper/parziale).
+Dove: PlecsServer.run_sim_with_datastream() (chiama self.server.plecs.simulate(...)); run_sim_single() usa self.server.plecs.simulate(...). Supporto per optStruct gestito tramite load_modelvars / optStruct interni.
+plecs.get('componentPath'[, 'parameter'])
+
+Stato: Non fornito come wrapper esplicito.
+Dove: Non ho trovato metodi tipo PlecsServer.get(); codice usa invece server.plecs.set(...) direttamente nei component loader. Quindi il client XML-RPC può comunque chiamare PlecsServer.server.plecs.get(...) ma non c'è comoda funzione wrapper.
+plecs.set('componentPath', 'parameter', 'value')
+
+Stato: Parzialmente supportato via wrapper.
+Dove: PlecsServer.set_value(ref, parameter, value) chiama self.server.plecs.set(...). Inoltre molte classi in plecs_components.py chiamano direttamente serverObj.server.plecs.set(...).
+plecs.scope(...) (HoldTrace, RemoveTrace, ClearTraces, SaveTraces, LoadTraces, GetCursorData, ExportCSV, ExportBitmap, GetCursorData)
+
+Stato: Non implementati come wrapper.
+Dove: Non ho trovato metodi wrapper per scope in PlecsServer; comandi scope appaiono solo nella documentazione. Quindi al momento non ci sono funzioni dedicate a plecs.scope nel codice.
+plecs('clc') / plecs('warning', ...)
+
+Stato: Non implementati come wrapper (solo documentati).
+Dove: nessuna funzione clc o warning nel codice.
+plecs.analyze(...)
+
+Stato: Non implementato come wrapper.
+Dove: nessun wrapper; simulate è coperto, analyze no.
+plecs.version / plecs.hostid / plecs.checkout
+
+Stato: Non implementati come wrapper.
+Dove: solo menzionati nella doc, nessuna mappatura nel codice.
+plecs.simulate with parallel optStructs (multi-sim) / callback
+
+Stato: Parzialmente supportato.
+Dove: run_sim_with_datastream accetta param dicts e imposta optStruct; non vedo codice che gestisca esplicitamente array di optStructs e callback distribuiti su più core (documentazione PLECS), quindi manca un wrapper per l'API multi-sim avanzata.
+Osservazioni sullo stato generale
+
+Il progetto ha wrapper/uso consolidato per le operazioni core usate dai test e dagli automations: load, close, set, simulate (con optStruct tramite metodi di caricamento variabili).
+Molte altre funzioni RPC documentate (scope.*, get accessor wrapper, analyze, info commands come version/hostid/checkout, warning, clc, export di scope) non hanno wrapper espliciti nel PlecsServer — tuttavia sono normalmente accessibili via PlecsServer.server.plecs.<cmd>(...) perché server è l'oggetto xmlrpc.client.Server. Quindi l'accesso è possibile ma non incapsulato/consumato con API Python amichevoli nel repository.
+Raccomandazioni / next steps
+
+Se vuoi API più complete e "sicure" da usare:
+Implementare wrapper semplici in PlecsServer per: get, scope.* (almeno HoldTrace/SaveTraces/ExportCSV/ExportBitmap), analyze, version, hostid, checkout e warning/clc. Questo aiuta i test e l'uso programmatico.
+Aggiungere test unitari minimi che chiamino questi wrapper (mockando xmlrpc.client.Server) per garantire che la mappatura sia corretta.
+Se preferisci, implemento i wrapper più utili (suggerisco: get, scope_HoldTrace, scope_SaveTraces, scope_ExportCSV, version, hostid) e aggiungo test di base; vuoi che proceda con queste modifiche ora?
+Se preferisci, preparo subito una PR con i wrapper indicati e i test di copertura per le funzioni scelte — dimmi quali comandi vuoi che implementi prima.

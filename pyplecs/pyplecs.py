@@ -251,6 +251,26 @@ class PlecsServer:
     def set_value(self, ref, parameter, value):
         self.server.plecs.set(self.modelName + '/' + ref, parameter, str(value))
 
+    def get(self, componentPath, parameter=None):
+        """
+        Wrapper for plecs.get. If parameter is provided returns the specific
+        parameter value, otherwise returns the dict/struct of all parameters
+        for the component path.
+        """
+        if parameter is None:
+            return self.server.plecs.get(componentPath)
+        return self.server.plecs.get(componentPath, parameter)
+
+    def export_scope_csv(self, scope_path, file_name, time_range=None):
+        """
+        Wrapper for plecs.scope(scope_path, 'ExportCSV', file_name[, time_range])
+        If time_range is provided it should be an iterable like [t1, t2].
+        Returns whatever the RPC server returns (usually None or a file path).
+        """
+        if time_range is None:
+            return self.server.plecs.scope(scope_path, 'ExportCSV', file_name)
+        return self.server.plecs.scope(scope_path, 'ExportCSV', file_name, time_range)
+
     def run_sim_with_datastream(self, param_dict=None):
         """
         Kick off PLECS simulation with specified
@@ -262,6 +282,42 @@ class PlecsServer:
         else:
             self.load_modelvars(model_vars=param_dict)
             return self.server.plecs.simulate(self.modelName, self.optStruct)
+
+    def simulate_batch(self, optStructs, callback=None):
+        """
+        Run multiple simulations by passing a list (1xN) of option structures
+        to the PLECS RPC simulate command. This mirrors the documented
+        behaviour where plecs.simulate(modelName, optStructs) returns a list
+        of results.
+
+        If `callback` is provided (a Python callable), it will be invoked for
+        each result as callback(index, result) and the list of callback return
+        values will be returned. If no callback is provided, the raw list of
+        results from the XML-RPC call is returned.
+
+        Note: the callback is executed locally after receiving the results
+        from the RPC server (the RPC API does not support sending a remote
+        function pointer via xmlrpc.client), but this provides the same
+        convenience for client-side aggregation.
+        """
+        if not isinstance(optStructs, (list, tuple)):
+            raise TypeError("optStructs must be a list or tuple of option structs")
+
+        # Call remote simulate with the list of optStructs
+        results = self.server.plecs.simulate(self.modelName, list(optStructs))
+
+        # If no callback provided return raw results
+        if callback is None:
+            return results
+
+        if not callable(callback):
+            raise TypeError("callback must be callable")
+
+        callback_outputs = []
+        for idx, res in enumerate(results):
+            callback_outputs.append(callback(idx, res))
+
+        return callback_outputs
 
 
 class GenericConverterPlecsMdl:
