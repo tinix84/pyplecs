@@ -12,7 +12,7 @@ class ParserTestSuite(unittest.TestCase):
 
     def test_parse_plecs_file(self):
         """Test parsing a single .plecs file."""
-        test_file = Path('../data/simple_buck.plecs')
+        test_file = Path('data/simple_buck.plecs')
         result = parse_plecs_file(str(test_file))
 
         self.assertIsInstance(result, dict)
@@ -23,7 +23,7 @@ class ParserTestSuite(unittest.TestCase):
 
     def test_plecs_overview(self):
         """Test generating an overview for a .plecs file."""
-        test_file = Path('../data/simple_buck.plecs')
+        test_file = Path('data/simple_buck.plecs')
         overview = plecs_overview(str(test_file))
 
         self.assertIsInstance(overview, dict)
@@ -34,7 +34,7 @@ class ParserTestSuite(unittest.TestCase):
 
     def test_scan_plecs_dir(self):
         """Test scanning a directory for .plecs files."""
-        test_dir = Path('../data')
+        test_dir = Path('data')
         results = scan_plecs_dir(str(test_dir))
 
         self.assertIsInstance(results, dict)
