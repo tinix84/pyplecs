@@ -25,14 +25,28 @@ class InteractiveTestSuite(unittest.TestCase):
         full_sim_name = str(sim_file_path_obj.absolute())
         plecs_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
 
+        if not sys.stdin.isatty():
+            self.skipTest('Interactive tests require a TTY; skipping in CI')
+
         print("\n=== Starting Sequential Simulation Test ===")
         input("Press Enter to continue with next sim 00...")
+
+        # try to reach PLECS RPC and skip if unavailable
+        import socket
+
+        try:
+            s = socket.create_connection(('localhost', 1080), timeout=1)
+            s.close()
+        except OSError:
+            self.skipTest('PLECS RPC not reachable; skipping interactive test')
 
         plecs42 = pyplecs.PlecsApp()
         plecs42.open_plecs()
         time.sleep(1)
-        plecs_server = pyplecs.PlecsServer(plecs_mdl.folder, 
-                                          plecs_mdl.simulation_name)
+        plecs_server = pyplecs.PlecsServer(
+            plecs_mdl.folder,
+            plecs_mdl.simulation_name,
+        )
         plecs_server.run_sim_with_datastream()
 
         print("Simulation 00 completed")
@@ -43,8 +57,10 @@ class InteractiveTestSuite(unittest.TestCase):
         ModelVars["Ii_max"] = 25
         ModelVars["Vo_ref"] = 25
 
-        plecs_server = pyplecs.PlecsServer(plecs_mdl.folder, 
-                                          plecs_mdl.simulation_name)
+        plecs_server = pyplecs.PlecsServer(
+            plecs_mdl.folder,
+            plecs_mdl.simulation_name,
+        )
         plecs_server.run_sim_with_datastream(param_dict=ModelVars)
 
         print("Simulation 01 completed with Vi=250, Ii_max=25, Vo_ref=25")
@@ -54,10 +70,12 @@ class InteractiveTestSuite(unittest.TestCase):
         ModelVars["Ii_max"] = 1
         ModelVars["Vo_ref"] = 5
 
-        plecs_server = pyplecs.PlecsServer(plecs_mdl.folder, 
-                                          plecs_mdl.simulation_name)
+        plecs_server = pyplecs.PlecsServer(
+            plecs_mdl.folder,
+            plecs_mdl.simulation_name,
+        )
         plecs_server.run_sim_with_datastream(param_dict=ModelVars)
-        
+
         print("Simulation 02 completed with Vi=25, Ii_max=1, Vo_ref=5")
         print("=== Sequential Simulation Test Complete ===")
 
@@ -105,28 +123,40 @@ class InteractiveTestSuite(unittest.TestCase):
         time.sleep(1)
         
         # Run first simulation
-        plecs_server = pyplecs.PlecsServer(sim_path_buck_mdl_01, 
-                                          sim_name_buck_mdl_01)
+        plecs_server = pyplecs.PlecsServer(
+            sim_path_buck_mdl_01,
+            sim_name_buck_mdl_01,
+        )
         plecs_server.run_sim_with_datastream()
         print("Simulation 01 completed (Vi=250, Ii_max=25, Vo_ref=25)")
+        if not sys.stdin.isatty():
+            self.skipTest('Interactive tests require a TTY; skipping in CI')
         input("Press Enter to continue with next sim...")
 
         # Run second simulation
         time.sleep(1)
-        plecs_server = pyplecs.PlecsServer(sim_path_buck_mdl_02, 
-                                          sim_name_buck_mdl_02)
+        plecs_server = pyplecs.PlecsServer(
+            sim_path_buck_mdl_02,
+            sim_name_buck_mdl_02,
+        )
         plecs_server.run_sim_with_datastream()
         print("Simulation 02 completed (Vi=25, Ii_max=1, Vo_ref=5)")
         input("Press Enter to finish test...")
-        
+
         print("=== Different File Simulation Test Complete ===")
 
 
 if __name__ == '__main__':
     print("WARNING: This test suite contains interactive tests that require")
-    print("manual input. Run individual tests or use pytest for better control.")
+    print(
+        "manual input. Run individual tests or use pytest for better control."
+    )
     print("\nExample usage:")
-    print("python -m pytest tests/test_interactive.py::InteractiveTestSuite::test01_sequential_simulation_server_same_file -v -s")
+    print(
+        "python -m pytest "
+        "tests/test_interactive.py::InteractiveTestSuite::"
+        "test01_sequential_simulation_server_same_file -v -s"
+    )
     print("\nOr run all interactive tests:")
     print("python -m pytest tests/test_interactive.py -v -s")
     

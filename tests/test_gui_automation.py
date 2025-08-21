@@ -27,6 +27,12 @@ class GUIAutomationTestSuite(unittest.TestCase):
         Windows applications by automating Notepad operations.
         """
         # Run a target application
+        # Skip GUI tests on non-Windows or headless CI environments
+        import sys
+
+        if sys.platform != 'win32':
+            self.skipTest('pywinauto tests require Windows')
+
         app = Application().start("notepad.exe")
         # Select a menu item
         app.UntitledNotepad.menu_select("Help->About Notepad")
@@ -72,6 +78,15 @@ class GUIAutomationTestSuite(unittest.TestCase):
                                                buck_mdl_02.simulation_name)
 
         # Start PLECS application
+        # Skip PLECS GUI automation if RPC server is not reachable
+        import socket
+
+        try:
+            s = socket.create_connection(('localhost', 1080), timeout=1)
+            s.close()
+        except Exception:
+            self.skipTest('PLECS RPC not reachable; skipping GUI automation')
+
         plecs42 = pyplecs.PlecsApp()
         plecs42.open_plecs()
 

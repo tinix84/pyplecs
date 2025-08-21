@@ -6,6 +6,7 @@ import pywinauto
 from pathlib import Path
 
 import xmlrpc.client
+import logging
 
 import psutil
 import subprocess
@@ -23,6 +24,7 @@ def load_mat_file(file):
     del param['__version__']
     del param['__globals__']
     return param
+
 
 def save_mat_file(file_name, data):
     sio.savemat(file_name, data, format='5')
@@ -76,8 +78,9 @@ def generate_variant_plecs_file(scr_filename: str, dst_filename: str, modelvars:
 def generate_variant_plecs_mdl(src_mdl, variant_name: str, variant_vars: dict):
     variant_mdl = copy.deepcopy(src_mdl)
     src_path_obj = Path(src_mdl.filename)
-    variant_mdl.filename = str(src_path_obj.parent / variant_name / src_path_obj.name).replace('.plecs',
-                                                                                               f'{variant_name}.plecs')
+    # create folder/name for the variant model and replace extension
+    variant_path = src_path_obj.parent / variant_name / src_path_obj.name
+    variant_mdl.filename = str(variant_path).replace('.plecs', f'{variant_name}.plecs')
     generate_variant_plecs_file(scr_filename=src_mdl.filename, dst_filename=variant_mdl.filename,
                                 modelvars=variant_vars)
 
@@ -150,7 +153,11 @@ class PlecsApp:
         for p in proc_iter:
             if p.info["name"] == "PLECS.exe":
                 # print (p.pid)
-                p.kill()
+                try:
+                    p.kill()
+                except psutil.NoSuchProcess:
+                    # Process already terminated or PID reused; ignore
+                    continue
 
     #    @staticmethod
     def get_plecs_cpu(self):
@@ -261,11 +268,94 @@ class PlecsServer:
             return self.server.plecs.get(componentPath)
         return self.server.plecs.get(componentPath, parameter)
 
+    def get_model_variables(self):
+        """Return a list of model variable names.
+
+        Attempt to call the RPC helper `plecs.getModelVariables()` on the
+        connected server. If the method is not available (Fault -32601) or
+        the RPC object doesn't expose it, fall back to parsing the local
+        .plecs model file using `plecs_parser.parse_plecs_file()` and return
+        the keys of the `init_vars` dict.
+        """
+        logger = logging.getLogger(__name__)
+        # First try RPC call if available
+        try:
+            if hasattr(self.server, 'plecs') and hasattr(self.server.plecs, 'getModelVariables'):
+                try:
+                    mv = self.server.plecs.getModelVariables()
+                    if isinstance(mv, (list, tuple)):
+                        return list(mv)
+                    return mv
+                except xmlrpc.client.Fault as f:
+                    # -32601 = method not found; log and fall back
+                    if getattr(f, 'faultCode', None) != -32601:
+                        logger.error('RPC fault when calling getModelVariables: %s', f)
+                        raise
+                    logger.debug('RPC does not expose getModelVariables (fault -32601). Falling back to parser.')
+        except AttributeError:
+            logger.debug('RPC proxy does not expose getModelVariables attribute; falling back to parser.')
+
+        # Fallback: attempt to locate the local .plecs file in several places
+        try:
+            from .plecs_parser import parse_plecs_file
+
+            candidates = []
+            # prefer explicit sim_path when provided
+            if getattr(self, 'sim_path', None):
+                candidates.append(Path(self.sim_path) / (self.sim_name or ''))
+            # direct sim_name (may be absolute or relative)
+            if self.sim_name:
+                candidates.append(Path(self.sim_name))
+                candidates.append(Path.cwd() / self.sim_name)
+
+            # try repository data folder relative to this file (repo_root/data)
+            repo_root = Path(__file__).resolve().parents[2]
+            candidates.append(repo_root / 'data' / (self.sim_name or ''))
+
+            # search candidates for existence, and as a last resort try to find
+            # a .plecs file with the same stem anywhere under the repo
+            model_file = None
+            for c in candidates:
+                try:
+                    if c and c.exists():
+                        model_file = c
+                        break
+                except Exception:
+                    continue
+
+            if model_file is None and self.sim_name:
+                stem = Path(self.sim_name).stem
+                for p in repo_root.rglob('*.plecs'):
+                    if p.stem == stem:
+                        model_file = p
+                        break
+
+            if model_file is None:
+                raise FileNotFoundError(f"Could not locate .plecs file for model '{self.sim_name}'")
+
+            logger.debug('Using model file %s for parser fallback', model_file)
+            parsed = parse_plecs_file(str(model_file))
+            return list(parsed.get('init_vars', {}).keys())
+        except Exception as e:
+            logger.error('Failed to retrieve model variables via RPC or parser: %s', e)
+            raise RuntimeError('Could not retrieve model variables via RPC or parser') from e
+
+    def list_model_variables(self):
+        """Return tuple (ok, vars_or_error). ok=True on success and vars is list.
+
+        On failure ok=False and the second element is an error message.
+        """
+        try:
+            vars = self.get_model_variables()
+            return True, vars
+        except Exception as e:
+            return False, str(e)
+
     def export_scope_csv(self, scope_path, file_name, time_range=None):
         """
-        Wrapper for plecs.scope(scope_path, 'ExportCSV', file_name[, time_range])
-        If time_range is provided it should be an iterable like [t1, t2].
-        Returns whatever the RPC server returns (usually None or a file path).
+    Wrapper for plecs.scope(scope_path, 'ExportCSV', file_name[, time_range]).
+    If time_range is provided it should be an iterable like [t1, t2].
+    Returns whatever the RPC server returns (usually None or a file path).
         """
         if time_range is None:
             return self.server.plecs.scope(scope_path, 'ExportCSV', file_name)
