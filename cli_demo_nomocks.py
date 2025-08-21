@@ -96,6 +96,7 @@ class RealPlecsSimulator:
         self.plecs_model = GenericConverterPlecsMdl(full_sim_name)
         self.server = None
         self.plecs_app = None
+        self.cache = SimulationCache()  # Add cache support
         
     def start_plecs_and_connect(self) -> bool:
         """Start PLECS application and connect via XML-RPC.
@@ -191,6 +192,14 @@ class RealPlecsSimulator:
         """
         if not self.server:
             raise RuntimeError("Not connected to PLECS server")
+        
+        # Check cache first
+        cached_result = self.cache.get_cached_result(
+            str(self.model_file), parameters
+        )
+        if cached_result:
+            print("  ✓ Using cached result")
+            return cached_result
         
         # Set parameters in PLECS
         self.set_parameters(parameters)
@@ -329,10 +338,28 @@ class RealPlecsSimulator:
                 'simulation_type': 'real_plecs'
             }
             
-            return {
+            result_dict = {
                 'timeseries': timeseries_df,
                 'metadata': metadata
             }
+            
+            # Cache the result
+            if metadata.get('success', False):
+                # Ensure we have a DataFrame for caching
+                if HAS_NUMPY_PANDAS:
+                    if not isinstance(timeseries_df, pd.DataFrame):
+                        cache_df = pd.DataFrame(timeseries_df)
+                    else:
+                        cache_df = timeseries_df
+                        
+                    self.cache.cache_result(
+                        str(self.model_file),
+                        parameters,
+                        cache_df,
+                        metadata
+                    )
+            
+            return result_dict
             
         except Exception as e:
             # Return error result

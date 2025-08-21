@@ -256,7 +256,7 @@ class SimulationResultStore:
             'metadata': metadata or {}
         }
     
-    def _store_parquet(self, simulation_hash: str, data: pd.DataFrame) -> None:
+    def _store_parquet(self, simulation_hash: str, data: Union[pd.DataFrame, Dict[str, Any]]) -> None:
         """Store data in Parquet format."""
         file_path = self.storage_dir / f"{simulation_hash}.parquet"
         compression = self.config.cache.compression
@@ -264,7 +264,13 @@ class SimulationResultStore:
             import pyarrow as pa
             import pyarrow.parquet as pq
         except Exception as e:
-            raise RuntimeError("pyarrow is required to store parquet files. Install pyarrow in your environment.") from e
+            raise RuntimeError(
+                "pyarrow is required to store parquet files. Install pyarrow in your environment."
+            ) from e
+
+        # Ensure data is a DataFrame
+        if isinstance(data, dict):
+            data = pd.DataFrame(data)
 
         table = pa.Table.from_pandas(data)
         pq.write_table(table, file_path, compression=compression)
@@ -293,9 +299,12 @@ class SimulationResultStore:
         file_path = self.storage_dir / f"{simulation_hash}.h5"
         if not file_path.exists():
             return None
-        
+
         try:
-            return pd.read_hdf(file_path, key='timeseries')
+            result = pd.read_hdf(file_path, key="timeseries")
+            if isinstance(result, pd.DataFrame):
+                return result
+            return None
         except Exception:
             return None
     
@@ -315,40 +324,48 @@ class SimulationResultStore:
         except Exception:
             return None
     
-    def _store_json_metadata(self, simulation_hash: str, metadata: Dict[str, Any]) -> None:
+    def _store_json_metadata(self, simulation_hash: str,
+                             metadata: Dict[str, Any]) -> None:
         """Store metadata in JSON format."""
-        file_path = self.storage_dir / f"{simulation_hash}_metadata.json"
-        with open(file_path, 'w') as f:
-            json.dump(metadata, f, indent=2, default=str)
-    
+        file_path = self.storage_dir / f"{simulation_hash}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
+
     def _load_json_metadata(self, simulation_hash: str) -> Optional[Dict[str, Any]]:
         """Load metadata from JSON format."""
-        file_path = self.storage_dir / f"{simulation_hash}_metadata.json"
+        file_path = self.storage_dir / f"{simulation_hash}.json"
         if not file_path.exists():
             return None
-        
+
         try:
-            with open(file_path, 'r') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
             return None
-    
-    def _store_yaml_metadata(self, simulation_hash: str, metadata: Dict[str, Any]) -> None:
+
+    def _store_yaml_metadata(self, simulation_hash: str,
+                             metadata: Dict[str, Any]) -> None:
         """Store metadata in YAML format."""
-        import yaml
-        file_path = self.storage_dir / f"{simulation_hash}_metadata.yml"
-        with open(file_path, 'w') as f:
+        file_path = self.storage_dir / f"{simulation_hash}.yaml"
+        try:
+            import yaml
+        except ImportError as e:
+            raise RuntimeError(
+                "yaml is required to store YAML files. Install pyyaml in your environment."
+            ) from e
+
+        with open(file_path, "w", encoding="utf-8") as f:
             yaml.dump(metadata, f, default_flow_style=False)
-    
+
     def _load_yaml_metadata(self, simulation_hash: str) -> Optional[Dict[str, Any]]:
         """Load metadata from YAML format."""
-        import yaml
-        file_path = self.storage_dir / f"{simulation_hash}_metadata.yml"
+        file_path = self.storage_dir / f"{simulation_hash}.yaml"
         if not file_path.exists():
             return None
-        
+
         try:
-            with open(file_path, 'r') as f:
+            import yaml
+            with open(file_path, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
         except Exception:
             return None
@@ -388,8 +405,8 @@ class SimulationCache:
             return None
         
         simulation_hash = self.hasher.compute_hash(
-            model_file, 
-            parameters, 
+            model_file,
+            parameters,
             self.config.cache.include_files
         )
         
@@ -406,36 +423,24 @@ class SimulationCache:
         Args:
             model_file: Path to PLECS model file
             parameters: Simulation parameters
-            timeseries_data: Time series simulation data
-            metadata: Simulation metadata
+            timeseries_data: Simulation timeseries data
+            metadata: Additional metadata
             
         Returns:
-            Simulation hash for this cached result
+            Hash of cached simulation
         """
-        if not self.config.cache.enabled:
-            return ""
-        
         simulation_hash = self.hasher.compute_hash(
             model_file,
             parameters,
             self.config.cache.include_files
         )
         
-        # Store in result store
-        self.result_store.store_results(simulation_hash, timeseries_data, metadata)
-        
-        # Store hash in cache backend for quick lookup
-        cache_entry = {
-            'model_file': model_file,
-            'parameters': parameters,
-            'simulation_hash': simulation_hash,
-            'cached_at': time.time()
-        }
-        
-        self.backend.set(simulation_hash, cache_entry, self.config.cache.ttl)
-        
+        # Store result
+        self.result_store.store_results(
+            simulation_hash, timeseries_data, metadata
+        )
         return simulation_hash
-    
+
     def invalidate_cache(self, model_file: str, parameters: Dict[str, Any]) -> bool:
         """Invalidate cached result for specific model and parameters.
         
