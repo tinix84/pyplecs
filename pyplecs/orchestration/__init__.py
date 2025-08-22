@@ -8,6 +8,10 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
+
+# Import simulation planning and viewing classes
+from .simulation_plan import SimulationPlan
+from .simulation_viewer import SimulationViewer
 from queue import Queue, PriorityQueue
 import threading
 

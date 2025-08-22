@@ -1,12 +1,23 @@
 # -*- coding: utf-8 -*-
-
+# Warn or fail if not run with pytest -s (no output capture)
+import os
 import sys
+
+
 import unittest
 import time
 from pathlib import Path
 
+if os.environ.get("PYTEST_CURRENT_TEST") and not sys.stdout.isatty():
+    raise RuntimeError(
+        "This test requires pytest -s (no output capture) for input() to work.\n"
+        "Run with: pytest -s tests/interactive/test_interactive.py"
+    )
+
+
 # Add project root to path for import
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 
 import pyplecs
 
@@ -24,9 +35,6 @@ class InteractiveTestSuite(unittest.TestCase):
         sim_file_path_obj = Path('data/simple_buck.plecs')
         full_sim_name = str(sim_file_path_obj.absolute())
         plecs_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
-
-        if not sys.stdin.isatty():
-            self.skipTest('Interactive tests require a TTY; skipping in CI')
 
         print("\n=== Starting Sequential Simulation Test ===")
         input("Press Enter to continue with next sim 00...")

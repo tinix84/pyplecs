@@ -21,3 +21,4 @@ def test_full_install_flow(monkeypatch):
     # Call CLI main with --full
     rc = installer.main(['install-packages', '--full', '--yes'])
     assert rc == 0
+        # Additional tests or assertions can be added here

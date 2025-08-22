@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from pyplecs.plecs_parser import parse_plecs_file
 from pyplecs.cache import SimulationCache
 from pyplecs.pyplecs import PlecsServer, GenericConverterPlecsMdl, PlecsApp
-from tests.test_end_to_end_cli import SimulationPlan, SimulationViewer
+from pyplecs.orchestration import SimulationPlan, SimulationViewer
 
 # Check for optional dependencies
 HAS_NUMPY_PANDAS = False
@@ -173,7 +173,8 @@ class RealPlecsSimulator:
         print(f"    ⚙ Setting {len(simple_vars)} PLECS variables")
         for name, value in simple_vars.items():
             print(f"      {name} = {value}")
-            
+        # Print the dict sent to load_modelvars
+        print(f"    [DEBUG] Sending to load_modelvars: {simple_vars}")
         # Use the load_modelvars method to set parameters
         if simple_vars:
             self.server.load_modelvars(simple_vars)
@@ -193,31 +194,54 @@ class RealPlecsSimulator:
         if not self.server:
             raise RuntimeError("Not connected to PLECS server")
         
-        # Check cache first
-        cached_result = self.cache.get_cached_result(
-            str(self.model_file), parameters
-        )
-        if cached_result:
-            print("  ✓ Using cached result")
-            return cached_result
+        # Check cache first (unless forced to skip)
+        force_simulation = parameters.get('_force_simulation', False)
+        if not force_simulation:
+            cached_result = self.cache.get_cached_result(
+                str(self.model_file), parameters
+            )
+            if cached_result:
+                print("  ✓ Using cached result")
+                return cached_result
         
-        # Set parameters in PLECS
-        self.set_parameters(parameters)
-        
+        # Prepare and set parameters in PLECS
+        # Separate simple variables from expressions (duplicate logic from set_parameters)
+        simple_vars = {}
+        for name, value in parameters.items():
+            if name.startswith('_'):
+                continue
+            if isinstance(value, str):
+                operators = ['/', '*', '+', '-', '^', '(', ')']
+                has_operators = any(op in str(value) for op in operators)
+                if has_operators:
+                    print(f"      ~ Skipping expression: {name} = {value}")
+                    continue
+                try:
+                    simple_vars[name] = float(value)
+                except ValueError:
+                    print(f"      ~ Skipping non-numeric: {name} = {value}")
+                    continue
+            else:
+                simple_vars[name] = float(value)
+        print(f"    ⚙ Setting {len(simple_vars)} PLECS variables")
+        for name, value in simple_vars.items():
+            print(f"      {name} = {value}")
+        print(f"    [DEBUG] Sending to load_modelvars: {simple_vars}")
+        if simple_vars:
+            self.server.load_modelvars(simple_vars)
+        else:
+            print("    ⚠ No simple variables to set")
         # Run simulation
         print("    Running PLECS simulation with parameters:")
         for name, value in parameters.items():
             if not name.startswith('_'):
                 print(f"      {name} = {value}")
-        
+        input("\n[PAUSE] Press Enter to run the simulation...")
         start_time = time.time()
-        
         try:
-            # Execute simulation via XML-RPC
-            result = self.server.run_sim_with_datastream(param_dict=None)
-            
+            # Execute simulation via XML-RPC, passing parameters
+            result = self.server.run_sim_with_datastream(param_dict=simple_vars)
             sim_time = time.time() - start_time
-            
             print(f"    ✓ PLECS simulation completed in {sim_time:.2f}s")
             
             if result is None:
@@ -502,8 +526,11 @@ def interactive_result_viewer(results_data: List[Dict[str, Any]]):
             
             if var_name in available_vars:
                 stats = viewer.summary_statistics(var_name)
-                print(f"\nSummary statistics for {var_name}:")
-                print(stats.to_string(index=False))
+                if stats is not None:
+                    print(f"\nSummary statistics for {var_name}:")
+                    print(stats.to_string(index=False))
+                else:
+                    print("Summary statistics not available.")
             else:
                 print(f"Variable '{var_name}' not found.")
         
@@ -661,6 +688,7 @@ def main():
     if clear_cache == 'y':
         try:
             cache.backend.clear()
+            simulator.cache.backend.clear()  # Also clear simulator's cache
             print("✓ Cache cleared - will run fresh PLECS simulations")
         except Exception as e:
             print(f"Warning: Could not clear cache: {e}")
@@ -684,52 +712,46 @@ def main():
         params_with_type = params.copy()
         params_with_type['_simulation_type'] = 'real_plecs'
         params_with_type['_simulation_engine'] = 'xml_rpc'
+        params_with_type['_force_simulation'] = clear_cache == 'y'  # Force simulation if cache was cleared
         
-        # Check cache first with modified parameters
-        cached_result = cache.get_cached_result(model_file, params_with_type)
+        print("  ⚙ Running PLECS simulation...")
         
-        if cached_result:
-            print("  ✓ Using cached result")
-            results_data.append(cached_result)
-        else:
-            print("  ⚙ Running PLECS simulation...")
+        try:
+            # Real PLECS simulation execution (skip cache check here since we handle it above)
+            plecs_result = simulator.run_simulation(params_with_type)
             
-            try:
-                # Real PLECS simulation execution
-                plecs_result = simulator.run_simulation(params)
+            if plecs_result['metadata']['success']:
+                # Store in cache with modified parameters
+                cache.cache_result(
+                    model_file,
+                    params_with_type,  # Use params with simulation type
+                    plecs_result['timeseries'],
+                    plecs_result['metadata']
+                )
                 
-                if plecs_result['metadata']['success']:
-                    # Store in cache with modified parameters
-                    cache.cache_result(
-                        model_file,
-                        params_with_type,  # Use params with simulation type
-                        plecs_result['timeseries'],
-                        plecs_result['metadata']
-                    )
-                    
-                    results_data.append(plecs_result)
-                    print("  ✓ Simulation completed and cached")
-                else:
-                    error_msg = plecs_result['metadata'].get(
-                        'error', 'Unknown error')
-                    print(f"  ✗ Simulation failed: {error_msg}")
-                    results_data.append(plecs_result)  # Include failed results
-                
-            except Exception as e:
-                print(f"  ✗ Simulation execution failed: {e}")
-                # Create error result
-                error_result = {
-                    'timeseries': None,
-                    'metadata': {
-                        'parameters': params,
-                        'simulation_time': 0,
-                        'success': False,
-                        'error': str(e),
-                        'timestamp': time.time(),
-                        'model_file': model_file
-                    }
+                results_data.append(plecs_result)
+                print("  ✓ Simulation completed and cached")
+            else:
+                error_msg = plecs_result['metadata'].get(
+                    'error', 'Unknown error')
+                print(f"  ✗ Simulation failed: {error_msg}")
+                results_data.append(plecs_result)  # Include failed results
+            
+        except Exception as e:
+            print(f"  ✗ Simulation execution failed: {e}")
+            # Create error result
+            error_result = {
+                'timeseries': None,
+                'metadata': {
+                    'parameters': params,
+                    'simulation_time': 0,
+                    'success': False,
+                    'error': str(e),
+                    'timestamp': time.time(),
+                    'model_file': model_file
                 }
-                results_data.append(error_result)
+            }
+            results_data.append(error_result)
     
     successful_count = sum(1 for r in results_data if r['metadata']['success'])
     print(f"\n✓ Completed {len(results_data)} simulations "

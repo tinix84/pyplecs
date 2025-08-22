@@ -3,10 +3,10 @@
 import asyncio
 import logging
 from typing import List, Optional
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from ..config import get_config
@@ -59,7 +59,9 @@ def get_orchestrator() -> SimulationOrchestrator:
     """Get the global orchestrator instance."""
     global orchestrator
     if orchestrator is None:
-        raise HTTPException(status_code=500, detail="Orchestrator not initialized")
+        raise HTTPException(
+            status_code=500, detail="Orchestrator not initialized"
+        )
     return orchestrator
 
 
@@ -67,12 +69,52 @@ def create_api_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     config = get_config()
     
+    # Define lifespan handler to initialize and shutdown orchestrator
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        """Lifespan context: start and stop the global orchestrator."""
+        global orchestrator
+        orchestrator = SimulationOrchestrator()
+
+        # Register a dummy simulation runner for now
+        def dummy_runner(request: SimulationRequest):
+            import time
+            import pandas as pd
+            from ..core.models import SimulationResult
+
+            # Simulate some work
+            time.sleep(1)
+
+            # Create dummy result
+            df = pd.DataFrame({
+                'time': [0, 1, 2, 3, 4],
+                'voltage': [0, 5, 10, 15, 20],
+                'current': [0, 1, 2, 3, 4]
+            })
+
+            return SimulationResult(
+                task_id="",
+                success=True,
+                timeseries_data=df,
+                metadata={"simulation_completed": True},
+                execution_time=1.0
+            )
+
+        orchestrator.register_simulation_runner(dummy_runner)
+        await orchestrator.start()
+        try:
+            yield
+        finally:
+            if orchestrator:
+                await orchestrator.stop()
+
     app = FastAPI(
         title="PyPLECS API",
         description="REST API for PLECS simulation management",
         version="1.0.0",
         docs_url="/docs" if config.api.docs_enabled else None,
-        redoc_url="/redoc" if config.api.docs_enabled else None
+        redoc_url="/redoc" if config.api.docs_enabled else None,
+        lifespan=lifespan,
     )
     
     # CORS middleware
@@ -88,48 +130,6 @@ def create_api_app() -> FastAPI:
 
 
 app = create_api_app()
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the orchestrator on startup."""
-    global orchestrator
-    orchestrator = SimulationOrchestrator()
-    
-    # Register a dummy simulation runner for now
-    def dummy_runner(request: SimulationRequest):
-        import time
-        import pandas as pd
-        from ..core.models import SimulationResult
-        
-        # Simulate some work
-        time.sleep(1)
-        
-        # Create dummy result
-        df = pd.DataFrame({
-            'time': [0, 1, 2, 3, 4],
-            'voltage': [0, 5, 10, 15, 20],
-            'current': [0, 1, 2, 3, 4]
-        })
-        
-        return SimulationResult(
-            task_id="",
-            success=True,
-            timeseries_data=df,
-            metadata={"simulation_completed": True},
-            execution_time=1.0
-        )
-    
-    orchestrator.register_simulation_runner(dummy_runner)
-    await orchestrator.start()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Clean shutdown of the orchestrator."""
-    global orchestrator
-    if orchestrator:
-        await orchestrator.stop()
 
 
 @app.post("/simulations", response_model=dict)
@@ -202,8 +202,10 @@ async def get_simulation_result(
     
     if task.status != SimulationStatus.COMPLETED:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Task not completed. Current status: {task.status.value}"
+            status_code=400,
+            detail=(
+                f"Task not completed. Current status: {task.status.value}"
+            ),
         )
     
     if not task.result:
@@ -212,11 +214,15 @@ async def get_simulation_result(
     return SimulationResultAPI(
         task_id=task.result.task_id,
         success=task.result.success,
-        timeseries_data=task.result.timeseries_data.to_dict() if task.result.timeseries_data is not None else None,
+        timeseries_data=(
+            task.result.timeseries_data.to_dict()
+            if task.result.timeseries_data is not None
+            else None
+        ),
         metadata=task.result.metadata,
         error_message=task.result.error_message,
         execution_time=task.result.execution_time,
-        cached=task.result.cached
+        cached=task.result.cached,
     )
 
 
@@ -229,7 +235,10 @@ async def cancel_simulation(
     success = await orchestrator.cancel_task(task_id)
     
     if not success:
-        raise HTTPException(status_code=404, detail="Task not found or cannot be cancelled")
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found or cannot be cancelled",
+        )
     
     return {"message": "Task cancelled successfully"}
 
@@ -252,7 +261,10 @@ async def list_simulations(
             status_filter = SimulationStatus(status.lower())
             all_tasks = [t for t in all_tasks if t.status == status_filter]
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status: {status}",
+            )
     
     # Sort by creation time (newest first) and limit
     all_tasks.sort(key=lambda t: t.created_at, reverse=True)
