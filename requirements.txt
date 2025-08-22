@@ -6,7 +6,6 @@ plotly>=5.0.0
 pyyaml>=6.0
 
 # Simulation and optimization
-pywinauto>=0.6.8
 psutil>=5.8.0
 
 # Cache and storage

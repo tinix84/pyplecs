@@ -43,7 +43,7 @@ python -m pytest tests/test_interactive.py::InteractiveTestSuite::test01_sequent
 **Note**: Use the `-s` flag to see output and input prompts in real-time.
 
 ### 🖱️ `test_gui_automation.py` - GUI Automation Tests
-**Purpose**: Tests that use GUI automation (pywinauto) to interact with external applications.
+**Purpose**: Tests that require external applications (removed - GUI automation no longer supported).
 
 **Usage**:
 ```bash
@@ -52,14 +52,13 @@ python -m pytest tests/test_gui_automation.py -v -s
 ```
 
 **Includes**:
-- pywinauto functionality tests
+- External application automation (removed)
 - PLECS GUI automation
 - External application interaction
 
 **Requirements**:
 - Windows GUI environment (not headless)
 - Required applications installed (Notepad, PLECS)
-- pywinauto package
 
 ### 📜 `test_basic.py` - Legacy Compatibility
 **Purpose**: Backward compatibility file that redirects to `test_automated.py`.
@@ -114,8 +113,7 @@ python -m pytest tests/test_automated.py tests/test_interactive.py tests/test_gu
 ### GUI Automation Testing
 - All minimal requirements
 - Windows GUI environment (not headless/SSH)
-- pywinauto package installed
-- External applications available (Notepad, PLECS GUI)
+- External applications available (if required)
 
 ## Configuration
 
