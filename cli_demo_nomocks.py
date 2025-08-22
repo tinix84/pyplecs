@@ -236,7 +236,11 @@ class RealPlecsSimulator:
         for name, value in parameters.items():
             if not name.startswith('_'):
                 print(f"      {name} = {value}")
-        input("\n[PAUSE] Press Enter to run the simulation...")
+        
+        # Only pause for interactive sessions, not during automated tests
+        if sys.stdin.isatty():
+            input("\n[PAUSE] Press Enter to run the simulation...")
+        
         start_time = time.time()
         try:
             # Execute simulation via XML-RPC, passing parameters

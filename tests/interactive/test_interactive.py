@@ -37,6 +37,8 @@ class InteractiveTestSuite(unittest.TestCase):
         plecs_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
 
         print("\n=== Starting Sequential Simulation Test ===")
+        if not sys.stdin.isatty():
+            self.skipTest('Interactive tests require a TTY; skipping in CI')
         input("Press Enter to continue with next sim 00...")
 
         # try to reach PLECS RPC and skip if unavailable
