@@ -21,7 +21,7 @@ __version__ = "0.1.0"
 __author__ = "Riccardo Tinivella"
 __email__ = "tinix84@gmail.com"
 
-# Legacy imports (optional - only if pywinauto is available)
+# Legacy imports (optional - only if dependencies are available)
 try:
     from .pyplecs import PlecsServer, GenericConverterPlecsMdl, PlecsApp, generate_variant_plecs_mdl
     _legacy_available = True
@@ -71,7 +71,8 @@ except ImportError:
 
 print(f'PyPLECS v{__version__} - Advanced PLECS Simulation Automation')
 if not _legacy_available:
-    print('Note: Legacy PLECS GUI automation not available (missing pywinauto)')
+    print('Note: Legacy PLECS GUI automation not available '
+          '(missing dependencies)')
 
 # Expose main classes and functions
 __all__ = [

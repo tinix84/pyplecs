@@ -86,7 +86,7 @@ import pyplecs
 | Test Suite | Tests | Status | Notes |
 |------------|-------|--------|-------|
 | `test_interactive.py` | 2 | ⚠️ Expected Fail | Requires `-s` flag for user input |
-| `test_gui_automation.py` | 2 | ⚠️ Expected Fail | Requires GUI environment & pywinauto |
+| `test_gui_automation.py` | - | ❌ Removed | GUI automation no longer supported |
 
 ## 🏗️ Final Project Structure
 

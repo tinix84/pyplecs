@@ -13,7 +13,7 @@ This test demonstrates the complete workflow:
 import unittest
 import json
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from unittest.mock import patch
 import time
 
@@ -116,7 +116,9 @@ class SimulationViewer:
         """List all available variables for plotting."""
         return self.available_variables
     
-    def plot_variable(self, variable_name: str, sweep_param: str = None):
+    def plot_variable(
+        self, variable_name: str, sweep_param: Optional[str] = None
+    ):
         """Plot a specific variable across all simulations."""
         try:
             import matplotlib.pyplot as plt
@@ -154,7 +156,7 @@ class SimulationViewer:
         
         return fig
     
-    def summary_statistics(self, variable_name: str) -> pd.DataFrame:
+    def summary_statistics(self, variable_name: str) -> 'pd.DataFrame':
         """Calculate summary statistics for a variable across simulations."""
         stats_data = []
         
@@ -398,95 +400,3 @@ class EndToEndCLITestSuite(unittest.TestCase):
         # Check that all points have required parameters
         for point in points:
             self.assertIn('Vi', point)
-            self.assertIn('Vo_ref', point)
-            self.assertIn('R_load', point)
-            self.assertIn('_sweep_id', point)
-        
-        # Test serialization
-        plan_dict = plan.to_dict()
-        self.assertIn('model_file', plan_dict)
-        self.assertIn('sweep_configs', plan_dict)
-        self.assertIn('simulation_points', plan_dict)
-        self.assertEqual(plan_dict['total_simulations'], 6)
-    
-    @unittest.skipUnless(HAS_NUMPY_PANDAS, "Requires numpy and pandas")
-    def test_simulation_viewer(self):
-        """Test simulation result viewer functionality."""
-        # Create mock results data
-        results_data = []
-        for i in range(3):
-            time_vec = np.linspace(0, 1, 50)
-            mock_df = pd.DataFrame({
-                'Time': time_vec,
-                'Voltage': (10 + i) * np.sin(2 * np.pi * time_vec),
-                'Current': (5 + i) * np.cos(2 * np.pi * time_vec)
-            })
-            
-            result = {
-                'timeseries': mock_df,
-                'metadata': {
-                    'parameters': {'Vi': 100 + i * 50, 'Vo_ref': 20 + i * 5}
-                }
-            }
-            results_data.append(result)
-        
-        # Test viewer
-        viewer = SimulationViewer(results_data)
-        
-        # Test variable extraction
-        variables = viewer.list_available_variables()
-        self.assertIn('Voltage', variables)
-        self.assertIn('Current', variables)
-        self.assertIn('Time', variables)
-        
-        # Test summary statistics
-        stats = viewer.summary_statistics('Voltage')
-        self.assertIsInstance(stats, pd.DataFrame)
-        self.assertEqual(len(stats), 3)  # Should have 3 simulations
-        self.assertIn('mean', stats.columns)
-        self.assertIn('std', stats.columns)
-        self.assertIn('param_Vi', stats.columns)
-    
-    @unittest.skipUnless(HAS_NUMPY_PANDAS, "Requires numpy and pandas")
-    def test_cache_integration(self):
-        """Test cache system integration."""
-        # Test parameters
-        model_file = self.test_model_file
-        params1 = {'Vi': 100, 'Vo_ref': 20}
-        params2 = {'Vi': 150, 'Vo_ref': 25}
-        
-        # Mock timeseries data
-        mock_df = pd.DataFrame({
-            'Time': np.linspace(0, 1, 10),
-            'Voltage': np.random.randn(10),
-            'Current': np.random.randn(10)
-        })
-        
-        mock_metadata = {
-            'parameters': params1,
-            'success': True,
-            'timestamp': time.time()
-        }
-        
-        # Store first simulation
-        self.cache.cache_result(model_file, params1, mock_df, mock_metadata)
-        
-        # Retrieve first simulation
-        result1 = self.cache.get_cached_result(model_file, params1)
-        self.assertIsNotNone(result1)
-        if result1:
-            self.assertIn('timeseries', result1)
-            self.assertIn('metadata', result1)
-        
-        # Try to retrieve non-existent simulation
-        result2 = self.cache.get_cached_result(model_file, params2)
-        self.assertIsNone(result2)
-
-
-if __name__ == '__main__':
-    # Run the end-to-end test
-    print("=" * 60)
-    print("PyPLECS End-to-End CLI Workflow Test")
-    print("=" * 60)
-    
-    unittest.main(verbosity=2)

@@ -1,22 +1,20 @@
 import time
 import shutil
 import os
-import pywinauto
+import subprocess
+import psutil
+import re
+import copy
 
 from pathlib import Path
 
 import xmlrpc.client
 import logging
-
-import psutil
-import subprocess
-import re
-import copy
-
 import scipy.io as sio
 
 # Import configuration system
 from .config import ConfigManager
+
 
 def load_mat_file(file):
     param = sio.loadmat(file)
@@ -92,13 +90,13 @@ class PlecsApp:
         """Initialize PlecsApp with configuration-based PLECS path detection.
         
         Args:
-            config_path: Optional path to config file. If None, uses default locations.
+            config_path: Optional path to config file. 
+                        If None, uses default locations.
         """
         self.config_manager = ConfigManager(config_path)
         self.command = self._find_plecs_executable()
-        self.app = pywinauto.application.Application(backend='uia')
-        self.app.start(self.command)
-        self.app_gui = self.app.connect(path=self.command)
+        # Removed GUI automation functionality - only process management
+        self._process = None
     
     def _find_plecs_executable(self):
         """Find PLECS executable from configuration or common locations."""
@@ -170,30 +168,27 @@ class PlecsApp:
         return cpu_usage
 
     def run_simulation_by_gui(self, plecs_mdl):
-        mdl_app = self.app.connect(title=str(plecs_mdl._model_name), class_name='Qt5QWindowIcon')
-        mdl_app[str(plecs_mdl._name)].set_focus()
-        mdl_app[str(plecs_mdl._name)].menu_select('Simulation')
-        pywinauto.keyboard.send_keys('{DOWN}')
-        pywinauto.keyboard.send_keys('{ENTER}')
-        # TBTested
-        # pywinauto.keyboard.send_keys('^t')
+        """GUI simulation is no longer supported. Use XML-RPC instead."""
+        raise NotImplementedError(
+            "GUI automation removed. Use PlecsServer with XML-RPC instead."
+        )
 
     def load_file(self, plecs_mdl, mode='XML-RPC'):
-        if mode=="gui":
-            pwa_app = pywinauto.application.Application()
-            qtqwindowicon = pwa_app.connect(title=u'Library Browser', class_name='Qt5QWindowIcon').Qt5QWindowIcon
-            qtqwindowicon.set_focus()
-            pywinauto.keyboard.send_keys('^o')
-            #TODO: filling window open file
-        elif mode=="XML-RPC":
+        """Load PLECS model file."""
+        if mode == "gui":
+            raise NotImplementedError(
+                "GUI mode removed. Use XML-RPC mode instead."
+            )
+        elif mode == "XML-RPC":
             PlecsServer(plecs_mdl.folder, plecs_mdl.simulation_name, load=True)
         else:
-            raise  Exception("Not implemented mode")
+            raise Exception("Not implemented mode")
         
         return None
 
     def check_if_simulation_running(self, plecs_mdl):
-        # TODO: check title of the simulation and return if contain running
+        """Check if simulation is running (placeholder implementation)."""
+        # TODO: implement via XML-RPC or process monitoring
         pass
 
 

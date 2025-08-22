@@ -234,7 +234,7 @@ Potential Causes:
 These tests are inherently non-automatable without advanced GUI testing tools.
 Next Steps:
 Document these failures as expected in the test suite.
-Explore tools like Pywinauto or Selenium for partial automation.
+Explore automation tools or scripting for partial automation.
 Action Plan
 Cache Tests:
 

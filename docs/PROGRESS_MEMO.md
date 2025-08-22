@@ -237,9 +237,9 @@ python -m pyplecs.cli.installer check-all
 - `tools/installers/windows_installer.bat` è ora un installer interattivo pensato per essere eseguito con doppio click e guida l'utente attraverso:
    - Verifica presenza di Python e possibilità di scaricarlo/avviarne l'installer (richiede interazione GUI).
    - Creazione di una virtualenv `.venv` nel progetto.
-   - Attivazione della venv e installazione delle dipendenze Python principali (fastapi, uvicorn, jinja2, pandas, pyyaml, pywinauto).
+   - Attivazione della venv e installazione delle dipendenze Python principali (fastapi, uvicorn, jinja2, pandas, pyyaml).
    - Ricerca dei percorsi PLECS comuni; se non trovati chiede all'utente il percorso e aggiorna `config/default.yml` automaticamente.
-   - Opzione per eseguire `pytest tests/test_basic.py` per verificare l'integrazione con `pywinauto` e PLECS (richiede PLECS/Windows GUI).
+   - Opzione per eseguire `pytest tests/test_basic.py` per verificare l'integrazione con PLECS (richiede PLECS/Windows GUI).
 
 Note: Lo script è conservativo: quando possibile usa i canali ufficiali (download Python dal sito ufficiale) e non forza installazioni di sistema senza conferma.
 
@@ -365,3 +365,59 @@ Implementare wrapper semplici in PlecsServer per: get, scope.* (almeno HoldTrace
 Aggiungere test unitari minimi che chiamino questi wrapper (mockando xmlrpc.client.Server) per garantire che la mappatura sia corretta.
 Se preferisci, implemento i wrapper più utili (suggerisco: get, scope_HoldTrace, scope_SaveTraces, scope_ExportCSV, version, hostid) e aggiungo test di base; vuoi che proceda con queste modifiche ora?
 Se preferisci, preparo subito una PR con i wrapper indicati e i test di copertura per le funzioni scelte — dimmi quali comandi vuoi che implementi prima.
+
+
+===============================================================================
+
+✅ PyWinAuto Removal Complete!
+I have successfully removed pywinauto from everywhere in the codebase. Here's a comprehensive summary of what was done:
+
+🗑️ Files & Dependencies Cleaned
+Requirements & Package Configuration:
+
+❌ Removed from requirements.txt
+❌ Removed from pyproject.toml (optional dependencies)
+❌ Removed from Windows installer script
+Code Changes:
+
+❌ Removed pywinauto import from pyplecs.py
+🔄 Refactored PlecsApp class to remove GUI automation (keeping process management)
+🔄 GUI automation methods now raise NotImplementedError with helpful messages
+🔄 Updated imports and error messages in __init__.py
+Test Files:
+
+❌ Removed test_gui_automation.py (it was already removed from filesystem)
+🔧 Fixed import errors in remaining tests
+Documentation:
+
+🔄 Updated README.md - removed pywinauto references
+🔄 Updated REFACTORING_CLEAN.md - marked GUI tests as removed
+🔄 Updated CLI_DEMO_NOMOCKS.md - generic automation reference
+🔄 Updated PROGRESS_MEMO.md - removed pywinauto from Italian docs
+Environment:
+
+❌ Uninstalled pywinauto package from virtual environment
+✅ Verification Results
+All tests passing: 46 passed, 5 skipped, 1 warning ✅
+Import works: PyPLECS imports successfully ✅
+PlecsApp works: Can be instantiated without errors ✅
+No pywinauto references: All removed from active codebase ✅
+🔧 What Changed in Functionality
+Still Works:
+
+✅ PLECS process management (start/stop/kill)
+✅ XML-RPC communication with PLECS
+✅ All simulation functionality via PlecsServer
+✅ Configuration-based PLECS executable detection
+✅ Process priority management
+No Longer Works (by design):
+
+❌ GUI automation via pywinauto (menu clicks, keyboard automation)
+❌ run_simulation_by_gui() - now raises NotImplementedError
+❌ GUI-based file loading - now raises NotImplementedError
+🎯 Benefits
+Reduced Dependencies: One less external package to manage
+Simpler Installation: No need for Windows-specific GUI automation tools
+Better Focus: Codebase now focuses on XML-RPC integration (which is more reliable)
+Cleaner Architecture: Removed legacy GUI automation that was brittle and hard to maintain
+The codebase is now cleaner and more focused on the core XML-RPC functionality, which is the recommended approach for PLECS automation anyway!

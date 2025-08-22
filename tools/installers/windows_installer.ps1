@@ -172,7 +172,7 @@ if (Test-Path $activate) {
     $venvPython = Join-Path $venvPath 'Scripts\python.exe'
     try {
         & $venvPython -m pip install --upgrade pip
-        & $venvPython -m pip install fastapi uvicorn[standard] jinja2 pandas pyyaml pywin32 pywinauto --progress-bar off
+        & $venvPython -m pip install fastapi uvicorn[standard] jinja2 pandas pyyaml pywin32 --progress-bar off
         if ($LASTEXITCODE -ne 0) { Log "pip install inside venv failed with exit code $LASTEXITCODE"; $global:ExitCode = 5; $global:StatusMessage = 'pip_install_failed'; Write-StatusJson $global:ExitCode $global:StatusMessage; exit $global:ExitCode }
     } catch {
         Log "Exception during pip install in venv: $_"
