@@ -486,6 +486,22 @@ class PlecsServer:
 
             exec_time = time.time() - start
             processed = self._process_simulation_results(results)
+            
+            # Check if simulation was successful
+            simulation_ok = True
+            if isinstance(results, dict) and 'SimulationOK' in results:
+                simulation_ok = bool(results['SimulationOK'])
+            elif hasattr(results, 'SimulationOK'):
+                simulation_ok = bool(results.SimulationOK)
+            
+            if not simulation_ok:
+                return {
+                    'success': False,
+                    'error': 'Simulation failed',
+                    'execution_time': exec_time,
+                    'parameters_used': self.optStruct.get('ModelVars', {}),
+                }
+            
             return {
                 'success': True,
                 'results': processed,
@@ -547,11 +563,41 @@ class PlecsServer:
 
                 if HAS_PANDAS:
                     # build DataFrame with time and signal columns
-                    if HAS_NUMPY and vals_arr.ndim == 2:
-                        df = _pd.DataFrame(vals_arr)
-                        df.insert(0, 'Time', time_arr)
+                    if (HAS_NUMPY and hasattr(vals_arr, 'ndim') and 
+                            vals_arr.ndim == 2):
+                        # For 2D arrays, each row should be a signal
+                        # Create DataFrame with time as index and signals as columns
+                        try:
+                            if vals_arr.shape[1] == len(time_arr):
+                                # Data is in correct orientation
+                                df = _pd.DataFrame(vals_arr.T, index=time_arr)
+                            elif vals_arr.shape[0] == len(time_arr):
+                                # Data needs transposing
+                                df = _pd.DataFrame(vals_arr, index=time_arr)
+                            else:
+                                # Incompatible dimensions - return raw
+                                return {
+                                    'Time': time_arr,
+                                    'Values': vals_arr,
+                                    'raw': results
+                                }
+                            df.index.name = 'Time'
+                        except Exception:
+                            # Fallback if DataFrame creation fails
+                            return {'Time': time_arr, 'Values': vals_arr, 'raw': results}
                     else:
-                        df = _pd.DataFrame({'Time': time_arr, 'Signal_0': vals_arr})
+                        # Handle 1D case - ensure lengths match
+                        if len(vals_arr) != len(time_arr):
+                            # Fallback: return raw data if lengths don't match
+                            return {
+                                'Time': time_arr,
+                                'Values': vals_arr,
+                                'raw': results
+                            }
+                        df = _pd.DataFrame({
+                            'Time': time_arr,
+                            'Signal_0': vals_arr
+                        })
                     return {'dataframe': df, 'raw': results}
 
                 return {'Time': time_arr, 'Values': vals_arr}
@@ -572,10 +618,38 @@ class PlecsServer:
                 if HAS_PANDAS:
                     import pandas as _pd2
                     if hasattr(vals_arr, 'ndim') and vals_arr.ndim == 2:
-                        df = _pd2.DataFrame(vals_arr)
-                        df.insert(0, 'Time', time_arr)
+                        # For 2D arrays, create DataFrame properly
+                        try:
+                            if vals_arr.shape[1] == len(time_arr):
+                                # Data is in correct orientation
+                                df = _pd2.DataFrame(vals_arr.T, index=time_arr)
+                            elif vals_arr.shape[0] == len(time_arr):
+                                # Data needs transposing
+                                df = _pd2.DataFrame(vals_arr, index=time_arr)
+                            else:
+                                # Incompatible dimensions - return raw
+                                return {
+                                    'Time': time_arr,
+                                    'Values': vals_arr,
+                                    'raw': results
+                                }
+                            df.index.name = 'Time'
+                        except Exception:
+                            # Fallback if DataFrame creation fails
+                            return {'Time': time_arr, 'Values': vals_arr, 'raw': results}
                     else:
-                        df = _pd2.DataFrame({'Time': time_arr, 'Signal_0': vals_arr})
+                        # Handle 1D case - ensure lengths match
+                        if len(vals_arr) != len(time_arr):
+                            # Fallback: return raw data if lengths don't match
+                            return {
+                                'Time': time_arr,
+                                'Values': vals_arr,
+                                'raw': results
+                            }
+                        df = _pd2.DataFrame({
+                            'Time': time_arr,
+                            'Signal_0': vals_arr
+                        })
                     return {'dataframe': df, 'raw': results}
 
                 return {'Time': time_arr, 'Values': vals_arr}
