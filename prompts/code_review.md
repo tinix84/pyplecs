@@ -285,38 +285,140 @@ Original content:
 """
 
 
+Task received — I will produce an executable Phase 1 → Task 1.1 plan: short summary, prioritized checklist, 4–6 concrete subtasks (with steps, files, commands, docstring template, acceptance checks and time estimates), docs/examples layout, a GitHub Actions job to auto-build & deploy docs, and quick local verification commands.
 
-You are a bullet-sharp AI Copilot tasked with rewriting a project improvement plan into a format that’s LLM-friendly. Provide:
+High-level plan
 
-1. A concise transformation of the plan into a clear, structured prompt for ChatGPT-5 Mini.
-2. Organized sections: Role, Objective, Instructions, Structure, Tone, Format.
-3. Optional: A short “chain-of-thought” sketch explaining your choices.
-4. A final succinct prompt ready to paste.
+Use Sphinx (good Python + autodoc integration) to generate API docs, add consistent Google-style docstrings across core modules, create 5+ runnable examples in examples/, improve FastAPI endpoint docs, and wire a CI job to auto-build and publish to GitHub Pages.
+Prioritized checklist (deliverables)
 
-Original content:
-"""
-# PyPLECS Repository Improvement Plan
-# PyPLECS Repository Improvement Plan
+ Choose & configure Sphinx in docs
+ Add Google-style docstrings to all public functions/classes in pyplecs/*
+ Create examples/ with 5+ practical scripts + README
+ Enhance FastAPI route docstrings/response_model/examples
+ CI job to build and deploy docs to GitHub Pages
+ Docstring/lint checks (pydocstyle / sphinx-build) in CI
+Subtasks (S1..S5)
 
-## Phase 1: Quick Wins & Documentation (2-3 weeks)
+S1 — Initialize Sphinx docs and basic toolchain
 
-### Task 1.1: API Documentation Enhancement
-**Context**: Current documentation focuses on setup but lacks detailed API usage examples  
-**What to do**:
-- Create comprehensive API documentation using Sphinx or MkDocs
-- Add docstrings to all public methods in pyplecs core modules
-- Create examples/ directory with practical usage scenarios
-- Document REST API endpoints with OpenAPI/Swagger integration
+Purpose: Bootstraps documentation site, autodoc & napoleon for Google/NumPy style.
+Steps:
+Add docs dependencies: Sphinx, sphinx-autobuild (optional), sphinx-rtd-theme (or pydata-sphinx-theme), sphinx.ext.napoleon, sphinx.ext.autodoc, sphinx_autodoc_typehints.
+Run sphinx-quickstart in docs and enable extensions in docs/conf.py.
+Generate autodoc stubs with sphinx-apidoc for pyplecs package.
+Add docs/index.rst linking API docs and examples.
+Files to create/edit:
+docs (folder)
+docs/conf.py (configure extensions, path)
+docs/index.rst (home)
+docs/api/pyplecs.rst (via sphinx-apidoc)
+Commands (run in repo root; use PowerShell or bash)
+Acceptance criteria:
+ docs/_build/html/index.html builds without errors.
+ autodoc pages for pyplecs appear under docs/_build/html.
+Time estimate: 1.5–3 hours
 
-**Expected outcome**: 
-- Developers can understand and use the API without reading source code
-- Reduced support queries and faster onboarding
-- Professional documentation site hosted on GitHub Pages
+S2 — Add consistent Google-style docstrings to public APIs
 
-**Acceptance criteria**:
-- [ ] All public APIs have comprehensive docstrings
-- [ ] 5+ practical examples in examples/ directory
-- [ ] Auto-generated documentation deployed
-- [ ] FastAPI auto-docs enhanced with descriptions
+Purpose: Make API discoverable via autodoc and improve developer UX.
+Steps:
+Adopt Google-style docstring template (see template below).
+Audit public symbols in pyplecs.py, config.py, exceptions.py.
+Add docstrings for public classes, functions, and methods. Mark private/internal with leading underscore and exclude them from docs or hide with :noindex: when needed.
+Add pydocstyle config and run checks locally.
+Files to edit:
+pyplecs.py
+config.py
+exceptions.py
+Add pyproject.toml or .pydocstyle config if missing
+Docstring template (Google style)
+Commands
+Acceptance criteria:
+ All public classes/functions have non-empty docstrings.
+ pydocstyle reports zero violations for configured rules.
+Time estimate: 4–12 hours (depends on codebase size; estimate ~1 dev-day)
 
-"""
+S3 — Create examples/ with 5+ practical scripts and docs
+
+Purpose: Provide copy/paste examples that demonstrate common workflows and make docs actionable.
+Steps:
+Create examples/ top-level folder.
+Add at least five example scripts (see suggestions below) with if __name__ == "__main__" and small README.md per example.
+Link examples from docs (docs/examples.rst).
+Files to create:
+examples/README.md
+examples/simple_simulation.py
+examples/parameter_sweep.py
+examples/load_model_and_set_vars.py
+examples/run_headless_sim.py
+examples/integrate_with_fastapi.py
+Example examples/simple_simulation.py stub
+Acceptance criteria:
+ 5 scripts present and runnable
+ Each script documented in examples/README.md
+ Links to examples from docs (examples page)
+Time estimate: 4–8 hours
+
+S4 — Improve FastAPI endpoint docs and OpenAPI wiring
+
+Purpose: Ensure the web GUI API shows helpful descriptions/examples in FastAPI auto-docs.
+Steps:
+Add summary, description, response_model, and examples to route decorators in webgui.py (or proper path).
+Add Pydantic models for request/response with field docstrings and example values.
+Re-generate OpenAPI schema (FastAPI exposes /openapi.json) and ensure description fields show up.
+Link FastAPI docs into Sphinx (either embed or link to hosted OpenAPI).
+Files to edit:
+webgui.py
+pyplecs/api/models.py (new file if models don't exist)
+Minimal change example (FastAPI)
+Acceptance criteria:
+ Swagger UI (docs) shows summary/description/examples for key endpoints
+ /openapi.json includes descriptions
+Time estimate: 2–6 hours
+
+S5 — CI: Build, test doc generation, and deploy to GitHub Pages
+
+Purpose: Auto-build docs and publish to gh-pages on merge to main (or dev branch chosen).
+Steps:
+Add GitHub Actions workflow .github/workflows/docs.yml that:
+Installs dependencies
+Builds docs with sphinx-build
+Uses peaceiris/actions-gh-pages (or crazy-max/ghaction alternative) to publish docs/_build/html to gh-pages
+Add badge to README.
+Files to create:
+.github/workflows/docs.yml
+CI job (paste-ready YAML)
+Acceptance criteria:
+ Workflow runs on push and deploys HTML to gh-pages.
+ README contains docs badge with link.
+Time estimate: 1–2 hours
+Repository layout (recommended)
+
+Quick verification commands (run locally)
+
+Machine-friendly acceptance checklist (YAML-ish)
+
+Short justification for choosing Sphinx
+
+Sphinx is the defacto Python documentation system with mature autodoc, napoleon (Google/NumPy style), type-hint integration, and many themes. It integrates easily into CI pipelines and supports fine-grained control over API pages (recommended for library-style docs).
+Minimal follow-ups / next steps for maintainers
+
+Pick final theme (sphinx-rtd-theme or pydata-sphinx-theme).
+Decide branch for publishing (main vs dev).
+Run S1 locally and commit docs config and examples/.
+Start S2 docstring updates in priority order (core helpers → public API → webgui).
+Concise time budget estimate
+
+S1: 1.5–3 hrs
+S2: 4–12 hrs (approx 1 dev-day)
+S3: 4–8 hrs
+S4: 2–6 hrs
+S5: 1–2 hrs Total Phase 1 estimate: ~2–4 working days (1–2 devs, part-time)
+If you want, I can now:
+
+Generate the exact docs/conf.py snippet configured for this repo,
+Draft the 5 example scripts,
+Create the initial docs/index.rst and examples/README.md,
+Or create the .github/workflows/docs.yml file in the repo.
+Which of those follow-ups should I do next?
