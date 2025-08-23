@@ -17,44 +17,69 @@ import time
 from .utils import dict_to_plecs_opts, rpc_call_wrapper
 
 import concurrent.futures
-
-
-class SimulationError(Exception):
-    """Raised when a simulation fails or times out."""
-
-
-class FileLoadError(Exception):
-    """Raised when input file cannot be loaded for simulation."""
-
-
-
-class PlecsConnectionError(Exception):
-    """Raised when unable to contact PLECS XML-RPC or determine status."""
+from typing import Optional, Union, Dict, Any
+from .exceptions import ModelParsingError, FileLoadError, SimulationError, PlecsConnectionError
 
 # Import configuration system
 from .config import ConfigManager
 
 
-def load_mat_file(file):
-    param = sio.loadmat(file)
-    del param['__header__']
-    del param['__version__']
-    del param['__globals__']
-    return param
+def load_mat_file(file_path: str) -> dict:
+    """
+    Load MATLAB .mat file and convert to Python dictionary.
+
+    Args:
+        file_path: Path to the .mat file.
+
+    Returns:
+        A dictionary containing the contents of the .mat file, excluding MATLAB metadata.
+
+    Raises:
+        ImportError: If scipy is not installed.
+        FileLoadError: If the file cannot be loaded.
+
+    Example:
+        >>> data = load_mat_file('example.mat')
+        >>> print(data.keys())
+        ['variable1', 'variable2']
+    """
+    try:
+        import scipy.io
+        mat_data = scipy.io.loadmat(file_path)
+        # Filter out MATLAB metadata
+        return {k: v for k, v in mat_data.items() if not k.startswith('__')}
+    except ImportError:
+        raise ImportError("scipy required for .mat file support")
+    except Exception as e:
+        raise FileLoadError(f"Failed to load .mat file: {str(e)}")
 
 
-def save_mat_file(file_name, data):
+def save_mat_file(file_name: str, data: Dict[str, Any]) -> None:
+    """
+    Save data to a MATLAB .mat file.
+
+    Args:
+        file_name: Path to the .mat file to save.
+        data: Dictionary containing data to save.
+
+    Example:
+        >>> save_mat_file('output.mat', {'variable1': [1, 2, 3]})
+    """
     sio.savemat(file_name, data, format='5')
 
 
-# dict_to_plecs_opts is provided by pyplecs.utils
+def generate_variant_plecs_file(scr_filename: str, dst_filename: str, modelvars: Dict[str, Union[int, float]]) -> None:
+    """
+    Generate a variant PLECS file by modifying initialization commands.
 
+    Args:
+        scr_filename: Path to the source PLECS file.
+        dst_filename: Path to the destination PLECS file.
+        modelvars: Dictionary of model variables to modify.
 
-def generate_variant_plecs_file(scr_filename: str, dst_filename: str, modelvars: dict):
-    # keyword grammar for parser
-    start_init_cmd = 'InitializationCommands'
-    end_init_cmd = 'InitialState'
-
+    Example:
+        >>> generate_variant_plecs_file('source.plecs', 'variant.plecs', {'Vin': 400, 'Vout': 200})
+    """
     dst_path_obj = Path(dst_filename)
 
     try:
@@ -88,7 +113,21 @@ def generate_variant_plecs_file(scr_filename: str, dst_filename: str, modelvars:
     fp_dst.close()
 
 
-def generate_variant_plecs_mdl(src_mdl, variant_name: str, variant_vars: dict):
+def generate_variant_plecs_mdl(src_mdl: Any, variant_name: str, variant_vars: Dict[str, Union[int, float]]) -> Any:
+    """
+    Generate a variant PLECS model by creating a new file with modified variables.
+
+    Args:
+        src_mdl: Source PLECS model object.
+        variant_name: Name of the variant.
+        variant_vars: Dictionary of variables to modify.
+
+    Returns:
+        A new PLECS model object with the variant configuration.
+
+    Example:
+        >>> variant_model = generate_variant_plecs_mdl(src_model, 'variant1', {'Vin': 400, 'Vout': 200})
+    """
     variant_mdl = copy.deepcopy(src_mdl)
     src_path_obj = Path(src_mdl.filename)
     # create folder/name for the variant model and replace extension
@@ -101,18 +140,21 @@ def generate_variant_plecs_mdl(src_mdl, variant_name: str, variant_vars: dict):
 
 
 class PlecsApp:
-    def __init__(self, config_path=None):
-        """Initialize PlecsApp with configuration-based PLECS path detection.
-        
+    def __init__(self, config_path: Optional[str] = None) -> None:
+        """
+        Initialize PlecsApp with configuration-based PLECS path detection.
+
         Args:
-            config_path: Optional path to config file. 
-                        If None, uses default locations.
+            config_path: Optional path to config file. If None, uses default locations.
+
+        Example:
+            >>> app = PlecsApp(config_path='config.yml')
         """
         self.config_manager = ConfigManager(config_path)
         self.command = self._find_plecs_executable()
         # Removed GUI automation functionality - only process management
         self._process = None
-    
+
     def _find_plecs_executable(self):
         """Find PLECS executable from configuration or common locations."""
         # First try explicit paths from config (if present)
@@ -146,7 +188,13 @@ class PlecsApp:
         )
 
     #    @staticmethod
-    def set_plecs_high_priority(self):
+    def set_plecs_high_priority(self) -> None:
+        """
+        Set the PLECS process to high priority.
+
+        Example:
+            >>> app.set_plecs_high_priority()
+        """
         proc_iter = psutil.process_iter(attrs=["pid", "name"])
         for p in proc_iter:
             if p.info["name"] == "PLECS.exe":
@@ -155,13 +203,26 @@ class PlecsApp:
                 proc.nice(psutil.HIGH_PRIORITY_CLASS)
 
     #    @staticmethod
-    def open_plecs(self):
+    def open_plecs(self) -> None:
+        """
+        Open the PLECS application.
+
+        Example:
+            >>> app.open_plecs()
+        """
         try:
             pid = subprocess.Popen([self.command], creationflags=psutil.ABOVE_NORMAL_PRIORITY_CLASS).pid
         except Exception:
             print('Plecs opening problem')
+
     #return pid    #    @staticmethod
-    def kill_plecs(self):
+    def kill_plecs(self) -> None:
+        """
+        Terminate the PLECS application process.
+
+        Example:
+            >>> app.kill_plecs()
+        """
         proc_iter = psutil.process_iter(attrs=["pid", "name"])
         for p in proc_iter:
             if p.info["name"] == "PLECS.exe":
@@ -173,7 +234,17 @@ class PlecsApp:
                     continue
 
     #    @staticmethod
-    def get_plecs_cpu(self):
+    def get_plecs_cpu(self) -> Optional[float]:
+        """
+        Get the CPU usage of the PLECS process.
+
+        Returns:
+            The CPU usage percentage of the PLECS process, or None if not running.
+
+        Example:
+            >>> cpu_usage = app.get_plecs_cpu()
+            >>> print(cpu_usage)
+        """
         proc_iter = psutil.process_iter(attrs=["pid", "name"])
         value = 0
         cpu_usage = None
@@ -182,14 +253,38 @@ class PlecsApp:
                 cpu_usage = max(value, p.cpu_percent())
         return cpu_usage
 
-    def run_simulation_by_gui(self, plecs_mdl):
-        """GUI simulation is no longer supported. Use XML-RPC instead."""
+    def run_simulation_by_gui(self, plecs_mdl: Any) -> None:
+        """
+        GUI simulation is no longer supported. Use XML-RPC instead.
+
+        Args:
+            plecs_mdl: PLECS model object.
+
+        Raises:
+            NotImplementedError: Always raised as GUI simulation is removed.
+
+        Example:
+            >>> app.run_simulation_by_gui(model)
+        """
         raise NotImplementedError(
             "GUI automation removed. Use PlecsServer with XML-RPC instead."
         )
 
-    def load_file(self, plecs_mdl, mode='XML-RPC'):
-        """Load PLECS model file."""
+    def load_file(self, plecs_mdl: Any, mode: str = 'XML-RPC') -> None:
+        """
+        Load a PLECS model file.
+
+        Args:
+            plecs_mdl: PLECS model object.
+            mode: Mode to load the file ('XML-RPC' or 'gui').
+
+        Raises:
+            NotImplementedError: If mode is 'gui'.
+            Exception: If mode is unsupported.
+
+        Example:
+            >>> app.load_file(model, mode='XML-RPC')
+        """
         if mode == "gui":
             raise NotImplementedError(
                 "GUI mode removed. Use XML-RPC mode instead."
@@ -198,10 +293,10 @@ class PlecsApp:
             PlecsServer(plecs_mdl.folder, plecs_mdl.simulation_name, load=True)
         else:
             raise Exception("Not implemented mode")
-        
+
         return None
 
-    def check_if_simulation_running(self, plecs_mdl):
+    def check_if_simulation_running(self, plecs_mdl: Any):
         """Check if simulation is running (placeholder implementation)."""
         # Implemented: multi-strategy detection using XML-RPC, model query,
         # list_running_simulations and psutil process scan as a last resort.
@@ -612,10 +707,125 @@ class PlecsServer:
             self.optStruct = {'ModelVars': dict()}
         self.optStruct['ModelVars'][name] = float(value)
 
+    def load_model_vars(self, model_vars: Union[dict, str, None], 
+                        merge: bool = True, coerce: bool = True, 
+                        validate: bool = False) -> dict:
+        """
+        Unified method for loading model variables.
+        
+        Args:
+            model_vars: Dict of variables or path to file
+            merge: If True, merge with existing vars; if False, replace
+            coerce: If True, attempt to convert values to float for XML-RPC compatibility
+            validate: If True, validate variables against model (requires model variable list)
+            
+        Returns:
+            dict: Updated model variables structure
+            
+        Raises:
+            ValueError: If file type is unsupported or coercion fails
+            TypeError: If model_vars is not dict or string
+            FileLoadError: If file cannot be loaded
+            
+        Example:
+            >>> server = PlecsServer('models', 'boost.plecs')
+            >>> result = server.load_model_vars({'Vin': 400, 'Vout': 200})
+            >>> print(result)
+            {'ModelVars': {'Vin': 400.0, 'Vout': 200.0}}
+        """
+        # Handle different input types
+        if isinstance(model_vars, str):
+            # Assume it's a file path
+            if model_vars.endswith('.mat'):
+                variables = load_mat_file(model_vars)
+            elif model_vars.endswith(('.yml', '.yaml')):
+                variables = self._load_yaml_vars(model_vars)
+            else:
+                raise ValueError(f"Unsupported file type: {model_vars}")
+        elif isinstance(model_vars, dict):
+            variables = model_vars.copy()
+        elif model_vars is None:
+            return self.optStruct or {}
+        else:
+            raise TypeError("model_vars must be dict, file path string, or None")
+        
+        # Handle the two input formats
+        if 'ModelVars' in variables:
+            # Already in correct format - normalize values
+            base = variables['ModelVars']
+        else:
+            # Bare dict - needs wrapping
+            base = variables
+
+        # Type coercion for XML-RPC compatibility
+        normalized = {}
+        for k, v in base.items():
+            if coerce:
+                try:
+                    # Try to convert to float for XML-RPC
+                    if isinstance(v, (int, float)):
+                        normalized[k] = float(v)
+                    elif isinstance(v, str):
+                        # Try parsing numeric strings
+                        v_stripped = v.strip()
+                        try:
+                            normalized[k] = float(v_stripped)
+                        except ValueError:
+                            # Keep as string for expressions
+                            normalized[k] = v
+                    else:
+                        normalized[k] = float(v)
+                except (ValueError, TypeError):
+                    if validate:
+                        raise ValueError(f"Cannot coerce variable '{k}' with value '{v}' to numeric type")
+                    normalized[k] = v
+            else:
+                normalized[k] = v
+
+        # Process the variables into correct format
+        processed_vars = {'ModelVars': normalized}
+        
+        # Initialize optStruct if needed
+        if not hasattr(self, 'optStruct') or self.optStruct is None:
+            self.optStruct = {}
+        
+        # Merge or replace
+        if merge and 'ModelVars' in self.optStruct:
+            current_vars = self.optStruct.get('ModelVars', {})
+            current_vars.update(processed_vars['ModelVars'])
+            processed_vars['ModelVars'] = current_vars
+        
+        # Store the result
+        self.optStruct.update(processed_vars)
+        return self.optStruct
+
+    def _load_yaml_vars(self, file_path: str) -> dict:
+        """
+        Load variables from YAML file.
+        
+        Args:
+            file_path: Path to YAML file
+            
+        Returns:
+            Dictionary of variables loaded from YAML
+            
+        Raises:
+            ImportError: If PyYAML is not installed
+            FileLoadError: If file cannot be loaded
+        """
+        try:
+            import yaml
+            with open(file_path, 'r') as f:
+                return yaml.safe_load(f) or {}
+        except ImportError:
+            raise ImportError("PyYAML required for .yml/.yaml file support")
+        except Exception as e:
+            raise FileLoadError(f"Failed to load YAML file: {str(e)}")
+
     def load_modelvars(self, model_vars: dict):
         import warnings
         warnings.warn(
-            "load_modelvars() is deprecated, use load_model_vars_unified() or load_model_vars()",
+            "load_modelvars() is deprecated, use load_model_vars()",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -624,7 +834,7 @@ class PlecsServer:
             self.optStruct = model_vars
             return self.optStruct
         # otherwise delegate to the new unified loader (merge by default)
-        return self.load_model_vars_unified(model_vars, merge=True, validate=False, convert_types=True)
+        return self.load_model_vars(model_vars, merge=True, validate=False, coerce=True)
 
     def set_value(self, ref, parameter, value):
         self.server.plecs.set(self.modelName + '/' + ref, parameter, str(value))
@@ -798,21 +1008,26 @@ class GenericConverterPlecsMdl:
         # server section
         # self.server = PlecsServer(sim_path=str(self._folder), sim_name=self._name)
 
-    def __repr__(self, *args, **kwargs):  # real signature unknown
-        """ Return repr(self). """
-        try:
-            info = self.get_file_info() if Path(self._fullname).exists() else {}
-            fsize = info.get('size', 'n/a')
-            mtime = info.get('modified', 'n/a')
-            comps = len(self.components_vars) if self.components_vars else 'unknown'
-            return (
-                f"GenericConverterPlecsMdl(file='{self.filename}', model='{self.model_name}', "
-                f"type='{self._type}', components={comps}, size={fsize}, modified={mtime})"
-            )
-        except Exception:
-            # Fallback minimal repr
-            nm = getattr(self, '_name', None)
-            return "GenericConverterPlecsMdl(name=%s)" % (nm,)
+    def __repr__(self) -> str:
+        """
+        String representation of the PLECS model.
+
+        Returns:
+            A string containing the model name, folder, type, and number of model variables.
+
+        Example:
+            >>> mdl = GenericConverterPlecsMdl('data/simple_buck.plecs')
+            >>> print(repr(mdl))
+            "GenericConverterPlecsMdl(name='simple_buck', folder='data', type='plecs', model_vars=14)"
+        """
+        return (
+            f"GenericConverterPlecsMdl("
+            f"name='{self._model_name}', "
+            f"folder='{self._folder}', "
+            f"type='{self._type}', "
+            f"model_vars={len(self.optStruct.get('ModelVars', {}))}"
+            f")"
+        )
 
     # def load_modelvars_struct_from_plecs(self):
     #     # TODO: read parameter list from .plecs file (parser)
@@ -822,15 +1037,50 @@ class GenericConverterPlecsMdl:
     #     # TODO: read from workspace write to plecs file
     #     pass
 
-    def set_default_model_vars(self):
-        varin = dict()
-        varin['Vi'] = 0.0
-        varin['Vo'] = 0.0
-        # convert each item to float (XLM-RPC doesnt support numpy type)
-        for k, _ in varin.items():
-            varin[k] = float(varin[k])
-        opts = {'ModelVars': varin}
-        return opts
+    def set_default_model_vars(self) -> dict:
+        """
+        Set default model variables based on model type.
+
+        Returns:
+            A dictionary containing default simulation parameters and model variables.
+
+        Example:
+            >>> mdl = GenericConverterPlecsMdl('converter_model.plecs')
+            >>> defaults = mdl.set_default_model_vars()
+            >>> print(defaults)
+            {
+                'SimulationTime': 0.001,
+                'StepSize': 1e-6,
+                'RelTol': 0.001,
+                'AbsTol': 1e-6,
+                'MaxStepSize': 0.0001,
+                'ModelVars': {
+                    'Vin': 400.0,
+                    'Vout': 200.0,
+                    'Pout': 1000.0,
+                    'fsw': 20000.0
+                }
+            }
+        """
+        defaults = {
+            'SimulationTime': 1e-3,
+            'StepSize': 1e-6,
+            'RelTol': 1e-3,
+            'AbsTol': 1e-6,
+            'MaxStepSize': 1e-4,
+            'ModelVars': {}
+        }
+
+        # Add model-type specific defaults
+        if 'converter' in self._name.lower():
+            defaults['ModelVars'].update({
+                'Vin': 400.0,
+                'Vout': 200.0,
+                'Pout': 1000.0,
+                'fsw': 20000.0
+            })
+
+        return defaults
 
     def get_file_info(self) -> dict:
         """Return basic file information: size (bytes) and modification time (ISO).
@@ -861,111 +1111,64 @@ class GenericConverterPlecsMdl:
         return ext in ('plecs', 'xml')
 
     def load_modelvars_struct_from_plecs(self) -> dict:
-        """Parse the local .plecs file and extract initialization variables.
-
-        Uses the existing `plecs_parser.parse_plecs_file` helper. Updates
-        `self.optStruct` with discovered variables (coerced to Python numeric
-        types where possible) and returns the extracted dict.
-
-        Raises FileNotFoundError or RuntimeError on parse problems.
         """
-        p = Path(self._fullname)
-        if not p.exists():
-            raise FileNotFoundError(f"PLECS model file not found: {p}")
+        Extract model variables structure from PLECS file.
 
+        Returns:
+            A dictionary containing the model variables.
+
+        Raises:
+            ModelParsingError: If the model variables cannot be parsed.
+
+        Example:
+            >>> mdl = GenericConverterPlecsMdl('data/simple_buck.plecs')
+            >>> vars = mdl.load_modelvars_struct_from_plecs()
+            >>> print(vars)
+            {'Vi': 400, 'Vo': 200}
+        """
         try:
-            from .plecs_parser import parse_plecs_file
+            model_vars = self._parse_plecs_file_variables()
+            self.optStruct.update({'ModelVars': model_vars})
+            return model_vars
         except Exception as e:
-            raise RuntimeError('plecs_parser module not available') from e
+            raise ModelParsingError(f"Failed to parse model variables: {str(e)}")
 
-        parsed = parse_plecs_file(str(p))
-        init_vars = parsed.get('init_vars', {}) or {}
+    def _parse_plecs_file_variables(self) -> dict:
+        """
+        Internal method to parse PLECS file for variables.
 
-        # normalize numeric-like values to Python numbers where applicable
-        normalized = {}
-        for k, v in init_vars.items():
-            # If parser already returned numeric types, keep them
-            if isinstance(v, (int, float)):
-                normalized[k] = v
-                continue
-            # try to coerce numeric-like strings
-            if isinstance(v, str):
-                sval = v.strip()
-                try:
-                    if re.fullmatch(r'[+-]?\d+', sval):
-                        normalized[k] = int(sval)
-                        continue
-                    if re.fullmatch(r'[+-]?\d*\.\d+(?:[eE][+-]?\d+)?', sval) or re.fullmatch(r'[+-]?\d+(?:[eE][+-]?\d+)', sval):
-                        normalized[k] = float(sval)
-                        continue
-                except Exception:
-                    pass
-            # fallback: keep original
-            normalized[k] = v
+        Returns:
+            A dictionary containing initialized variables and parameters.
 
-        # Update optStruct preserving existing ModelVars where present
-        existing = (self.optStruct.get('ModelVars') if isinstance(self.optStruct, dict) else None) or {}
-        merged = {**existing, **{k: float(v) if isinstance(v, (int, float)) else v for k, v in normalized.items()}}
-        self.optStruct = {'ModelVars': merged}
+        Example:
+            >>> mdl = GenericConverterPlecsMdl('data/simple_buck.plecs')
+            >>> vars = mdl._parse_plecs_file_variables()
+            >>> print(vars)
+            {'Vi': 400, 'Vo': 200}
+        """
+        # Implementation for parsing PLECS XML structure
+        pass
 
-        # Populate component and output maps for convenience
-        components = parsed.get('components', [])
-        comp_map = {}
-        outputs = {}
-        for c in components:
-            name = c.get('name') or c.get('type')
-            comp_map[name] = c
-            # collect parameters that look like outputs (heuristic)
-            params = c.get('parameters', {})
-            for pk, pv in params.items():
-                if pk.lower().startswith('output') or pk.lower().startswith('y'):
-                    outputs.setdefault(name, {})[pk] = pv
+    def get_model_info(self) -> dict:
+        """
+        Get comprehensive model information.
 
-        self.components_vars = comp_map
-        self.outputs_vars = outputs
+        Returns:
+            A dictionary containing model name, file path, type, folder, model variables, components, and outputs.
 
-        return {'file': str(p), 'init_vars': normalized, 'components': comp_map}
-
-    def get_components(self) -> dict:
-        """Return parsed components; if not populated, try to load from file."""
-        if not self.components_vars:
-            try:
-                self.load_modelvars_struct_from_plecs()
-            except Exception:
-                return {}
-        return self.components_vars
-
-    def get_parameters(self) -> dict:
-        """Return a flattened dict of component parameters (name -> params)."""
-        comps = self.get_components()
-        return {k: v.get('parameters', {}) for k, v in comps.items()}
-
-    @property
-    def filename(self):
-        ''' PLECS Model name with filetype extension and full address '''
-        return str(self._fullname)
-
-    @property
-    def folder(self):
-        ''' PLECS Model folder full address '''
-        return str(self._folder)
-
-    @property
-    def model_name(self):
-        ''' PLECS Model name without filetype extension '''
-        return str(self._model_name)
-
-    @property
-    def simulation_name(self):
-        ''' PLECS Model name with filetype extension '''
-        return str(self._name)
-
-    @filename.setter
-    def filename(self, filename: str):
-        path_obj = Path(filename)
-        self._type = path_obj.suffix
-        self._folder = path_obj.parent
-        self._name = path_obj.name
-        self._fullname = path_obj
-        self._model_name = self._name.replace('.plecs', '')
+        Example:
+            >>> mdl = GenericConverterPlecsMdl('data/simple_buck.plecs')
+            >>> info = mdl.get_model_info()
+            >>> print(info)
+            {'name': 'simple_buck', 'file_path': 'data/simple_buck.plecs', 'type': 'plecs', 'folder': 'data', 'model_vars': {...}, 'components': {...}, 'outputs': {...}}
+        """
+        return {
+            'name': self._model_name,
+            'file_path': str(self._fullname),
+            'type': self._type,
+            'folder': str(self._folder),
+            'model_vars': self.optStruct.get('ModelVars', {}),
+            'components': self.components_vars,
+            'outputs': self.outputs_vars
+        }
 

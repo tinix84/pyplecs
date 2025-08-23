@@ -81,7 +81,7 @@ Suggested signature:
 - def __repr__(self) -> str
 
 Outputs:
-- A short string e.g. `"GenericConverterPlecsMdl(filename='data/simple_buck.plecs', model_name='simple_buck')"`
+- A short string e.g. "GenericConverterPlecsMdl(name='simple_buck', folder='data', type='plecs', model_vars=14)"
 
 Side effects:
 - None.
@@ -89,28 +89,33 @@ Side effects:
 Notes:
 - Use only available attributes (`_name`, `_model_name`, `_folder`). Avoid heavy computation or I/O.
 
----
+### GenericConverterPlecsMdl.load_modelvars_struct_from_plecs(self)
+Purpose: Extract model variables structure from PLECS file.
+Suggested signature:
+- def load_modelvars_struct_from_plecs(self) -> dict
 
-### 4) Potential helper methods (commented out now)
-#### load_modelvars_struct_from_plecs(self)
-Purpose: Query the running PLECS instance (via XML-RPC) to fetch ModelVars structure and populate local optStruct.
-Signature:
-- def load_modelvars_struct_from_plecs(self, plecs_server: Optional[PlecsServer] = None) -> dict
+Outputs:
+- A dictionary containing initialized variables and parameters.
 
-Behavior:
-- If `plecs_server` provided, attempt RPC call `plecs.getModelVariables()` if exposed, or query relevant scopes/components. If not available, parse `.plecs` file and return inferred init vars.
-- Return optStruct dict `{'ModelVars': {...}}` on success.
-
-Errors:
-- Raises `RuntimeError` if neither RPC nor parser could retrieve variables.
-
-#### load_input_vars(self)
-Purpose: Read I/O section / workspace from .plecs (parser) and populate `components_vars` and `outputs_vars` on model object.
-Signature:
-- def load_input_vars(self) -> None
+Side effects:
+- Updates `optStruct` with parsed variables.
 
 Notes:
-- This is I/O metadata only — no RPC required.
+- Raise `ModelParsingError` for parsing failures.
+
+### GenericConverterPlecsMdl.get_model_info(self)
+Purpose: Get comprehensive model information.
+Suggested signature:
+- def get_model_info(self) -> dict
+
+Outputs:
+- A dictionary containing model name, file path, type, folder, model variables, components, and outputs.
+
+Side effects:
+- None.
+
+Notes:
+- Ensure all attributes are populated before returning.
 
 ---
 
@@ -149,7 +154,7 @@ D. Error handling pattern:
 - def __repr__(self) -> str
 
 4. GenericConverterPlecsMdl.load_modelvars_struct_from_plecs
-- def load_modelvars_struct_from_plecs(self, plecs_server: Optional[PlecsServer] = None) -> dict
+- def load_modelvars_struct_from_plecs(self) -> dict
 
 5. GenericConverterPlecsMdl.load_input_vars
 - def load_input_vars(self) -> None
