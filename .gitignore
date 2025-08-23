@@ -4,6 +4,8 @@ __pycache__/
 pyplecs/webgui/__pycache__/
 /pyplecs/__pycache__/
 /tests/__pycache__/
+/docs/_build/*
+/examples_output/*
 
 # other
 pyplecs.egg-info/
@@ -33,3 +35,5 @@ utils/
 .idea/
 
 cache/
+pyplecs/pyplecs.py
+examples/integrate_with_fastapi.py
