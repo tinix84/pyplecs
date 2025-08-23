@@ -11,6 +11,25 @@ from pathlib import Path
 import xmlrpc.client
 import logging
 import scipy.io as sio
+import socket
+import time
+# Utilities moved to separate module for testability
+from .utils import dict_to_plecs_opts, rpc_call_wrapper
+
+import concurrent.futures
+
+
+class SimulationError(Exception):
+    """Raised when a simulation fails or times out."""
+
+
+class FileLoadError(Exception):
+    """Raised when input file cannot be loaded for simulation."""
+
+
+
+class PlecsConnectionError(Exception):
+    """Raised when unable to contact PLECS XML-RPC or determine status."""
 
 # Import configuration system
 from .config import ConfigManager
@@ -28,11 +47,7 @@ def save_mat_file(file_name, data):
     sio.savemat(file_name, data, format='5')
 
 
-def dict_to_plecs_opts(varin: dict):
-    for k, _ in varin.items():
-        varin[k] = float(varin[k])
-    opts = {'ModelVars': varin}
-    return opts
+# dict_to_plecs_opts is provided by pyplecs.utils
 
 
 def generate_variant_plecs_file(scr_filename: str, dst_filename: str, modelvars: dict):
@@ -188,8 +203,125 @@ class PlecsApp:
 
     def check_if_simulation_running(self, plecs_mdl):
         """Check if simulation is running (placeholder implementation)."""
-        # TODO: implement via XML-RPC or process monitoring
-        pass
+        # Implemented: multi-strategy detection using XML-RPC, model query,
+        # list_running_simulations and psutil process scan as a last resort.
+        # plecs_mdl may be:
+        # - None: return detailed dict with status summary
+        # - str: model name to check
+        # - PlecsServer-like object with 'server' attribute
+        import time
+        start = time.time()
+
+        # Helper: build xmlrpc proxy to default port
+        def _get_proxy():
+            # default port used elsewhere in the code
+            port = '1080'
+            try:
+                cfg_port = getattr(self.config_manager.plecs, 'rpc_port', None)
+                if cfg_port:
+                    port = str(cfg_port)
+            except Exception:
+                # ignore config errors and use default
+                pass
+            return xmlrpc.client.Server('http://localhost:' + port + '/RPC2')
+
+        # Helper to return detailed dict
+        def _detail(result=None, error=None, server_available=False, process_found=False):
+            return {
+                'server_available': server_available,
+                'running': result,
+                'process_found': process_found,
+                'error': error,
+            }
+
+        # If caller passed a PlecsServer-like object, use its proxy
+        proxy = None
+        model_name = None
+        if plecs_mdl is None:
+            model_name = None
+        elif hasattr(plecs_mdl, 'server'):
+            proxy = getattr(plecs_mdl, 'server')
+            model_name = getattr(plecs_mdl, 'modelName', None) or getattr(plecs_mdl, 'simulation_name', None)
+        elif isinstance(plecs_mdl, str):
+            model_name = plecs_mdl.replace('.plecs', '')
+        else:
+            # attempt to read simulation_name attribute
+            model_name = getattr(plecs_mdl, 'simulation_name', None) or getattr(plecs_mdl, 'model_name', None)
+
+        # Try to create a proxy if we don't have one
+        if proxy is None:
+            try:
+                proxy = _get_proxy()
+            except Exception as e:
+                # Could not create proxy -> fallback to process check
+                try:
+                    # quick psutil scan
+                    proc_found = any(p.info.get('name', '').lower().startswith('plecs') for p in psutil.process_iter(attrs=['name']))
+                except Exception:
+                    proc_found = False
+                # If no proxy and no process, raise connection error
+                raise PlecsConnectionError('Cannot connect to PLECS XML-RPC and no PLECS process found') from e
+
+        # Now attempt RPC-based checks within timeout
+        try:
+            # Primary: try server status helper
+            try:
+                status = rpc_call_wrapper(proxy, 'plecs.status', retries=1, backoff=0.1)
+                # Interpret common status shapes
+                if isinstance(status, dict):
+                    running = status.get('running', False) or status.get('status', '') == 'running'
+                elif isinstance(status, str):
+                    running = status.lower() == 'running'
+                else:
+                    running = bool(status)
+
+                if model_name is None:
+                    return _detail(result=running, server_available=True, process_found=False)
+                if running:
+                    # if server reports running, but model-specific might differ
+                    # try model-specific query
+                    try:
+                        model_status = rpc_call_wrapper(proxy, f'plecs.get', model_name, 'SimulationStatus', retries=1, backoff=0.1)
+                        if isinstance(model_status, str):
+                            return model_status.lower() == 'running'
+                        return bool(model_status)
+                    except Exception:
+                        return True
+
+            except Exception:
+                # status() not available or failed; try list_running_simulations
+                try:
+                    running_list = rpc_call_wrapper(proxy, 'plecs.list_running_simulations', retries=1, backoff=0.1)
+                    if isinstance(running_list, (list, tuple)):
+                        if model_name is None:
+                            return _detail(result=bool(running_list), server_available=True, process_found=False)
+                        return model_name in running_list or (model_name + '.plecs') in running_list
+                except Exception:
+                    # Next: if model_name provided, try plecs.get(model, 'SimulationStatus')
+                    if model_name is not None:
+                        try:
+                            model_status = rpc_call_wrapper(proxy, 'plecs.get', model_name, 'SimulationStatus', retries=1, backoff=0.1)
+                            if isinstance(model_status, str):
+                                return model_status.lower() == 'running'
+                            return bool(model_status)
+                        except Exception:
+                            pass
+
+            # If all RPC attempts inconclusive, use a psutil fallback
+            try:
+                proc_found = any(p.info.get('name', '').lower().startswith('plecs') for p in psutil.process_iter(attrs=['name']))
+                # If process exists and no model specified, assume running
+                if model_name is None:
+                    return _detail(result=proc_found, server_available=True, process_found=proc_found)
+                # If model specified, we cannot be sure from process list -> return False
+                return False
+            except Exception:
+                # last resort: return False
+                return False
+
+        except Exception as e:
+            # Communication error
+            raise PlecsConnectionError('Error while querying PLECS server') from e
 
 
 class PlecsServer:
@@ -206,12 +338,157 @@ class PlecsServer:
             print('sim_path or sim_path is invalid or load is False')
             print(f'load={load}')
 
-    def run_sim_single(self, inputs):
-        inputs = load_mat_file(inputs)
-        for name, value in inputs.items():
-            self.load_model_var(name, value)
-        results = self.server.plecs.simulate(self.modelName, self.optStruct)
-        return results
+    def run_sim_single(self, inputs, timeout: float = 30.0):
+        """Execute a single simulation.
+
+        Args:
+            inputs: dict of parameters or path to .mat file
+
+        Returns:
+            Standardized result dict
+        """
+        logger = logging.getLogger(__name__)
+
+        # 1) Load inputs from file if needed
+        if isinstance(inputs, str):
+            if not Path(inputs).exists():
+                raise FileLoadError(f"Input file not found: {inputs}")
+            try:
+                inputs = load_mat_file(inputs)
+            except Exception as e:
+                raise FileLoadError(f"Failed to load MAT file: {e}") from e
+
+        if not isinstance(inputs, dict):
+            raise ValueError('inputs must be a dict or path to a .mat file')
+
+        # 2) Validate / normalize inputs (coerce to floats where possible)
+        try:
+            opt = dict_to_plecs_opts(inputs)
+        except Exception as e:
+            raise ValueError(f'Invalid inputs: {e}') from e
+
+        # merge with existing optStruct if present
+        if getattr(self, 'optStruct', None) is None:
+            self.optStruct = opt
+        else:
+            # merge model vars
+            base = self.optStruct.get('ModelVars', {})
+            merged = {**base, **opt.get('ModelVars', {})}
+            self.optStruct = {'ModelVars': merged}
+
+        # 3) Run simulation via RPC with timeout using a thread executor
+        start = time.time()
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                fut = ex.submit(
+                    rpc_call_wrapper,
+                    self.server,
+                    'plecs.simulate',
+                    self.modelName,
+                    self.optStruct,
+                )
+                results = fut.result(timeout=timeout)
+
+            exec_time = time.time() - start
+            processed = self._process_simulation_results(results)
+            return {
+                'success': True,
+                'results': processed,
+                'execution_time': exec_time,
+                'parameters_used': self.optStruct.get('ModelVars', {}),
+            }
+        except concurrent.futures.TimeoutError as te:
+            # attempt to cancel and surface a SimulationError
+            try:
+                fut.cancel()
+            except Exception:
+                pass
+            logger.exception('PLECS simulation timed out')
+            raise SimulationError('PLECS simulation timed out') from te
+
+        except xmlrpc.client.Fault as f:
+            logger.exception('PLECS XML-RPC fault during simulate')
+            msg = getattr(f, 'faultString', str(f))
+            raise SimulationError('PLECS simulation fault: %s' % (msg,)) from f
+        except (ConnectionRefusedError, socket.error) as e:
+            logger.exception('Connection error when calling PLECS simulate')
+            raise PlecsConnectionError('Cannot connect to PLECS server: %s' % (e,)) from e
+        except Exception as e:
+            logger.exception('Unexpected error during simulation')
+            raise SimulationError('Unexpected simulation error: %s' % (e,)) from e
+
+    def _process_simulation_results(self, results):
+        """Normalize PLECS simulate output into a Python dict.
+
+        This is intentionally lightweight and accepts dicts or objects with
+        Time/Values attributes.
+        """
+        # If it's already a dict, try to normalize Time/Values
+        try:
+            import numpy as _np
+            HAS_NUMPY = True
+        except Exception:
+            _np = None
+            HAS_NUMPY = False
+
+        try:
+            import pandas as _pd
+            HAS_PANDAS = True
+        except Exception:
+            _pd = None
+            HAS_PANDAS = False
+
+        if isinstance(results, dict):
+            # common keys: 'Time' and 'Values'
+            if 'Time' in results and 'Values' in results:
+                time_vec = results['Time']
+                vals = results['Values']
+                if HAS_NUMPY:
+                    time_arr = _np.array(time_vec)
+                    vals_arr = _np.array(vals)
+                else:
+                    time_arr = list(time_vec)
+                    vals_arr = list(vals)
+
+                if HAS_PANDAS:
+                    # build DataFrame with time and signal columns
+                    if HAS_NUMPY and vals_arr.ndim == 2:
+                        df = _pd.DataFrame(vals_arr)
+                        df.insert(0, 'Time', time_arr)
+                    else:
+                        df = _pd.DataFrame({'Time': time_arr, 'Signal_0': vals_arr})
+                    return {'dataframe': df, 'raw': results}
+
+                return {'Time': time_arr, 'Values': vals_arr}
+
+        # If object has Time and Values attributes
+        if hasattr(results, 'Time') and hasattr(results, 'Values'):
+            try:
+                time_vec = list(results.Time)
+                vals = list(results.Values)
+                if HAS_NUMPY:
+                    import numpy as _np2
+                    time_arr = _np2.array(time_vec)
+                    vals_arr = _np2.array(vals)
+                else:
+                    time_arr = time_vec
+                    vals_arr = vals
+
+                if HAS_PANDAS:
+                    import pandas as _pd2
+                    if hasattr(vals_arr, 'ndim') and vals_arr.ndim == 2:
+                        df = _pd2.DataFrame(vals_arr)
+                        df.insert(0, 'Time', time_arr)
+                    else:
+                        df = _pd2.DataFrame({'Time': time_arr, 'Signal_0': vals_arr})
+                    return {'dataframe': df, 'raw': results}
+
+                return {'Time': time_arr, 'Values': vals_arr}
+            except Exception:
+                return {'raw': results}
+
+        # Fallback: return raw
+        return {'raw': results}
 
     def load_file(self):
         self.load()
@@ -424,10 +701,18 @@ class GenericConverterPlecsMdl:
 
     def __repr__(self, *args, **kwargs):  # real signature unknown
         """ Return repr(self). """
-        pass
+        try:
+            return (
+                f"GenericConverterPlecsMdl(filename='{self.filename}', "
+                f"model_name='{self.model_name}')"
+            )
+        except Exception:
+            # Fallback minimal repr
+            nm = getattr(self, '_name', None)
+            return "GenericConverterPlecsMdl(name=%s)" % (nm,)
 
     # def load_modelvars_struct_from_plecs(self):
-    #     # TODO: read input parameter list from plecs file, parsing init workspace
+    #     # TODO: read parameter list from .plecs file (parser)
     #     pass
 
     # def load_input_vars(self):
