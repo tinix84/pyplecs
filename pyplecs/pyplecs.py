@@ -508,11 +508,104 @@ class PlecsServer:
         self.server.plecs.close(self.modelName)
 
     def load_model_vars(self, data):
-        varin = {**self.optStruct['ModelVars'], **data}
-        for k, _ in varin.items():
-            varin[k] = float(varin[k])  # float conversion due to XML protocol limitation
-        opts = {'ModelVars': varin}
-        return opts
+        # backward-compat simple wrapper retained for older callers
+        # kept to avoid breaking API: delegates to unified implementation
+        return self.load_model_vars_unified(data, merge=True, validate=False, convert_types=True)
+
+    def load_model_vars_unified(self, 
+                                model_vars, 
+                                merge: bool = True,
+                                validate: bool = True,
+                                convert_types: bool = True) -> dict:
+        """Unified loader for model variables supporting multiple input types.
+
+        Args:
+            model_vars: dict of variables, or path to .mat / .yaml file (str or Path)
+            merge: if True merge into existing ModelVars, else replace
+            validate: if True, attempt to validate variable names against model
+            convert_types: if True, convert numeric types to float for XML-RPC
+
+        Returns:
+            optStruct dict with 'ModelVars'
+
+        Raises:
+            FileLoadError for missing/invalid files
+            ValueError for validation failures
+        """
+        # Resolve input source
+        data_dict = None
+        # If model_vars is a dict-like, use directly
+        try:
+            from pathlib import Path as _Path
+        except Exception:
+            _Path = Path
+
+        if isinstance(model_vars, dict):
+            data_dict = dict(model_vars)
+        elif isinstance(model_vars, (_Path,)) or isinstance(model_vars, str):
+            p = _Path(str(model_vars))
+            if not p.exists():
+                raise FileLoadError(f"Variable file not found: {p}")
+            # choose loader by extension
+            if p.suffix.lower() in ('.mat',):
+                try:
+                    data_dict = load_mat_file(str(p))
+                except Exception as e:
+                    raise FileLoadError(f"Failed to load MAT file: {e}") from e
+            elif p.suffix.lower() in ('.yml', '.yaml'):
+                try:
+                    import yaml as _yaml
+                    with p.open('r', encoding='utf-8') as fh:
+                        data_dict = _yaml.safe_load(fh) or {}
+                except Exception as e:
+                    raise FileLoadError(f"Failed to load YAML file: {e}") from e
+            else:
+                raise FileLoadError(f"Unsupported variable file type: {p.suffix}")
+        else:
+            raise TypeError('model_vars must be a dict or path to .mat/.yaml file')
+
+        # Ensure flat dict for ModelVars if wrapped in {'ModelVars': {...}}
+        if isinstance(data_dict, dict) and 'ModelVars' in data_dict and isinstance(data_dict['ModelVars'], dict):
+            vars_in = dict(data_dict['ModelVars'])
+        else:
+            vars_in = dict(data_dict or {})
+
+        # Optional validation against known model variables
+        if validate:
+            try:
+                allowed = None
+                try:
+                    allowed = self.get_model_variables()
+                except Exception:
+                    allowed = None
+
+                if isinstance(allowed, (list, tuple, set)) and len(allowed) > 0:
+                    unknown = [k for k in vars_in.keys() if k not in allowed]
+                    if unknown:
+                        raise ValueError(f"Unknown model variables: {unknown}")
+            except Exception:
+                # If validation mechanism fails, surface the original exception
+                raise
+
+        # Convert types for XML-RPC compatibility
+        if convert_types:
+            converted = {}
+            for k, v in vars_in.items():
+                if isinstance(v, (int, float)):
+                    converted[k] = float(v)
+                else:
+                    # leave lists, strings, and other structures intact
+                    converted[k] = v
+            vars_in = converted
+
+        # Merge or replace into self.optStruct
+        existing = {}
+        if merge and isinstance(getattr(self, 'optStruct', None), dict):
+            existing = dict(self.optStruct.get('ModelVars') or {})
+
+        new_model_vars = {**(existing if merge else {}), **vars_in}
+        self.optStruct = {'ModelVars': new_model_vars}
+        return self.optStruct
 
     def load_model_var(self, name, value):
         if not hasattr(self, 'opts'):
@@ -520,12 +613,18 @@ class PlecsServer:
         self.optStruct['ModelVars'][name] = float(value)
 
     def load_modelvars(self, model_vars: dict):
-        #TODO: merge with load_model_vars
-        if 'ModelVars' in model_vars:
-            # self.optStruct = {'ModelVars': dict()}
+        import warnings
+        warnings.warn(
+            "load_modelvars() is deprecated, use load_model_vars_unified() or load_model_vars()",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        # Preserve previous behavior: accept both {'ModelVars': {...}} and plain dict
+        if isinstance(model_vars, dict) and 'ModelVars' in model_vars:
             self.optStruct = model_vars
-        else:
-            self.optStruct = dict_to_plecs_opts(varin=model_vars)
+            return self.optStruct
+        # otherwise delegate to the new unified loader (merge by default)
+        return self.load_model_vars_unified(model_vars, merge=True, validate=False, convert_types=True)
 
     def set_value(self, ref, parameter, value):
         self.server.plecs.set(self.modelName + '/' + ref, parameter, str(value))
@@ -702,9 +801,13 @@ class GenericConverterPlecsMdl:
     def __repr__(self, *args, **kwargs):  # real signature unknown
         """ Return repr(self). """
         try:
+            info = self.get_file_info() if Path(self._fullname).exists() else {}
+            fsize = info.get('size', 'n/a')
+            mtime = info.get('modified', 'n/a')
+            comps = len(self.components_vars) if self.components_vars else 'unknown'
             return (
-                f"GenericConverterPlecsMdl(filename='{self.filename}', "
-                f"model_name='{self.model_name}')"
+                f"GenericConverterPlecsMdl(file='{self.filename}', model='{self.model_name}', "
+                f"type='{self._type}', components={comps}, size={fsize}, modified={mtime})"
             )
         except Exception:
             # Fallback minimal repr
@@ -728,6 +831,114 @@ class GenericConverterPlecsMdl:
             varin[k] = float(varin[k])
         opts = {'ModelVars': varin}
         return opts
+
+    def get_file_info(self) -> dict:
+        """Return basic file information: size (bytes) and modification time (ISO).
+
+        Raises FileNotFoundError if file does not exist.
+        """
+        p = Path(self._fullname)
+        if not p.exists():
+            raise FileNotFoundError(f"PLECS model file not found: {p}")
+        stat = p.stat()
+        return {
+            'file': str(p),
+            'size': stat.st_size,
+            'modified': time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(stat.st_mtime)),
+            'exists': True,
+        }
+
+    def validate_model(self) -> bool:
+        """Quick validation of the model file: checks extension and readability.
+
+        Returns True when file exists and has a supported extension (primarily '.plecs').
+        """
+        p = Path(self._fullname)
+        if not p.exists():
+            return False
+        ext = p.suffix.lower().lstrip('.')
+        # support 'plecs' and common XML-backed variants
+        return ext in ('plecs', 'xml')
+
+    def load_modelvars_struct_from_plecs(self) -> dict:
+        """Parse the local .plecs file and extract initialization variables.
+
+        Uses the existing `plecs_parser.parse_plecs_file` helper. Updates
+        `self.optStruct` with discovered variables (coerced to Python numeric
+        types where possible) and returns the extracted dict.
+
+        Raises FileNotFoundError or RuntimeError on parse problems.
+        """
+        p = Path(self._fullname)
+        if not p.exists():
+            raise FileNotFoundError(f"PLECS model file not found: {p}")
+
+        try:
+            from .plecs_parser import parse_plecs_file
+        except Exception as e:
+            raise RuntimeError('plecs_parser module not available') from e
+
+        parsed = parse_plecs_file(str(p))
+        init_vars = parsed.get('init_vars', {}) or {}
+
+        # normalize numeric-like values to Python numbers where applicable
+        normalized = {}
+        for k, v in init_vars.items():
+            # If parser already returned numeric types, keep them
+            if isinstance(v, (int, float)):
+                normalized[k] = v
+                continue
+            # try to coerce numeric-like strings
+            if isinstance(v, str):
+                sval = v.strip()
+                try:
+                    if re.fullmatch(r'[+-]?\d+', sval):
+                        normalized[k] = int(sval)
+                        continue
+                    if re.fullmatch(r'[+-]?\d*\.\d+(?:[eE][+-]?\d+)?', sval) or re.fullmatch(r'[+-]?\d+(?:[eE][+-]?\d+)', sval):
+                        normalized[k] = float(sval)
+                        continue
+                except Exception:
+                    pass
+            # fallback: keep original
+            normalized[k] = v
+
+        # Update optStruct preserving existing ModelVars where present
+        existing = (self.optStruct.get('ModelVars') if isinstance(self.optStruct, dict) else None) or {}
+        merged = {**existing, **{k: float(v) if isinstance(v, (int, float)) else v for k, v in normalized.items()}}
+        self.optStruct = {'ModelVars': merged}
+
+        # Populate component and output maps for convenience
+        components = parsed.get('components', [])
+        comp_map = {}
+        outputs = {}
+        for c in components:
+            name = c.get('name') or c.get('type')
+            comp_map[name] = c
+            # collect parameters that look like outputs (heuristic)
+            params = c.get('parameters', {})
+            for pk, pv in params.items():
+                if pk.lower().startswith('output') or pk.lower().startswith('y'):
+                    outputs.setdefault(name, {})[pk] = pv
+
+        self.components_vars = comp_map
+        self.outputs_vars = outputs
+
+        return {'file': str(p), 'init_vars': normalized, 'components': comp_map}
+
+    def get_components(self) -> dict:
+        """Return parsed components; if not populated, try to load from file."""
+        if not self.components_vars:
+            try:
+                self.load_modelvars_struct_from_plecs()
+            except Exception:
+                return {}
+        return self.components_vars
+
+    def get_parameters(self) -> dict:
+        """Return a flattened dict of component parameters (name -> params)."""
+        comps = self.get_components()
+        return {k: v.get('parameters', {}) for k, v in comps.items()}
 
     @property
     def filename(self):
