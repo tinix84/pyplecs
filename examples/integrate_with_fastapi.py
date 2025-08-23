@@ -34,7 +34,7 @@ if venv_path.exists():
     
     if venv_site_packages.exists():
         sys.path.insert(0, str(venv_site_packages))
-        print(f"✓ Using virtual environment: {venv_path}")
+        print(f"[OK] Using virtual environment: {venv_path}")
 
 # Now import dependencies
 try:
@@ -115,7 +115,7 @@ def startup_plecs(model_file='simple_buck.plecs', model_path='data'):
     try:
         if test_mode:
             # Test mode initialization
-            print("✓ Mock PLECS initialized for test mode")
+            print("[OK] Mock PLECS initialized for test mode")
             plecs_initialized = True
             return
             
@@ -137,7 +137,7 @@ def startup_plecs(model_file='simple_buck.plecs', model_path='data'):
                 if (search_path / model_file).exists():
                     model_path = search_path
                     found_file = model_path / model_file
-                    print(f"✓ Found model at: {found_file}")
+                    print(f"[OK] Found model at: {found_file}")
                     break
             
             if not found_file:
@@ -167,19 +167,19 @@ def startup_plecs(model_file='simple_buck.plecs', model_path='data'):
         try:
             # Try a simple ping to verify connection
             if hasattr(plecs_server, 'server') and plecs_server.server:
-                print("✓ XMLRPC connection established")
+                print("[OK] XMLRPC connection established")
             else:
                 raise RuntimeError("XMLRPC server connection failed")
         except Exception as e:
             raise RuntimeError(f"XMLRPC connection test failed: {e}")
         
         plecs_initialized = True
-        print("✓ PLECS initialized successfully")
+        print("[OK] PLECS initialized successfully")
         
     except Exception as e:
         initialization_error = str(e)
         plecs_initialized = False
-        print(f"✗ Failed to initialize PLECS: {e}")
+        print(f"[ERROR] Failed to initialize PLECS: {e}")
 
 
 def shutdown_plecs():
@@ -650,10 +650,10 @@ def generate_simulation_plot(simulation_id: str, result: Dict[str, Any],
         plt.savefig(plot_file, dpi=150, bbox_inches='tight')
         plt.close(fig)
         
-        print(f"✓ Plot saved for simulation {simulation_id}")
+        print(f"[OK] Plot saved for simulation {simulation_id}")
         
     except Exception as e:
-        print(f"✗ Failed to generate plot for {simulation_id}: {e}")
+        print(f"[ERROR] Failed to generate plot for {simulation_id}: {e}")
         import traceback
         print(f"Traceback: {traceback.format_exc()}")
 
