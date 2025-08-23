@@ -1,3 +1,20 @@
+"""High-level utilities and CLI-facing helpers for PyPLECS.
+
+This module exposes convenience functions for working with PLECS models
+and a small `PlecsApp` class for managing the PLECS process and
+interacting with the XML-RPC server.
+
+Public functions/classes:
+- load_mat_file
+- save_mat_file
+- generate_variant_plecs_file
+- generate_variant_plecs_mdl
+- PlecsApp
+
+The docstrings use a Google-style format so Sphinx Napoleon can
+generate readable API documentation.
+"""
+
 import time
 import shutil
 import os
@@ -25,8 +42,7 @@ from .config import ConfigManager
 
 
 def load_mat_file(file_path: str) -> dict:
-    """
-    Load MATLAB .mat file and convert to Python dictionary.
+    """Load MATLAB .mat file and convert to Python dictionary.
 
     Args:
         file_path: Path to the .mat file.
@@ -55,8 +71,7 @@ def load_mat_file(file_path: str) -> dict:
 
 
 def save_mat_file(file_name: str, data: Dict[str, Any]) -> None:
-    """
-    Save data to a MATLAB .mat file.
+    """Save data to a MATLAB .mat file.
 
     Args:
         file_name: Path to the .mat file to save.
@@ -69,8 +84,7 @@ def save_mat_file(file_name: str, data: Dict[str, Any]) -> None:
 
 
 def generate_variant_plecs_file(scr_filename: str, dst_filename: str, modelvars: Dict[str, Union[int, float]]) -> None:
-    """
-    Generate a variant PLECS file by modifying initialization commands.
+    """Generate a variant PLECS file by modifying initialization commands.
 
     Args:
         scr_filename: Path to the source PLECS file.
@@ -114,8 +128,7 @@ def generate_variant_plecs_file(scr_filename: str, dst_filename: str, modelvars:
 
 
 def generate_variant_plecs_mdl(src_mdl: Any, variant_name: str, variant_vars: Dict[str, Union[int, float]]) -> Any:
-    """
-    Generate a variant PLECS model by creating a new file with modified variables.
+    """Generate a variant PLECS model by creating a new file with modified variables.
 
     Args:
         src_mdl: Source PLECS model object.
@@ -140,9 +153,10 @@ def generate_variant_plecs_mdl(src_mdl: Any, variant_name: str, variant_vars: Di
 
 
 class PlecsApp:
+    """Manage the PLECS application process and XML-RPC interactions."""
+
     def __init__(self, config_path: Optional[str] = None) -> None:
-        """
-        Initialize PlecsApp with configuration-based PLECS path detection.
+        """Initialize PlecsApp with configuration-based PLECS path detection.
 
         Args:
             config_path: Optional path to config file. If None, uses default locations.
@@ -189,8 +203,7 @@ class PlecsApp:
 
     #    @staticmethod
     def set_plecs_high_priority(self) -> None:
-        """
-        Set the PLECS process to high priority.
+        """Set the PLECS process to high priority.
 
         Example:
             >>> app.set_plecs_high_priority()
@@ -204,8 +217,7 @@ class PlecsApp:
 
     #    @staticmethod
     def open_plecs(self) -> None:
-        """
-        Open the PLECS application.
+        """Open the PLECS application.
 
         Example:
             >>> app.open_plecs()
@@ -217,8 +229,7 @@ class PlecsApp:
 
     #return pid    #    @staticmethod
     def kill_plecs(self) -> None:
-        """
-        Terminate the PLECS application process.
+        """Terminate the PLECS application process.
 
         Example:
             >>> app.kill_plecs()
@@ -235,8 +246,7 @@ class PlecsApp:
 
     #    @staticmethod
     def get_plecs_cpu(self) -> Optional[float]:
-        """
-        Get the CPU usage of the PLECS process.
+        """Get the CPU usage of the PLECS process.
 
         Returns:
             The CPU usage percentage of the PLECS process, or None if not running.
@@ -254,8 +264,7 @@ class PlecsApp:
         return cpu_usage
 
     def run_simulation_by_gui(self, plecs_mdl: Any) -> None:
-        """
-        GUI simulation is no longer supported. Use XML-RPC instead.
+        """GUI simulation is no longer supported. Use XML-RPC instead.
 
         Args:
             plecs_mdl: PLECS model object.
@@ -271,8 +280,7 @@ class PlecsApp:
         )
 
     def load_file(self, plecs_mdl: Any, mode: str = 'XML-RPC') -> None:
-        """
-        Load a PLECS model file.
+        """Load a PLECS model file.
 
         Args:
             plecs_mdl: PLECS model object.
@@ -420,7 +428,17 @@ class PlecsApp:
 
 
 class PlecsServer:
+    """Thin XML-RPC client wrapper around a running PLECS server."""
+
     def __init__(self, sim_path=None, sim_name=None, port='1080', load=True):
+        """Create a PlecsServer RPC client and optionally load a model.
+
+        Args:
+            sim_path: Path to the model folder or None.
+            sim_name: Model filename (with extension) or None.
+            port: XML-RPC port as string or number (default '1080').
+            load: If True attempt to call plecs.load(...) on the server.
+        """
         self.modelName = sim_name.replace('.plecs', '')
         self.server = xmlrpc.client.Server('http://localhost:' + port + '/RPC2')
         self.sim_name = sim_name
@@ -437,10 +455,11 @@ class PlecsServer:
         """Execute a single simulation.
 
         Args:
-            inputs: dict of parameters or path to .mat file
+            inputs: dict of parameters or path to .mat file.
+            timeout: seconds to wait for remote simulation to complete.
 
         Returns:
-            Standardized result dict
+            Standardized result dict.
         """
         logger = logging.getLogger(__name__)
 
@@ -531,8 +550,9 @@ class PlecsServer:
     def _process_simulation_results(self, results):
         """Normalize PLECS simulate output into a Python dict.
 
-        This is intentionally lightweight and accepts dicts or objects with
-        Time/Values attributes.
+        This accepts either dicts with 'Time'/'Values' keys or objects that
+        expose Time and Values attributes and returns either a dataframe
+        container (when pandas is available) or plain lists/arrays.
         """
         # If it's already a dict, try to normalize Time/Values
         try:
@@ -660,25 +680,33 @@ class PlecsServer:
         return {'raw': results}
 
     def load_file(self):
+        """Backward-compatible alias for :py:meth:`load`.
+
+        Kept for API compatibility with older callers.
+        """
         self.load()
 
     def load(self):
-        """ 
-        Interface to the plecs.load function 
-        from Plecs help: plecs.load('mdlFileName')
+        """Load the model on the remote PLECS server.
+
+        Calls the server's ``plecs.load`` helper with the configured
+        path and model name.
         """
         self.server.plecs.load(self.sim_path + '//' + self.sim_name)
 
     def close(self):
-        """  
-        Interface to the plecs.close function 
-        from Plecs help: plecs.close('mdlName')
+        """Close the model on the remote PLECS server.
+
+        Calls the server's ``plecs.close`` helper for the current model.
         """
         self.server.plecs.close(self.modelName)
 
     def load_model_vars(self, data):
-        # backward-compat simple wrapper retained for older callers
-        # kept to avoid breaking API: delegates to unified implementation
+        """Backward-compatible wrapper that delegates to
+        :py:meth:`load_model_vars_unified`.
+
+        Accepts older call shapes for compatibility.
+        """
         return self.load_model_vars_unified(data, merge=True, validate=False, convert_types=True)
 
     def load_model_vars_unified(self, 
@@ -777,6 +805,12 @@ class PlecsServer:
         return self.optStruct
 
     def load_model_var(self, name, value):
+        """Set a single model variable in the current optStruct.
+
+        Args:
+            name: Variable name.
+            value: Numeric value (will be coerced to float).
+        """
         if not hasattr(self, 'opts'):
             self.optStruct = {'ModelVars': dict()}
         self.optStruct['ModelVars'][name] = float(value)
@@ -784,23 +818,22 @@ class PlecsServer:
     def load_model_vars(self, model_vars: Union[dict, str, None], 
                         merge: bool = True, coerce: bool = True, 
                         validate: bool = False) -> dict:
-        """
-        Unified method for loading model variables.
-        
+        """Unified method for loading model variables.
+
         Args:
-            model_vars: Dict of variables or path to file
-            merge: If True, merge with existing vars; if False, replace
-            coerce: If True, attempt to convert values to float for XML-RPC compatibility
-            validate: If True, validate variables against model (requires model variable list)
-            
+            model_vars: Dict of variables or path to file.
+            merge: If True, merge with existing vars; if False, replace.
+            coerce: If True, attempt to convert values to float for XML-RPC compatibility.
+            validate: If True, validate variables against model (requires model variable list).
+
         Returns:
-            dict: Updated model variables structure
-            
+            dict: Updated model variables structure.
+
         Raises:
-            ValueError: If file type is unsupported or coercion fails
-            TypeError: If model_vars is not dict or string
-            FileLoadError: If file cannot be loaded
-            
+            ValueError: If file type is unsupported or coercion fails.
+            TypeError: If model_vars is not dict or string.
+            FileLoadError: If file cannot be loaded.
+
         Example:
             >>> server = PlecsServer('models', 'boost.plecs')
             >>> result = server.load_model_vars({'Vin': 400, 'Vout': 200})
@@ -874,18 +907,17 @@ class PlecsServer:
         return self.optStruct
 
     def _load_yaml_vars(self, file_path: str) -> dict:
-        """
-        Load variables from YAML file.
-        
+        """Load variables from YAML file.
+
         Args:
-            file_path: Path to YAML file
-            
+            file_path: Path to YAML file.
+
         Returns:
-            Dictionary of variables loaded from YAML
-            
+            Dictionary of variables loaded from YAML.
+
         Raises:
-            ImportError: If PyYAML is not installed
-            FileLoadError: If file cannot be loaded
+            ImportError: If PyYAML is not installed.
+            FileLoadError: If file cannot be loaded.
         """
         try:
             import yaml
@@ -897,6 +929,10 @@ class PlecsServer:
             raise FileLoadError(f"Failed to load YAML file: {str(e)}")
 
     def load_modelvars(self, model_vars: dict):
+        """Deprecated wrapper kept for backward compatibility.
+
+        Delegates to :py:meth:`load_model_vars` and issues a DeprecationWarning.
+        """
         import warnings
         warnings.warn(
             "load_modelvars() is deprecated, use load_model_vars()",
@@ -911,6 +947,13 @@ class PlecsServer:
         return self.load_model_vars(model_vars, merge=True, validate=False, coerce=True)
 
     def set_value(self, ref, parameter, value):
+        """Set a parameter value on a component in the remote model.
+
+        Args:
+            ref: Component path or reference inside the model.
+            parameter: Parameter name to set.
+            value: Value to set (will be converted to string for RPC).
+        """
         self.server.plecs.set(self.modelName + '/' + ref, parameter, str(value))
 
     def get(self, componentPath, parameter=None):
@@ -1008,9 +1051,9 @@ class PlecsServer:
 
     def export_scope_csv(self, scope_path, file_name, time_range=None):
         """
-    Wrapper for plecs.scope(scope_path, 'ExportCSV', file_name[, time_range]).
-    If time_range is provided it should be an iterable like [t1, t2].
-    Returns whatever the RPC server returns (usually None or a file path).
+        Wrapper for plecs.scope(scope_path, 'ExportCSV', file_name[, time_range]).
+        If time_range is provided it should be an iterable like [t1, t2].
+        Returns whatever the RPC server returns (usually None or a file path).
         """
         if time_range is None:
             return self.server.plecs.scope(scope_path, 'ExportCSV', file_name)
@@ -1066,6 +1109,13 @@ class PlecsServer:
 
 
 class GenericConverterPlecsMdl:
+    """Lightweight converter/adapter for PLECS model files.
+
+    Provides convenience methods to load model variables, inspect the
+    model file, and produce a normalized representation used by the
+    higher-level APIs.
+    """
+
     def __init__(self, filename: str):
         # simulation file
         path_obj = Path(filename)

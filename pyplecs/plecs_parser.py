@@ -1,11 +1,13 @@
 """PLECS file parser utilities.
 
 Provides functions to parse .plecs files and extract:
+
 - Component blocks (Type, Name, Parameters)
 - InitializationCommands (MATLAB-like variable assignments)
 
 The parser is intentionally lightweight (regex + brace matching) and
 works with the typical flattened .plecs files used in this repo.
+
 """
 from pathlib import Path
 import re
@@ -152,24 +154,35 @@ def parse_plecs_file(path: str) -> Dict[str, Any]:
 
 
 def plecs_overview(path: str) -> Dict[str, Any]:
-        """Return a compact dict overview for a .plecs file suitable for orchestration.
+    """Return a compact dict overview for a .plecs file.
 
-        Structure:
-            {
-                'file': str,
-                'components': {name_or_index: {type, name, parameters}},
-                'init_vars': {..}
-            }
-        """
-        parsed = parse_plecs_file(path)
-        comps = {}
-        for i, c in enumerate(parsed['components']):
-                key = c.get('name') or f"component_{i}"
-                # if duplicate names, append index
-                if key in comps:
-                        key = f"{key}_{i}"
-                comps[key] = {'type': c.get('type'), 'name': c.get('name'), 'parameters': c.get('parameters')}
-        return {'file': parsed['file'], 'components': comps, 'init_vars': parsed['init_vars']}
+    Structure::
+
+        {
+            'file': str,
+            'components': {name_or_index: {type, name, parameters}},
+            'init_vars': {..}
+        }
+
+    """
+    parsed = parse_plecs_file(path)
+    comps: Dict[str, Any] = {}
+    for i, c in enumerate(parsed['components']):
+        key = c.get('name') or f"component_{i}"
+        # if duplicate names, append index
+        if key in comps:
+            key = f"{key}_{i}"
+        comps[key] = {
+            'type': c.get('type'),
+            'name': c.get('name'),
+            'parameters': c.get('parameters'),
+        }
+
+    return {
+        'file': parsed['file'],
+        'components': comps,
+        'init_vars': parsed['init_vars'],
+    }
 
 
 def scan_plecs_dir(dirpath: str) -> Dict[str, Dict[str, Any]]:

@@ -23,7 +23,7 @@ __email__ = "tinix84@gmail.com"
 
 # Legacy imports (optional - only if dependencies are available)
 try:
-    from .pyplecs import PlecsServer, GenericConverterPlecsMdl, PlecsApp, generate_variant_plecs_mdl
+    from .pyplecs import PlecsServer, GenericConverterPlecsMdl, PlecsApp, generate_variant_plecs_mdl, generate_variant_plecs_file
     _legacy_available = True
 except ImportError:
     # Create placeholder classes for missing dependencies
@@ -31,6 +31,7 @@ except ImportError:
     GenericConverterPlecsMdl = None 
     PlecsApp = None
     generate_variant_plecs_mdl = None
+    generate_variant_plecs_file = None
     _legacy_available = False
 
 # New architecture imports

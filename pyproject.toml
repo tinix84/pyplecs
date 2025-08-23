@@ -1,3 +1,6 @@
+[tool.pydocstyle]
+# Only check for presence of module/class/function docstrings in this pass.
+select = ["D100", "D101", "D102"]
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
