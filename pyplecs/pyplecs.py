@@ -439,16 +439,16 @@ class PlecsServer:
             port: XML-RPC port as string or number (default '1080').
             load: If True attempt to call plecs.load(...) on the server.
         """
-        self.modelName = sim_name.replace('.plecs', '')
-        self.server = xmlrpc.client.Server('http://localhost:' + port + '/RPC2')
-        self.sim_name = sim_name
-        self.sim_path = sim_path
+        self.modelName = sim_name.replace('.plecs', '') if sim_name else ''
+        self.server = xmlrpc.client.Server(f'http://localhost:{str(port)}/RPC2')
+        self.sim_name = sim_name or ''
+        self.sim_path = str(sim_path) if sim_path else ''
         self.optStruct = None
 
-        if ((sim_path is not None) or ( sim_name is not None)) and load:
-            self.server.plecs.load(self.sim_path + '//' + self.sim_name)
+        if self.sim_path and self.sim_name and load:
+            self.server.plecs.load(f'{self.sim_path}//{self.sim_name}')
         else:
-            print('sim_path or sim_path is invalid or load is False')
+            print('sim_path or sim_name is invalid or load is False')
             print(f'load={load}')
 
     def run_sim_single(self, inputs, timeout: float = 30.0):

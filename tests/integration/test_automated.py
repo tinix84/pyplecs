@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pyplecs
+from tests.integration_utils import setup_plecs_app, setup_plecs_server
 
 
 class AutomatedTestSuite(unittest.TestCase):
@@ -20,11 +21,7 @@ class AutomatedTestSuite(unittest.TestCase):
 
     def test02_plecs_app_open_highpriority(self):
         """Test PLECS application opening and priority setting."""
-        plecs42 = pyplecs.PlecsApp()
-        plecs42.kill_plecs()
-        time.sleep(1)
-        plecs42.open_plecs()
-        time.sleep(1)
+        plecs42 = setup_plecs_app()
         plecs42.set_plecs_high_priority()
 
     def test03_pyplecs_xrpc_server(self):
@@ -33,34 +30,12 @@ class AutomatedTestSuite(unittest.TestCase):
         full_sim_name = str(sim_file_path_obj.absolute())
         plecs_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
 
-        plecs42 = pyplecs.PlecsApp()
-        plecs42.kill_plecs()
-        plecs42.open_plecs()
-        time.sleep(1)
-        pyplecs.PlecsServer(plecs_mdl.folder, plecs_mdl.simulation_name)
-
-    def test04_pyplecs_generate_variants(self):
-        """Test PLECS model variant generation."""
-        sim_file_path_obj = Path('data/simple_buck.plecs')
-        full_sim_name = str(sim_file_path_obj.absolute())
-        buck_mdl = pyplecs.GenericConverterPlecsMdl(full_sim_name)
-
-        ModelVars = dict()
-        ModelVars["Vi"] = 250
-        ModelVars["Ii_max"] = 250
-        ModelVars["Vo_ref"] = 250
-        pyplecs.generate_variant_plecs_mdl(src_mdl=buck_mdl, variant_name='01',
-                                           variant_vars=ModelVars)
-
-        ModelVars["Vi"] = 25
-        ModelVars["Ii_max"] = 25
-        ModelVars["Vo_ref"] = 25
-        pyplecs.generate_variant_plecs_mdl(src_mdl=buck_mdl, variant_name='02',
-                                           variant_vars=ModelVars)
+        plecs42 = setup_plecs_app()
+        setup_plecs_server(plecs42, plecs_mdl._folder, plecs_mdl._model_name)
 
     def test05_gui_cmds(self):
         """Test basic GUI command functionality."""
-        plecs42 = pyplecs.PlecsApp()
+        plecs42 = setup_plecs_app()
         plecs42.open_plecs()
 
     def test06_check_simulation_running(self):

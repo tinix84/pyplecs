@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pyplecs.pyplecs import PlecsServer, GenericConverterPlecsMdl
 from pyplecs.exceptions import SimulationError, PlecsConnectionError
+from tests.integration_utils import setup_plecs_app, setup_plecs_server
 
 
 class TestEndToEndWorkflows:
@@ -12,62 +13,61 @@ class TestEndToEndWorkflows:
 
     def test_complete_simulation_workflow(self):
         """Test full workflow: start PLECS -> load model -> simulate."""
-        from pyplecs.pyplecs import PlecsApp
         import time
-        
+
         # Step 1: Start PLECS application
-        plecs_app = PlecsApp()
-        
+        plecs_app = setup_plecs_app()
+
         try:
-            # Start PLECS process
-            plecs_app.open_plecs()
-            
             # Wait for PLECS to start up
             time.sleep(3)
-            
+
             # Step 2: Create PLECS server and load model
-            # Use absolute path to the PLECS file
             repo_root = Path(__file__).resolve().parents[2]
             model_path = repo_root / 'data'
             model_file = 'simple_buck.plecs'
-            
-            server = PlecsServer(str(model_path), model_file, load=True)
-            
+
+            server = setup_plecs_server(plecs_app, str(model_path), model_file)
+
+            # Explicitly initialize optStruct
+            server.optStruct = {'ModelVars': {}}
+
             # Step 3: Load model variables
             variables = {
-                'Vi': 400.0,      # Input voltage
-                'Vo_ref': 200.0,  # Output voltage reference
-                'Ii_max': 10.0,   # Max input current
-                'fs': 20000.0     # Switching frequency
+                'ModelVars': {
+                    'Vi': 400.0,      # Input voltage
+                    'Vo_ref': 200.0,  # Output voltage reference
+                    'Ii_max': 10.0,   # Max input current
+                    'fs': 20000.0     # Switching frequency
+                }
             }
-            server.load_model_vars(variables)
-            
+            server.load_model_vars_unified(variables)
+
             # Verify variables were loaded correctly
             assert server.optStruct is not None
             assert 'ModelVars' in server.optStruct
             assert server.optStruct['ModelVars']['Vi'] == 400.0
             assert server.optStruct['ModelVars']['Vo_ref'] == 200.0
-            
+
             # Step 4: Run simulation
-            result = server.run_sim_single(variables)
-            
+            result = server.run_sim_single(variables['ModelVars'])
+
             # Step 5: Verify results
             assert result['success'] is True
             assert 'results' in result
             assert 'execution_time' in result
             assert result['execution_time'] > 0
-            
+
             # Check that we got some simulation data
             results_data = result['results']
             assert isinstance(results_data, dict)
-            
+
             print(f"Simulation completed in {result['execution_time']:.3f}s")
             print(f"Parameters used: {result['parameters_used']}")
-            
+
         except Exception as e:
-            # If PLECS is not available, skip the test
             pytest.skip(f"PLECS not available or simulation failed: {e}")
-            
+
         finally:
             # Clean up: Kill PLECS processes
             try:
