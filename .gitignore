@@ -37,3 +37,4 @@ utils/
 cache/
 pyplecs/pyplecs.py
 examples/integrate_with_fastapi.py
+*.html

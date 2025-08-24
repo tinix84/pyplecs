@@ -421,3 +421,30 @@ Simpler Installation: No need for Windows-specific GUI automation tools
 Better Focus: Codebase now focuses on XML-RPC integration (which is more reliable)
 Cleaner Architecture: Removed legacy GUI automation that was brittle and hard to maintain
 The codebase is now cleaner and more focused on the core XML-RPC functionality, which is the recommended approach for PLECS automation anyway!
+
+
+===================================================================
+
+
+(.venv) PS D:\git\pyplecs> python simple_validate.py
+FastAPI Integration - Simple Validation
+Trying server on port 8005...
+Found server on port 8005
+
+Test 1: Basic Functionality
+Health check: PASS
+Parameters: PASS
+
+Test 2: Basic Simulation
+Simulation: 100 points - PASS
+
+Test 3: Enhanced Features
+Enhanced simulation: 150 points - PASS
+
+BUT NO PLECS I STARTED, I HAVE ONLY ASK 3 UNIT TESTS FOR
+
+$body = @{parameters=@{Vin=600;Vout=300;L=0.0005;C=0.00005;R=8};save_plot=$true;model_file="simple_buck01.plecs";model_path="data/01";plot_title="Buck01 Model - High Frequency";description="Testing simple_buck02.plecs with high frequency parameters"} | ConvertTo-Json; Invoke-RestMethod -Uri "http://127.0.0.1:8005/simulate" -Method POST -Body $body -ContentType "application/json"
+
+$body = @{parameters=@{Vin=600;Vout=300;L=0.0005;C=0.00005;R=8};save_plot=$true;model_file="simple_buck01.plecs";model_path="data/01";plot_title="Buck Model - High Frequency";description="Testing simple_buck02.plecs with high frequency parameters"} | ConvertTo-Json; Invoke-RestMethod -Uri "http://127.0.0.1:8005/simulate" -Method POST -Body $body -ContentType "application/json"
+
+$body = @{parameters=@{Vin=600;Vout=300;L=0.0005;C=0.00005;R=8};save_plot=$true;model_file="simple_buck.plecs";model_path="data";plot_title="Buck Model - High Frequency";description="Testing simple_buck.plecs with high frequency parameters"} | ConvertTo-Json; Invoke-RestMethod -Uri "http://127.0.0.1:8005/simulate" -Method POST -Body $body -ContentType "application/json"

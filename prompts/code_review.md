@@ -7,6 +7,40 @@ You are a bullet-sharp AI Copilot tasked with rewriting a project improvement pl
 
 Original content:
 """
+### Task 2.2: Configuration Validation & Schema
+**Context**: YAML configuration lacks validation, leading to runtime errors  
+**What to do**:
+- Define JSON schema for config/default.yml
+- Implement configuration validation on startup
+- Add config validation to CLI tools
+- Create configuration templates for different use cases
+- Add config migration tools for version updates
+
+**Expected outcome**: 
+- Invalid configurations caught early with clear error messages  
+- Reduced debugging time from configuration issues
+- Easier configuration management for complex setups
+
+**Acceptance criteria**:
+- [ ] JSON schema validates all config options
+- [ ] Clear validation errors with suggestions
+- [ ] Template configs for common scenarios
+- [ ] Migration path for config updates
+
+"""
+
+
+
+
+You are a bullet-sharp AI Copilot tasked with rewriting a project improvement plan into a format that’s LLM-friendly. Provide:
+
+1. A concise transformation of the plan into a clear, structured prompt for ChatGPT-5 Mini.
+2. Organized sections: Role, Objective, Instructions, Structure, Tone, Format.
+3. Optional: A short “chain-of-thought” sketch explaining your choices.
+4. A final succinct prompt ready to paste.
+
+Original content:
+"""
 # PyPLECS Repository Improvement Plan
 # PyPLECS Repository Improvement Plan
 
