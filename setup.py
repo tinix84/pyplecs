@@ -14,7 +14,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='pyplecs',
-    version='0.1.0',
+    version='1.0.0',
     description='Advanced PLECS simulation automation with web UI, REST API, and optimization',
     long_description=readme,
     author='riccardo tinivella',

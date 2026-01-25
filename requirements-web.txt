@@ -1,0 +1,16 @@
+# PyPLECS Web UI & REST API
+# Dependencies for FastAPI web server and monitoring interface
+
+fastapi>=0.68.0
+uvicorn[standard]>=0.15.0
+jinja2>=3.0.0
+aiofiles>=0.7.0
+websockets>=10.0
+python-multipart>=0.0.5
+plotly>=5.0.0
+rich>=10.0.0
+tqdm>=4.62.0
+
+# Optional authentication
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4

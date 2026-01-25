@@ -1,0 +1,10 @@
+# PyPLECS Advanced Caching
+# Storage backends and compression for simulation result caching
+
+pyarrow>=5.0.0       # Parquet storage (default, fast)
+h5py>=3.3.0          # HDF5 storage (large data)
+diskcache>=5.4.0     # Enhanced file-based cache
+
+# Optional: Redis backend for distributed caching
+redis>=4.0.0
+aioredis>=2.0.0

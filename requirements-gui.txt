@@ -1,0 +1,6 @@
+# PyPLECS Desktop GUI Automation
+# Windows-specific dependencies for GUI automation features
+
+pywinauto>=0.6.8
+psutil>=5.8.0
+colorama>=0.4.4
