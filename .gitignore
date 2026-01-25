@@ -34,3 +34,4 @@ utils/
 .claude/
 
 articles/output/
+FORCE_PUSH_PLAN.txt
