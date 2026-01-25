@@ -31,4 +31,5 @@ utils/
 
 *.old
 .idea/
+.claude/
 
