@@ -5,7 +5,7 @@ from .models import (
     SimulationResult,
     SimulationStatus,
     ComponentParameter,
-    ModelVariant,
+    # ModelVariant removed in v1.0.0 - use SimulationRequest with parameters instead
     OptimizationObjective,
     OptimizationParameter,
     OptimizationRequest,
@@ -18,12 +18,12 @@ from .models import (
 
 __all__ = [
     'SimulationRequest',
-    'SimulationResult', 
+    'SimulationResult',
     'SimulationStatus',
     'ComponentParameter',
-    'ModelVariant',
+    # 'ModelVariant',  # Removed in v1.0.0
     'OptimizationObjective',
-    'OptimizationParameter', 
+    'OptimizationParameter',
     'OptimizationRequest',
     'OptimizationResult',
     'WebGuiState',

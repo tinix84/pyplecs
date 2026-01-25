@@ -153,9 +153,14 @@ def test_component_parameter():
 
 
 def test_model_variant():
-    """Test model variant functionality."""
-    from pyplecs.core.models import ModelVariant
-    
+    """Test model variant functionality - REMOVED in v1.0.0.
+
+    ModelVariant was removed in favor of using SimulationRequest with parameters.
+    This test is updated to document the migration.
+    """
+    # MIGRATION: ModelVariant is removed - use SimulationRequest with parameters instead
+    from pyplecs.core.models import SimulationRequest
+
     # Create temporary base model
     with tempfile.NamedTemporaryFile(suffix='.plecs', delete=False) as f:
         # Simple PLECS model content with initialization commands
@@ -167,19 +172,23 @@ EndInitialization
 """
         f.write(content.encode())
         base_model = f.name
-    
+
     try:
-        variant = ModelVariant(
-            name="high_voltage",
-            base_model=base_model,
+        # Old way (v0.x):
+        # variant = ModelVariant(name="high_voltage", base_model=base_model, parameters={"Vi": 24.0})
+
+        # New way (v1.0.0+):
+        # Use SimulationRequest with parameters - no file generation needed!
+        request = SimulationRequest(
+            model_file=base_model,
             parameters={"Vi": 24.0, "Vo": 12.0},
-            description="High voltage variant"
+            metadata={"variant_name": "high_voltage", "description": "High voltage variant"}
         )
-        
-        # Test variant file generation (would create actual file in real scenario)
-        assert variant.name == "high_voltage"
-        assert variant.parameters["Vi"] == 24.0
-        
+
+        # PLECS native ModelVars handles parameter variations
+        assert request.parameters["Vi"] == 24.0
+        assert request.metadata["variant_name"] == "high_voltage"
+
     finally:
         os.unlink(base_model)
 

@@ -74,30 +74,9 @@ class ComponentParameter:
         return f"{self.component_path}/{self.parameter_name}"
 
 
-@dataclass
-class ModelVariant:
-    """Represents a model variant with specific parameters."""
-    name: str
-    base_model: str
-    parameters: Dict[str, Any]
-    description: Optional[str] = None
-    
-    def generate_variant_file(self, output_dir: str) -> str:
-        """Generate a variant PLECS file with the specified parameters."""
-        from ..pyplecs import generate_variant_plecs_file
-        
-        output_path = Path(output_dir) / self.name / Path(self.base_model).name
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        variant_file = str(output_path).replace('.plecs', f'_{self.name}.plecs')
-        
-        generate_variant_plecs_file(
-            scr_filename=self.base_model,
-            dst_filename=variant_file,
-            modelvars=self.parameters
-        )
-        
-        return variant_file
+# DEPRECATED: ModelVariant class removed in v1.0.0
+# Use SimulationRequest with parameters dict instead
+# PLECS native ModelVars handles parameter variations without file generation
 
 
 @dataclass

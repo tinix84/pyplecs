@@ -17,36 +17,41 @@ Refactored: August 2025
 """
 
 # Version info
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 __author__ = "Riccardo Tinivella"
 __email__ = "tinix84@gmail.com"
 
 # Legacy imports (optional - only if pywinauto is available)
 try:
-    from .pyplecs import PlecsServer, GenericConverterPlecsMdl, PlecsApp, generate_variant_plecs_mdl
+    from .pyplecs import PlecsServer, PlecsApp
+    # GenericConverterPlecsMdl and generate_variant_plecs_mdl removed in v1.0.0
     _legacy_available = True
 except ImportError:
     # Create placeholder classes for missing dependencies
     PlecsServer = None
-    GenericConverterPlecsMdl = None 
     PlecsApp = None
-    generate_variant_plecs_mdl = None
     _legacy_available = False
 
 # New architecture imports
 from .config import get_config, init_config
 from .core import (
-    SimulationRequest, 
-    SimulationResult, 
+    SimulationRequest,
+    SimulationResult,
     SimulationStatus,
     ComponentParameter,
-    ModelVariant,
+    # ModelVariant removed in v1.0.0
     OptimizationRequest,
     OptimizationResult
 )
 from .orchestration import SimulationOrchestrator, TaskPriority
 from .cache import SimulationCache
-from .logging import get_logger, init_logging
+
+# Optional logging (requires structlog)
+try:
+    from .logging import get_logger, init_logging
+except ImportError:
+    get_logger = None
+    init_logging = None
 
 # Optional imports (only if dependencies are available)
 try:
@@ -77,35 +82,35 @@ if not _legacy_available:
 __all__ = [
     # Legacy API (may be None if dependencies missing)
     'PlecsServer',
-    'GenericConverterPlecsMdl', 
+    # 'GenericConverterPlecsMdl',  # Removed in v1.0.0
     'PlecsApp',
-    'generate_variant_plecs_mdl',
-    
+    # 'generate_variant_plecs_mdl',  # Removed in v1.0.0
+
     # Configuration
     'get_config',
     'init_config',
-    
+
     # Core models
     'SimulationRequest',
     'SimulationResult',
     'SimulationStatus',
     'ComponentParameter',
-    'ModelVariant',
+    # 'ModelVariant',  # Removed in v1.0.0
     'OptimizationRequest',
     'OptimizationResult',
-    
+
     # Main services
     'SimulationOrchestrator',
     'TaskPriority',
     'SimulationCache',
-    
+
     # Logging
     'get_logger',
     'init_logging',
-    
+
     # Optional services
     'create_api_app',
-    'create_web_app', 
+    'create_web_app',
     'create_mcp_server',
     'OptimizationEngine',
 ]
