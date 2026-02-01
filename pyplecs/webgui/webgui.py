@@ -1,20 +1,17 @@
 """Web GUI for PyPLECS simulation monitoring and control."""
 
-import asyncio
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List
 
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, Depends, Form, HTTPException
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 import uvicorn
 
 from ..config import get_config
-from ..core.models import SimulationRequest, SimulationStatus
-from ..orchestration import SimulationOrchestrator, TaskPriority
 
 
 logger = logging.getLogger(__name__)
@@ -22,22 +19,26 @@ logger = logging.getLogger(__name__)
 
 class WebSocketManager:
     """Manages WebSocket connections for real-time updates."""
-    
+
     def __init__(self):
         self.active_connections: List[WebSocket] = []
-    
+
     async def connect(self, websocket: WebSocket):
         """Accept a new WebSocket connection."""
         await websocket.accept()
         self.active_connections.append(websocket)
-        logger.info(f"WebSocket connected. Total connections: {len(self.active_connections)}")
-    
+        logger.info(
+            f"WebSocket connected. Total connections: {len(self.active_connections)}"
+        )
+
     def disconnect(self, websocket: WebSocket):
         """Remove a WebSocket connection."""
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
-        logger.info(f"WebSocket disconnected. Total connections: {len(self.active_connections)}")
-    
+        logger.info(
+            f"WebSocket disconnected. Total connections: {len(self.active_connections)}"
+        )
+
     async def broadcast_json(self, data: dict):
         """Broadcast JSON data to all connected clients."""
         message = json.dumps(data)
@@ -48,7 +49,7 @@ class WebSocketManager:
             except Exception as e:
                 logger.error(f"Error broadcasting to WebSocket: {e}")
                 disconnected.append(connection)
-        
+
         # Remove disconnected connections
         for conn in disconnected:
             self.disconnect(conn)
@@ -56,31 +57,26 @@ class WebSocketManager:
 
 def create_web_app():
     """Create and configure the web application."""
-    config = get_config()
-    
     app = FastAPI(
         title="PyPLECS Web GUI",
         description="Web interface for PLECS simulation monitoring and control",
-        version="1.0.0"
+        version="1.0.0",
     )
-    
-    # Setup static files and templates
-    static_dir = Path(config.webgui.static_files)
-    templates_dir = Path(config.webgui.templates)
-    
-    # Create directories if they don't exist
-    static_dir.mkdir(parents=True, exist_ok=True)
-    templates_dir.mkdir(parents=True, exist_ok=True)
-    
+
+    # Use package-relative paths for static files and templates
+    package_dir = Path(__file__).parent
+    static_dir = package_dir / "static"
+    templates_dir = package_dir / "templates"
+
     # Mount static files
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-    
+
     # Setup templates
     templates = Jinja2Templates(directory=str(templates_dir))
-    
+
     # Initialize WebSocket manager
     websocket_manager = WebSocketManager()
-    
+
     # Page routes
     @app.get("/", response_class=HTMLResponse)
     async def dashboard(request: Request):
@@ -110,48 +106,44 @@ def create_web_app():
             "status": "running",
             "version": "1.0.0",
             "stats": {"total_tasks": 0, "completed_tasks": 0},
-            "workers": []
+            "workers": [],
         }
 
     @app.get("/api/simulations")
     async def get_simulations(limit: int = 50, offset: int = 0):
         """Get list of simulations with pagination."""
-        return {
-            "tasks": [],
-            "total": 0,
-            "limit": limit,
-            "offset": offset
-        }
+        return {"tasks": [], "total": 0, "limit": limit, "offset": offset}
 
     @app.get("/api/cache/stats")
     async def get_cache_stats():
         """Get cache statistics."""
         try:
             config = get_config()
-            cache_dir = config.get('cache', {}).get('directory', './cache')
-            
+            cache_dir = config.cache.directory
+
             import os
+
             total_entries = 0
             total_size = 0
-            
+
             if os.path.exists(cache_dir):
-                for root, dirs, files in os.walk(cache_dir):
+                for root, _, files in os.walk(cache_dir):
                     total_entries += len(files)
                     for file in files:
                         file_path = os.path.join(root, file)
                         try:
                             total_size += os.path.getsize(file_path)
-                        except (OSError, IOError):
+                        except OSError:
                             continue
-            
+
             return {
                 "total_entries": total_entries,
                 "total_size_bytes": total_size,
                 "total_size_mb": round(total_size / (1024 * 1024), 2),
-                "cache_directory": cache_dir
+                "cache_directory": cache_dir,
             }
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/api/cache/clear")
     async def clear_cache():
@@ -179,3 +171,9 @@ def run_app(host: str = "127.0.0.1", port: int = 8001):
     app, _ = create_web_app()
     logger.info(f"Starting PyPLECS Web GUI on http://{host}:{port}")
     uvicorn.run(app, host=host, port=port)
+
+
+def main():
+    """Entry point for pyplecs-gui command."""
+    app, _ = create_web_app()
+    uvicorn.run(app, host="127.0.0.1", port=8001)

@@ -9,6 +9,7 @@ from pathlib import Path
 
 class SimulationStatus(Enum):
     """Simulation task status."""
+
     QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -19,25 +20,27 @@ class SimulationStatus(Enum):
 @dataclass
 class SimulationRequest:
     """Request for a PLECS simulation."""
+
     model_file: str
     parameters: Dict[str, Any] = field(default_factory=dict)
     simulation_time: Optional[float] = None
     output_variables: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     def __post_init__(self):
         """Validate and normalize the request."""
         # Ensure model file exists
         if not Path(self.model_file).exists():
             raise FileNotFoundError(f"Model file not found: {self.model_file}")
-        
+
         # Convert relative path to absolute
         self.model_file = str(Path(self.model_file).resolve())
 
 
-@dataclass 
+@dataclass
 class SimulationResult:
     """Result of a PLECS simulation."""
+
     task_id: str
     success: bool
     timeseries_data: Optional[pd.DataFrame] = None
@@ -46,29 +49,32 @@ class SimulationResult:
     execution_time: float = 0.0
     cached: bool = False
     plecs_version: Optional[str] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert result to dictionary."""
         return {
-            'task_id': self.task_id,
-            'success': self.success,
-            'timeseries_data': self.timeseries_data.to_dict() if self.timeseries_data is not None else None,
-            'metadata': self.metadata,
-            'error_message': self.error_message,
-            'execution_time': self.execution_time,
-            'cached': self.cached,
-            'plecs_version': self.plecs_version
+            "task_id": self.task_id,
+            "success": self.success,
+            "timeseries_data": self.timeseries_data.to_dict()
+            if self.timeseries_data is not None
+            else None,
+            "metadata": self.metadata,
+            "error_message": self.error_message,
+            "execution_time": self.execution_time,
+            "cached": self.cached,
+            "plecs_version": self.plecs_version,
         }
 
 
 @dataclass
 class ComponentParameter:
     """Parameter for a PLECS component."""
+
     name: str
     value: Union[float, int, str]
     component_path: str
     parameter_name: str
-    
+
     def to_plecs_reference(self) -> str:
         """Get PLECS reference string for this parameter."""
         return f"{self.component_path}/{self.parameter_name}"
@@ -82,6 +88,7 @@ class ComponentParameter:
 @dataclass
 class OptimizationObjective:
     """Optimization objective definition."""
+
     name: str
     variable: str  # Variable name in simulation results
     target_value: Optional[float] = None
@@ -94,6 +101,7 @@ class OptimizationObjective:
 @dataclass
 class OptimizationParameter:
     """Parameter to be optimized."""
+
     name: str
     min_value: float
     max_value: float
@@ -105,6 +113,7 @@ class OptimizationParameter:
 @dataclass
 class OptimizationRequest:
     """Request for parameter optimization."""
+
     model_file: str
     objectives: List[OptimizationObjective]
     parameters: List[OptimizationParameter]
@@ -118,6 +127,7 @@ class OptimizationRequest:
 @dataclass
 class OptimizationResult:
     """Result of parameter optimization."""
+
     request_id: str
     success: bool
     optimal_parameters: Dict[str, float] = field(default_factory=dict)
@@ -133,6 +143,7 @@ class OptimizationResult:
 @dataclass
 class WebGuiState:
     """State information for web GUI."""
+
     simulation_queue: List[Dict[str, Any]] = field(default_factory=list)
     active_simulations: List[Dict[str, Any]] = field(default_factory=list)
     completed_simulations: List[Dict[str, Any]] = field(default_factory=list)
@@ -143,6 +154,7 @@ class WebGuiState:
 @dataclass
 class McpTool:
     """Model Context Protocol tool definition."""
+
     name: str
     description: str
     parameters: Dict[str, Any] = field(default_factory=dict)
@@ -152,6 +164,7 @@ class McpTool:
 @dataclass
 class McpResource:
     """Model Context Protocol resource definition."""
+
     uri: str
     name: str
     description: str
@@ -162,6 +175,7 @@ class McpResource:
 @dataclass
 class LogEntry:
     """Structured log entry."""
+
     timestamp: float
     level: str
     logger: str
@@ -170,16 +184,16 @@ class LogEntry:
     worker_id: Optional[str] = None
     simulation_hash: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
-            'timestamp': self.timestamp,
-            'level': self.level,
-            'logger': self.logger,
-            'message': self.message,
-            'task_id': self.task_id,
-            'worker_id': self.worker_id,
-            'simulation_hash': self.simulation_hash,
-            'metadata': self.metadata
+            "timestamp": self.timestamp,
+            "level": self.level,
+            "logger": self.logger,
+            "message": self.message,
+            "task_id": self.task_id,
+            "worker_id": self.worker_id,
+            "simulation_hash": self.simulation_hash,
+            "metadata": self.metadata,
         }

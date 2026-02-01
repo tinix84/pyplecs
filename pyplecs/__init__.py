@@ -24,6 +24,7 @@ __email__ = "tinix84@gmail.com"
 # Legacy imports (optional - only if pywinauto is available)
 try:
     from .pyplecs import PlecsServer, PlecsApp
+
     # GenericConverterPlecsMdl and generate_variant_plecs_mdl removed in v1.0.0
     _legacy_available = True
 except ImportError:
@@ -41,7 +42,7 @@ from .core import (
     ComponentParameter,
     # ModelVariant removed in v1.0.0
     OptimizationRequest,
-    OptimizationResult
+    OptimizationResult,
 )
 from .orchestration import SimulationOrchestrator, TaskPriority
 from .cache import SimulationCache
@@ -74,43 +75,38 @@ try:
 except ImportError:
     OptimizationEngine = None
 
-print(f'PyPLECS v{__version__} - Advanced PLECS Simulation Automation')
+print(f"PyPLECS v{__version__} - Advanced PLECS Simulation Automation")
 if not _legacy_available:
-    print('Note: Legacy PLECS GUI automation not available (missing pywinauto)')
+    print("Note: Legacy PLECS GUI automation not available (missing pywinauto)")
 
 # Expose main classes and functions
 __all__ = [
     # Legacy API (may be None if dependencies missing)
-    'PlecsServer',
+    "PlecsServer",
     # 'GenericConverterPlecsMdl',  # Removed in v1.0.0
-    'PlecsApp',
+    "PlecsApp",
     # 'generate_variant_plecs_mdl',  # Removed in v1.0.0
-
     # Configuration
-    'get_config',
-    'init_config',
-
+    "get_config",
+    "init_config",
     # Core models
-    'SimulationRequest',
-    'SimulationResult',
-    'SimulationStatus',
-    'ComponentParameter',
+    "SimulationRequest",
+    "SimulationResult",
+    "SimulationStatus",
+    "ComponentParameter",
     # 'ModelVariant',  # Removed in v1.0.0
-    'OptimizationRequest',
-    'OptimizationResult',
-
+    "OptimizationRequest",
+    "OptimizationResult",
     # Main services
-    'SimulationOrchestrator',
-    'TaskPriority',
-    'SimulationCache',
-
+    "SimulationOrchestrator",
+    "TaskPriority",
+    "SimulationCache",
     # Logging
-    'get_logger',
-    'init_logging',
-
+    "get_logger",
+    "init_logging",
     # Optional services
-    'create_api_app',
-    'create_web_app',
-    'create_mcp_server',
-    'OptimizationEngine',
+    "create_api_app",
+    "create_web_app",
+    "create_mcp_server",
+    "OptimizationEngine",
 ]

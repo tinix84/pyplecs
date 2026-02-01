@@ -1,5 +1,5 @@
 """Web GUI package for PyPLECS."""
 
-from .webgui import create_web_app, run_app, WebSocketManager
+from .webgui import WebSocketManager, create_web_app, main, run_app
 
-__all__ = ['create_web_app', 'run_app', 'WebSocketManager']
+__all__ = ["WebSocketManager", "create_web_app", "main", "run_app"]

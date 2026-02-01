@@ -1,5 +1,3 @@
-import time
-import os
 from pathlib import Path
 import xmlrpc.client
 import subprocess
@@ -8,6 +6,7 @@ import subprocess
 try:
     import pywinauto
     import psutil
+
     _gui_automation_available = True
 except ImportError:
     pywinauto = None
@@ -24,27 +23,33 @@ command = r"C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe"
 command = r"C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe"
 # command = r"C:\Users\tinix\Documents\Plexim\PLECS 4.3 (64 bit)\PLECS.exe"
 
+
 def load_mat_file(file):
     """Load MATLAB .mat file and remove metadata keys."""
     if sio is None:
-        raise ImportError("scipy is required for .mat file I/O. Install with: pip install scipy")
+        raise ImportError(
+            "scipy is required for .mat file I/O. Install with: pip install scipy"
+        )
     param = sio.loadmat(file)
-    del param['__header__']
-    del param['__version__']
-    del param['__globals__']
+    del param["__header__"]
+    del param["__version__"]
+    del param["__globals__"]
     return param
+
 
 def save_mat_file(file_name, data):
     """Save data to MATLAB .mat file."""
     if sio is None:
-        raise ImportError("scipy is required for .mat file I/O. Install with: pip install scipy")
-    sio.savemat(file_name, data, format='5')
+        raise ImportError(
+            "scipy is required for .mat file I/O. Install with: pip install scipy"
+        )
+    sio.savemat(file_name, data, format="5")
 
 
 def dict_to_plecs_opts(varin: dict):
     for k, _ in varin.items():
         varin[k] = float(varin[k])
-    opts = {'ModelVars': varin}
+    opts = {"ModelVars": varin}
     return opts
 
 
@@ -56,7 +61,7 @@ def dict_to_plecs_opts(varin: dict):
 class PlecsApp:
     def __init__(self):
         self.command = command
-        self.app = pywinauto.application.Application(backend='uia')
+        self.app = pywinauto.application.Application(backend="uia")
         self.app.start(self.command)
         self.app_gui = self.app.connect(path=self.command)
 
@@ -72,10 +77,13 @@ class PlecsApp:
     #    @staticmethod
     def open_plecs(self):
         try:
-            pid = subprocess.Popen([command], creationflags=psutil.ABOVE_NORMAL_PRIORITY_CLASS).pid
+            subprocess.Popen(
+                [command], creationflags=psutil.ABOVE_NORMAL_PRIORITY_CLASS
+            ).pid
         except Exception:
-            print('Plecs opening problem')
-	#return pid
+            print("Plecs opening problem")
+
+    # return pid
 
     #    @staticmethod
     def kill_plecs(self):
@@ -96,26 +104,30 @@ class PlecsApp:
         return cpu_usage
 
     def run_simulation_by_gui(self, plecs_mdl):
-        mdl_app = self.app.connect(title=str(plecs_mdl._model_name), class_name='Qt5QWindowIcon')
+        mdl_app = self.app.connect(
+            title=str(plecs_mdl._model_name), class_name="Qt5QWindowIcon"
+        )
         mdl_app[str(plecs_mdl._name)].set_focus()
-        mdl_app[str(plecs_mdl._name)].menu_select('Simulation')
-        pywinauto.keyboard.send_keys('{DOWN}')
-        pywinauto.keyboard.send_keys('{ENTER}')
+        mdl_app[str(plecs_mdl._name)].menu_select("Simulation")
+        pywinauto.keyboard.send_keys("{DOWN}")
+        pywinauto.keyboard.send_keys("{ENTER}")
         # TBTested
         # pywinauto.keyboard.send_keys('^t')
 
-    def load_file(self, plecs_mdl, mode='XML-RPC'):
-        if mode=="gui":
+    def load_file(self, plecs_mdl, mode="XML-RPC"):
+        if mode == "gui":
             pwa_app = pywinauto.application.Application()
-            qtqwindowicon = pwa_app.connect(title=u'Library Browser', class_name='Qt5QWindowIcon').Qt5QWindowIcon
+            qtqwindowicon = pwa_app.connect(
+                title="Library Browser", class_name="Qt5QWindowIcon"
+            ).Qt5QWindowIcon
             qtqwindowicon.set_focus()
-            pywinauto.keyboard.send_keys('^o')
-            #TODO: filling window open file
-        elif mode=="XML-RPC":
+            pywinauto.keyboard.send_keys("^o")
+            # TODO: filling window open file
+        elif mode == "XML-RPC":
             PlecsServer(plecs_mdl.folder, plecs_mdl.simulation_name, load=True)
         else:
-            raise  Exception("Not implemented mode")
-        
+            raise Exception("Not implemented mode")
+
         return None
 
     def check_if_simulation_running(self, plecs_mdl):
@@ -146,7 +158,9 @@ class PlecsServer:
             results = server.simulate_batch(params_list)
     """
 
-    def __init__(self, model_file=None, sim_path=None, sim_name=None, port='1080', load=True):
+    def __init__(
+        self, model_file=None, sim_path=None, sim_name=None, port="1080", load=True
+    ):
         """Initialize PLECS XML-RPC connection and load model.
 
         Args:
@@ -156,7 +170,7 @@ class PlecsServer:
             port: XML-RPC server port (default: 1080)
             load: Whether to load model on initialization (default: True)
         """
-        self.server = xmlrpc.client.Server('http://localhost:' + str(port) + '/RPC2')
+        self.server = xmlrpc.client.Server("http://localhost:" + str(port) + "/RPC2")
 
         # Support both new API (model_file) and legacy API (sim_path + sim_name)
         if model_file is not None:
@@ -167,13 +181,13 @@ class PlecsServer:
         elif sim_path is not None and sim_name is not None:
             self.sim_path = sim_path
             self.sim_name = sim_name
-            self.modelName = sim_name.replace('.plecs', '')
+            self.modelName = sim_name.replace(".plecs", "")
         else:
             raise ValueError("Must provide either model_file or (sim_path + sim_name)")
 
         # Load model on initialization if requested
         if load:
-            self.server.plecs.load(self.sim_path + '//' + self.sim_name)
+            self.server.plecs.load(self.sim_path + "//" + self.sim_name)
 
     def simulate(self, parameters=None):
         """Run simulation with optional ModelVars parameters.
@@ -251,7 +265,7 @@ class PlecsServer:
         Kept for backward compatibility. Will be removed in v2.0.0.
         """
         # Store for legacy compatibility
-        if 'ModelVars' in model_vars:
+        if "ModelVars" in model_vars:
             self.optStruct = model_vars
         else:
             self.optStruct = dict_to_plecs_opts(varin=model_vars)
@@ -267,7 +281,7 @@ class PlecsServer:
             parameter: Parameter name
             value: Parameter value
         """
-        self.server.plecs.set(self.modelName + '/' + ref, parameter, str(value))
+        self.server.plecs.set(self.modelName + "/" + ref, parameter, str(value))
 
     def close(self):
         """Close the model in PLECS."""
@@ -277,7 +291,7 @@ class PlecsServer:
         """Context manager entry - model already loaded in __init__."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, _exc_type, _exc_val, _exc_tb):
         """Context manager exit - close model."""
         self.close()
         return False

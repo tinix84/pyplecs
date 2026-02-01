@@ -2,14 +2,13 @@
 
 import asyncio
 import logging
+import threading
 import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
-from queue import Queue, PriorityQueue
-import threading
+from queue import PriorityQueue
+from typing import Any, Callable, Dict, List, Optional
 
 from ..config import get_config
 from ..cache import SimulationCache
@@ -21,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class TaskPriority(Enum):
     """Task priority levels."""
+
     LOW = 3
     NORMAL = 2
     HIGH = 1
@@ -30,6 +30,7 @@ class TaskPriority(Enum):
 @dataclass
 class SimulationTask:
     """Represents a simulation task in the queue."""
+
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     request: SimulationRequest = None
     priority: TaskPriority = TaskPriority.NORMAL
@@ -41,7 +42,7 @@ class SimulationTask:
     error: Optional[str] = None
     retry_count: int = 0
     max_retries: int = 3
-    
+
     def __lt__(self, other):
         """For priority queue ordering."""
         if self.priority.value != other.priority.value:
@@ -73,9 +74,9 @@ class BatchSimulationExecutor:
         self.server = plecs_server
         self.batch_size = batch_size
         self.stats = {
-            'batches_executed': 0,
-            'total_simulations': 0,
-            'total_runtime': 0.0
+            "batches_executed": 0,
+            "total_simulations": 0,
+            "total_runtime": 0.0,
         }
 
     def execute_batch(self, tasks: List[SimulationTask]) -> List[SimulationResult]:
@@ -101,16 +102,18 @@ class BatchSimulationExecutor:
         param_array = [task.request.parameters for task in tasks]
 
         try:
-            logger.info(f"Executing batch of {len(tasks)} simulations via PLECS parallel API")
+            logger.info(
+                f"Executing batch of {len(tasks)} simulations via PLECS parallel API"
+            )
 
             # PLECS handles parallelization internally
             # This single call distributes work across CPU cores
             results = self.server.simulate_batch(param_array)
 
             runtime = time.time() - start_time
-            self.stats['batches_executed'] += 1
-            self.stats['total_simulations'] += len(tasks)
-            self.stats['total_runtime'] += runtime
+            self.stats["batches_executed"] += 1
+            self.stats["total_simulations"] += len(tasks)
+            self.stats["total_runtime"] += runtime
 
             logger.info(f"Batch completed in {runtime:.2f}s ({len(tasks)} simulations)")
 
@@ -126,7 +129,9 @@ class BatchSimulationExecutor:
             logger.error(f"Batch execution failed: {e}")
             raise
 
-    def _parse_plecs_result(self, plecs_result: Any, task: SimulationTask) -> SimulationResult:
+    def _parse_plecs_result(
+        self, plecs_result: Any, task: SimulationTask
+    ) -> SimulationResult:
         """Parse PLECS simulation result into SimulationResult object.
 
         Args:
@@ -151,9 +156,9 @@ class BatchSimulationExecutor:
                 task_id=task.id,
                 success=True,
                 timeseries_data=timeseries_data,
-                metadata={'model_file': task.request.model_file},
+                metadata={"model_file": task.request.model_file},
                 execution_time=0.0,  # Part of batch, individual time not tracked
-                cached=False
+                cached=False,
             )
         except Exception as e:
             return SimulationResult(
@@ -161,7 +166,7 @@ class BatchSimulationExecutor:
                 success=False,
                 error_message=str(e),
                 execution_time=0.0,
-                cached=False
+                cached=False,
             )
 
 
@@ -195,8 +200,12 @@ class SimulationOrchestrator:
 
         # Batch executor (created when plecs_server is set)
         self.plecs_server = plecs_server
-        batch_size = batch_size or self.config.get('orchestration.max_concurrent_simulations', 4)
-        self.executor = BatchSimulationExecutor(plecs_server, batch_size) if plecs_server else None
+        batch_size = batch_size or self.config.get(
+            "orchestration.max_concurrent_simulations", 4
+        )
+        self.executor = (
+            BatchSimulationExecutor(plecs_server, batch_size) if plecs_server else None
+        )
 
         # Task management
         self.task_queue = PriorityQueue()
@@ -211,23 +220,23 @@ class SimulationOrchestrator:
 
         # Statistics
         self.stats = {
-            'total_submitted': 0,
-            'total_completed': 0,
-            'total_failed': 0,
-            'total_cached_hits': 0,
-            'total_batches': 0,
-            'queue_size': 0,
-            'active_tasks': 0
+            "total_submitted": 0,
+            "total_completed": 0,
+            "total_failed": 0,
+            "total_cached_hits": 0,
+            "total_batches": 0,
+            "queue_size": 0,
+            "active_tasks": 0,
         }
 
         # Callbacks
         self.task_callbacks: Dict[str, List[Callable]] = {
-            'on_task_started': [],
-            'on_task_completed': [],
-            'on_task_failed': [],
-            'on_queue_empty': [],
-            'on_batch_started': [],
-            'on_batch_completed': []
+            "on_task_started": [],
+            "on_task_completed": [],
+            "on_task_failed": [],
+            "on_queue_empty": [],
+            "on_batch_started": [],
+            "on_batch_completed": [],
         }
 
     def set_plecs_server(self, plecs_server):
@@ -237,19 +246,19 @@ class SimulationOrchestrator:
             plecs_server: PlecsServer instance to use for simulations
         """
         self.plecs_server = plecs_server
-        batch_size = self.config.get('orchestration.max_concurrent_simulations', 4)
+        batch_size = self.config.get("orchestration.max_concurrent_simulations", 4)
         self.executor = BatchSimulationExecutor(plecs_server, batch_size)
-    
+
     def add_callback(self, event: str, callback: Callable):
         """Add callback for orchestrator events."""
         if event in self.task_callbacks:
             self.task_callbacks[event].append(callback)
-    
+
     def remove_callback(self, event: str, callback: Callable):
         """Remove callback for orchestrator events."""
         if event in self.task_callbacks and callback in self.task_callbacks[event]:
             self.task_callbacks[event].remove(callback)
-    
+
     def _trigger_callbacks(self, event: str, *args, **kwargs):
         """Trigger callbacks for an event."""
         for callback in self.task_callbacks.get(event, []):
@@ -257,87 +266,88 @@ class SimulationOrchestrator:
                 callback(*args, **kwargs)
             except Exception as e:
                 logger.error(f"Callback error for {event}: {e}")
-    
-    async def submit_simulation(self, 
-                              request: SimulationRequest,
-                              priority: TaskPriority = TaskPriority.NORMAL,
-                              use_cache: bool = True) -> str:
+
+    async def submit_simulation(
+        self,
+        request: SimulationRequest,
+        priority: TaskPriority = TaskPriority.NORMAL,
+        use_cache: bool = True,
+    ) -> str:
         """Submit a simulation for execution.
-        
+
         Args:
             request: Simulation request
             priority: Task priority
             use_cache: Whether to use cached results if available
-            
+
         Returns:
             Task ID for tracking
         """
         task = SimulationTask(
             request=request,
             priority=priority,
-            max_retries=self.config.get('orchestration.retry_attempts', 3)
+            max_retries=self.config.get("orchestration.retry_attempts", 3),
         )
-        
+
         # Check cache first if enabled
         if use_cache and self.cache.config.cache.enabled:
             cached_result = self.cache.get_cached_result(
-                request.model_file,
-                request.parameters
+                request.model_file, request.parameters
             )
-            
+
             if cached_result:
                 task.status = SimulationStatus.COMPLETED
                 task.result = SimulationResult(
                     task_id=task.id,
                     success=True,
-                    timeseries_data=cached_result['timeseries'],
-                    metadata=cached_result['metadata'],
+                    timeseries_data=cached_result["timeseries"],
+                    metadata=cached_result["metadata"],
                     execution_time=0.0,
-                    cached=True
+                    cached=True,
                 )
                 task.completed_at = time.time()
-                
+
                 self.completed_tasks[task.id] = task
-                self.stats['total_cached_hits'] += 1
-                
+                self.stats["total_cached_hits"] += 1
+
                 logger.info(f"Task {task.id} served from cache")
-                self._trigger_callbacks('on_task_completed', task)
-                
+                self._trigger_callbacks("on_task_completed", task)
+
                 return task.id
-        
+
         # Add to queue
         with self._lock:
             self.task_queue.put(task)
             self.active_tasks[task.id] = task
-            self.stats['total_submitted'] += 1
-            self.stats['queue_size'] = self.task_queue.qsize()
-        
+            self.stats["total_submitted"] += 1
+            self.stats["queue_size"] = self.task_queue.qsize()
+
         logger.info(f"Task {task.id} queued with priority {priority.name}")
-        
+
         # Start orchestrator if not running
         if not self.is_running:
             await self.start()
-        
+
         return task.id
-    
+
     async def get_task_status(self, task_id: str) -> Optional[SimulationTask]:
         """Get status of a specific task."""
         # Check active tasks
         if task_id in self.active_tasks:
             return self.active_tasks[task_id]
-        
+
         # Check completed tasks
         if task_id in self.completed_tasks:
             return self.completed_tasks[task_id]
-        
+
         return None
-    
+
     async def cancel_task(self, task_id: str) -> bool:
         """Cancel a queued or running task."""
         with self._lock:
             if task_id in self.active_tasks:
                 task = self.active_tasks[task_id]
-                
+
                 if task.status == SimulationStatus.QUEUED:
                     task.status = SimulationStatus.CANCELLED
                     del self.active_tasks[task_id]
@@ -347,18 +357,18 @@ class SimulationOrchestrator:
                     # Mark for cancellation - worker will check this
                     task.status = SimulationStatus.CANCELLED
                     return True
-        
+
         return False
-    
+
     async def start(self):
         """Start the orchestrator."""
         if self.is_running:
             return
-        
+
         self.is_running = True
         self.orchestrator_task = asyncio.create_task(self._orchestrator_loop())
         logger.info("Simulation orchestrator started")
-    
+
     async def stop(self):
         """Stop the orchestrator."""
         self.is_running = False
@@ -375,7 +385,7 @@ class SimulationOrchestrator:
             await asyncio.sleep(0.1)
 
         logger.info("Simulation orchestrator stopped")
-    
+
     async def _orchestrator_loop(self):
         """Main orchestrator loop - batches tasks and submits to PLECS.
 
@@ -394,15 +404,17 @@ class SimulationOrchestrator:
 
                 # Collect batch from priority queue
                 batch = []
-                while len(batch) < self.executor.batch_size and not self.task_queue.empty():
+                while (
+                    len(batch) < self.executor.batch_size
+                    and not self.task_queue.empty()
+                ):
                     try:
                         task = self.task_queue.get_nowait()
 
                         # Check cache first (avoid simulation if cached)
                         if self.cache.config.cache.enabled:
                             cached = self.cache.get_cached_result(
-                                task.request.model_file,
-                                task.request.parameters
+                                task.request.model_file, task.request.parameters
                             )
 
                             if cached:
@@ -422,12 +434,14 @@ class SimulationOrchestrator:
 
                 # Update statistics
                 with self._lock:
-                    self.stats['queue_size'] = self.task_queue.qsize()
-                    self.stats['active_tasks'] = len(batch) if self.is_processing_batch else 0
+                    self.stats["queue_size"] = self.task_queue.qsize()
+                    self.stats["active_tasks"] = (
+                        len(batch) if self.is_processing_batch else 0
+                    )
 
                 # Check if queue is empty and trigger callback
                 if self.task_queue.empty() and not self.is_processing_batch:
-                    self._trigger_callbacks('on_queue_empty')
+                    self._trigger_callbacks("on_queue_empty")
 
                 await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
 
@@ -435,7 +449,7 @@ class SimulationOrchestrator:
             logger.info("Orchestrator loop cancelled")
         except Exception as e:
             logger.error(f"Orchestrator loop error: {e}")
-    
+
     def _complete_from_cache(self, task: SimulationTask, cached_result: Dict[str, Any]):
         """Complete a task using cached result.
 
@@ -447,10 +461,10 @@ class SimulationOrchestrator:
         task.result = SimulationResult(
             task_id=task.id,
             success=True,
-            timeseries_data=cached_result['timeseries'],
-            metadata=cached_result['metadata'],
+            timeseries_data=cached_result["timeseries"],
+            metadata=cached_result["metadata"],
             execution_time=0.0,
-            cached=True
+            cached=True,
         )
         task.completed_at = time.time()
 
@@ -458,10 +472,10 @@ class SimulationOrchestrator:
             if task.id in self.active_tasks:
                 del self.active_tasks[task.id]
             self.completed_tasks[task.id] = task
-            self.stats['total_cached_hits'] += 1
+            self.stats["total_cached_hits"] += 1
 
         logger.info(f"Task {task.id} served from cache")
-        self._trigger_callbacks('on_task_completed', task)
+        self._trigger_callbacks("on_task_completed", task)
 
     async def _execute_batch(self, tasks: List[SimulationTask]):
         """Execute a batch of tasks using PLECS native parallel API.
@@ -476,23 +490,21 @@ class SimulationOrchestrator:
             for task in tasks:
                 task.status = SimulationStatus.RUNNING
                 task.started_at = time.time()
-                self._trigger_callbacks('on_task_started', task)
+                self._trigger_callbacks("on_task_started", task)
 
-            self._trigger_callbacks('on_batch_started', tasks)
+            self._trigger_callbacks("on_batch_started", tasks)
 
             # Execute batch using PLECS native parallel API
             # This is where the magic happens - PLECS distributes work across CPU cores
             loop = asyncio.get_event_loop()
             results = await loop.run_in_executor(
-                None,
-                self.executor.execute_batch,
-                tasks
+                None, self.executor.execute_batch, tasks
             )
 
             with self._lock:
-                self.stats['total_batches'] += 1
+                self.stats["total_batches"] += 1
 
-            self._trigger_callbacks('on_batch_completed', tasks, results)
+            self._trigger_callbacks("on_batch_completed", tasks, results)
 
             # Process results
             for task, result in zip(tasks, results):
@@ -508,7 +520,7 @@ class SimulationOrchestrator:
                             task.request.model_file,
                             task.request.parameters,
                             result.timeseries_data,
-                            result.metadata
+                            result.metadata,
                         )
 
                     # Move to completed
@@ -516,9 +528,9 @@ class SimulationOrchestrator:
                         if task.id in self.active_tasks:
                             del self.active_tasks[task.id]
                         self.completed_tasks[task.id] = task
-                        self.stats['total_completed'] += 1
+                        self.stats["total_completed"] += 1
 
-                    self._trigger_callbacks('on_task_completed', task)
+                    self._trigger_callbacks("on_task_completed", task)
 
                 else:
                     # Handle failure with retry logic
@@ -546,11 +558,13 @@ class SimulationOrchestrator:
 
         if task.retry_count < task.max_retries:
             # Retry task
-            logger.info(f"Retrying task {task.id} (attempt {task.retry_count + 1}/{task.max_retries})")
+            logger.info(
+                f"Retrying task {task.id} (attempt {task.retry_count + 1}/{task.max_retries})"
+            )
             task.status = SimulationStatus.QUEUED
 
             # Add delay before retry
-            retry_delay = self.config.get('orchestration.retry_delay', 5)
+            retry_delay = self.config.get("orchestration.retry_delay", 5)
             await asyncio.sleep(retry_delay)
 
             with self._lock:
@@ -564,11 +578,13 @@ class SimulationOrchestrator:
                 if task.id in self.active_tasks:
                     del self.active_tasks[task.id]
                 self.completed_tasks[task.id] = task
-                self.stats['total_failed'] += 1
+                self.stats["total_failed"] += 1
 
-            self._trigger_callbacks('on_task_failed', task)
-            logger.error(f"Task {task.id} failed after {task.max_retries} retries: {error_message}")
-    
+            self._trigger_callbacks("on_task_failed", task)
+            logger.error(
+                f"Task {task.id} failed after {task.max_retries} retries: {error_message}"
+            )
+
     def get_orchestrator_stats(self) -> Dict[str, Any]:
         """Get orchestrator statistics.
 
@@ -577,45 +593,57 @@ class SimulationOrchestrator:
         """
         with self._lock:
             executor_stats = {
-                'batch_size': self.executor.batch_size if self.executor else 0,
-                'batches_executed': self.executor.stats['batches_executed'] if self.executor else 0,
-                'total_simulations': self.executor.stats['total_simulations'] if self.executor else 0,
-                'total_runtime': self.executor.stats['total_runtime'] if self.executor else 0.0,
-                'is_processing': self.is_processing_batch
+                "batch_size": self.executor.batch_size if self.executor else 0,
+                "batches_executed": self.executor.stats["batches_executed"]
+                if self.executor
+                else 0,
+                "total_simulations": self.executor.stats["total_simulations"]
+                if self.executor
+                else 0,
+                "total_runtime": self.executor.stats["total_runtime"]
+                if self.executor
+                else 0.0,
+                "is_processing": self.is_processing_batch,
             }
 
             return {
                 **self.stats,
-                'executor': executor_stats,
-                'cache_stats': self.cache.get_cache_stats()
+                "executor": executor_stats,
+                "cache_stats": self.cache.get_cache_stats(),
             }
-    
-    async def wait_for_completion(self, task_id: str, timeout: Optional[float] = None) -> Optional[SimulationTask]:
+
+    async def wait_for_completion(
+        self, task_id: str, timeout: Optional[float] = None
+    ) -> Optional[SimulationTask]:
         """Wait for a specific task to complete.
-        
+
         Args:
             task_id: Task ID to wait for
             timeout: Maximum time to wait in seconds
-            
+
         Returns:
             Completed task or None if timeout
         """
         start_time = time.time()
-        
+
         while True:
             task = await self.get_task_status(task_id)
-            
+
             if not task:
                 return None
-            
-            if task.status in [SimulationStatus.COMPLETED, SimulationStatus.FAILED, SimulationStatus.CANCELLED]:
+
+            if task.status in [
+                SimulationStatus.COMPLETED,
+                SimulationStatus.FAILED,
+                SimulationStatus.CANCELLED,
+            ]:
                 return task
-            
+
             if timeout and (time.time() - start_time) > timeout:
                 return None
-            
+
             await asyncio.sleep(0.1)
-    
+
     async def wait_for_all_tasks(self, timeout: Optional[float] = None) -> bool:
         """Wait for all tasks to complete.
 
