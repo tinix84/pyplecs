@@ -1,0 +1,1858 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python automation framework for PLECS power electronics simulation">
+      
+      
+      
+        <link rel="canonical" href="https://tinix84.github.io/pyplecs/migration/">
+      
+      
+        <link rel="prev" href="../webgui/">
+      
+      
+        <link rel="next" href="../changelog/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Migration - PyPLECS</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#migration-guide-pyplecs-v100" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="PyPLECS" class="md-header__button md-logo" aria-label="PyPLECS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyPLECS
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Migration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tinix84/pyplecs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tinix84/pyplecs
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../prd/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  PRD
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../architecture/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Architecture
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../install/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../webgui/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Web GUI
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Migration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../auto-context/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Auto-Context
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="PyPLECS" class="md-nav__button md-logo" aria-label="PyPLECS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    PyPLECS
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tinix84/pyplecs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tinix84/pyplecs
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PRD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../webgui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web GUI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tldr-what-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TL;DR - What Changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking Changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Breaking Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-file-based-variant-generation-removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. File-Based Variant Generation Removed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-genericconverterplecsmdl-class-removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. GenericConverterPlecsMdl Class Removed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-batch-parallel-api-added-new-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Batch Parallel API Added (New Feature)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-orchestrator-now-uses-batch-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Orchestrator Now Uses Batch API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-rest-api-batch-submission-endpoint-added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. REST API: Batch Submission Endpoint Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecated-but-still-working" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated But Still Working
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deprecated But Still Working">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Checklist
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration Checklist">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-update-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Update Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-replace-file-based-variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Replace File-Based Variants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-update-plecsserver-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Update PlecsServer Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-optimize-with-batch-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Optimize with Batch API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-update-orchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Update Orchestrator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: Test
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Comparison
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Comparison">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-v0x-sequential-with-file-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before (v0.x) - Sequential with File Generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-v100-batch-parallel-with-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After (v1.0.0) - Batch Parallel with Cache
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#faq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FAQ
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="FAQ">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#q-will-my-old-code-break" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Will my old code break?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-do-i-have-to-use-batch-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Do I have to use batch API?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-what-happened-to-my-variant-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: What happened to my variant files?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-is-caching-still-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Is caching still available?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-how-do-i-get-the-5x-speedup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: How do I get the 5x speedup?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-can-i-still-use-pywinauto-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Can I still use pywinauto features?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auto-context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auto-Context
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tldr-what-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TL;DR - What Changed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking Changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Breaking Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-file-based-variant-generation-removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. File-Based Variant Generation Removed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-genericconverterplecsmdl-class-removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. GenericConverterPlecsMdl Class Removed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-batch-parallel-api-added-new-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Batch Parallel API Added (New Feature)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-orchestrator-now-uses-batch-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Orchestrator Now Uses Batch API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-rest-api-batch-submission-endpoint-added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. REST API: Batch Submission Endpoint Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecated-but-still-working" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated But Still Working
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deprecated But Still Working">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Checklist
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration Checklist">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-update-imports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Update Imports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-replace-file-based-variants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Replace File-Based Variants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-update-plecsserver-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Update PlecsServer Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-optimize-with-batch-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Optimize with Batch API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-update-orchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Update Orchestrator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: Test
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Comparison
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Comparison">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-v0x-sequential-with-file-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before (v0.x) - Sequential with File Generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-v100-batch-parallel-with-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After (v1.0.0) - Batch Parallel with Cache
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#faq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FAQ
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="FAQ">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#q-will-my-old-code-break" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Will my old code break?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-do-i-have-to-use-batch-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Do I have to use batch API?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-what-happened-to-my-variant-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: What happened to my variant files?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-is-caching-still-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Is caching still available?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-how-do-i-get-the-5x-speedup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: How do I get the 5x speedup?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#q-can-i-still-use-pywinauto-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q: Can I still use pywinauto features?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="migration-guide-pyplecs-v100">Migration Guide: PyPLECS v1.0.0<a class="headerlink" href="#migration-guide-pyplecs-v100" title="Permanent link">&para;</a></h1>
+<p>This guide helps you migrate from PyPLECS v0.x to v1.0.0, which eliminates redundancy by leveraging PLECS native XML-RPC capabilities.</p>
+<h2 id="tldr-what-changed">TL;DR - What Changed<a class="headerlink" href="#tldr-what-changed" title="Permanent link">&para;</a></h2>
+<p><strong>Removed (39% code reduction)</strong>:
+- ❌ File-based variant generation (<code>generate_variant_plecs_file</code>, <code>generate_variant_plecs_mdl</code>)
+- ❌ <code>GenericConverterPlecsMdl</code> class
+- ❌ <code>ModelVariant</code> class
+- ❌ Individual worker threads (replaced with PLECS batch API)</p>
+<p><strong>Preserved (100% of value-add)</strong>:
+- ✅ Hash-based caching with Parquet storage
+- ✅ REST API with OpenAPI docs
+- ✅ Priority queueing, retry logic, callbacks
+- ✅ Web GUI for visualization</p>
+<p><strong>Improved</strong>:
+- 🚀 5-6x faster batch execution via PLECS native parallel API
+- 🧹 Simpler, more maintainable codebase
+- 📊 Better aligned with PLECS native capabilities</p>
+<hr />
+<h2 id="breaking-changes">Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h2>
+<h3 id="1-file-based-variant-generation-removed">1. File-Based Variant Generation Removed<a class="headerlink" href="#1-file-based-variant-generation-removed" title="Permanent link">&para;</a></h3>
+<p><strong>What was removed</strong>: The file-based variant generation system that created physical <code>.plecs</code> files in subdirectories.</p>
+<p><strong>Why</strong>: PLECS native <code>ModelVars</code> handles parameter variations without file generation. Creating physical files is unnecessary and slow.</p>
+<p><strong>Old approach</strong> (v0.x):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">pyplecs</span> <span class="kn">import</span> <span class="n">GenericConverterPlecsMdl</span><span class="p">,</span> <span class="n">generate_variant_plecs_mdl</span><span class="p">,</span> <span class="n">PlecsServer</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Create model object</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">buck_mdl</span> <span class="o">=</span> <span class="n">GenericConverterPlecsMdl</span><span class="p">(</span><span class="s2">&quot;simple_buck.plecs&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Generate variant file in subdirectory</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">ModelVars</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span> <span class="s2">&quot;Vo_ref&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">}</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">variant_mdl</span> <span class="o">=</span> <span class="n">generate_variant_plecs_mdl</span><span class="p">(</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">src_mdl</span><span class="o">=</span><span class="n">buck_mdl</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">variant_name</span><span class="o">=</span><span class="s1">&#39;01&#39;</span><span class="p">,</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">variant_vars</span><span class="o">=</span><span class="n">ModelVars</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">)</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># Run simulation on variant file</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">plecs_server</span> <span class="o">=</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="n">variant_mdl</span><span class="o">.</span><span class="n">folder</span><span class="p">,</span> <span class="n">variant_mdl</span><span class="o">.</span><span class="n">simulation_name</span><span class="p">)</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">results</span> <span class="o">=</span> <span class="n">plecs_server</span><span class="o">.</span><span class="n">run_sim_with_datastream</span><span class="p">()</span>
+</code></pre></div></p>
+<p><strong>New approach</strong> (v1.0.0):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">pyplecs</span> <span class="kn">import</span> <span class="n">PlecsServer</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># No file generation needed - use ModelVars directly</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">with</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="s2">&quot;simple_buck.plecs&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">server</span><span class="p">:</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">ModelVars</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span> <span class="s2">&quot;Vo_ref&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">}</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">results</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">ModelVars</span><span class="p">)</span>
+</code></pre></div></p>
+<p><strong>Benefits</strong>:
+- ✅ No file I/O overhead
+- ✅ No subdirectories cluttering workspace
+- ✅ Cleaner, more intuitive API
+- ✅ Works exactly how PLECS intended</p>
+<hr />
+<h3 id="2-genericconverterplecsmdl-class-removed">2. GenericConverterPlecsMdl Class Removed<a class="headerlink" href="#2-genericconverterplecsmdl-class-removed" title="Permanent link">&para;</a></h3>
+<p><strong>What was removed</strong>: The <code>GenericConverterPlecsMdl</code> class that parsed model files and stored metadata.</p>
+<p><strong>Why</strong>: Only needed for file-based variant generation. PlecsServer can work directly with model paths.</p>
+<p><strong>Old approach</strong> (v0.x):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">pyplecs</span> <span class="kn">import</span> <span class="n">GenericConverterPlecsMdl</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Create model object</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">mdl</span> <span class="o">=</span> <span class="n">GenericConverterPlecsMdl</span><span class="p">(</span><span class="s2">&quot;converter.plecs&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">folder</span><span class="p">)</span>          <span class="c1"># Get folder path</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">model_name</span><span class="p">)</span>      <span class="c1"># Get model name</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">mdl</span><span class="o">.</span><span class="n">simulation_name</span><span class="p">)</span> <span class="c1"># Get filename</span>
+</code></pre></div></p>
+<p><strong>New approach</strong> (v1.0.0):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Use standard Path for file handling</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">model_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;converter.plecs&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">model_path</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>  <span class="c1"># Folder path</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">model_path</span><span class="o">.</span><span class="n">stem</span><span class="p">)</span>    <span class="c1"># Model name</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">model_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>    <span class="c1"># Filename</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># Pass directly to PlecsServer</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="k">with</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">server</span><span class="p">:</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">results</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">simulate</span><span class="p">({</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">})</span>
+</code></pre></div></p>
+<p><strong>Benefits</strong>:
+- ✅ Use standard Python <code>pathlib</code> instead of custom class
+- ✅ Less code to maintain
+- ✅ More Pythonic</p>
+<hr />
+<h3 id="3-batch-parallel-api-added-new-feature">3. Batch Parallel API Added (New Feature)<a class="headerlink" href="#3-batch-parallel-api-added-new-feature" title="Permanent link">&para;</a></h3>
+<p><strong>What's new</strong>: PlecsServer now supports batch simulations via <code>simulate_batch()</code>, leveraging PLECS native parallelization.</p>
+<p><strong>Why</strong>: PLECS can run multiple simulations in parallel natively. Using this is 3-5x faster than sequential execution.</p>
+<p><strong>Old approach</strong> (v0.x - sequential):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">pyplecs</span> <span class="kn">import</span> <span class="n">PlecsServer</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">server</span> <span class="o">=</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="n">sim_path</span><span class="o">=</span><span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="n">sim_name</span><span class="o">=</span><span class="s2">&quot;model.plecs&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># Sequential execution (slow)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">12</span><span class="p">)}</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">run_sim_with_datastream</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1"># Takes 16x simulation time</span>
+</code></pre></div></p>
+<p><strong>New approach</strong> (v1.0.0 - batch parallel):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span> <span class="nn">pyplecs</span> <span class="kn">import</span> <span class="n">PlecsServer</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">with</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="s2">&quot;model.plecs&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">server</span><span class="p">:</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="c1"># Prepare parameter list</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">params_list</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="mi">12</span><span class="p">)}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">)]</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="c1"># Batch execution - PLECS parallelizes internally</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="n">results</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">simulate_batch</span><span class="p">(</span><span class="n">params_list</span><span class="p">)</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="c1"># Takes ~4x simulation time on 4-core machine (4x speedup!)</span>
+</code></pre></div></p>
+<p><strong>Benefits</strong>:
+- 🚀 3-5x faster on multi-core machines
+- ✅ PLECS handles parallelization (no Python threading overhead)
+- ✅ Automatic load balancing across CPU cores</p>
+<hr />
+<h3 id="4-orchestrator-now-uses-batch-api">4. Orchestrator Now Uses Batch API<a class="headerlink" href="#4-orchestrator-now-uses-batch-api" title="Permanent link">&para;</a></h3>
+<p><strong>What changed</strong>: <code>SimulationOrchestrator</code> now batches tasks and submits to PLECS for parallel execution.</p>
+<p><strong>Why</strong>: Better performance and simpler code by leveraging PLECS native capabilities.</p>
+<p><strong>Old approach</strong> (v0.x):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span> <span class="nn">pyplecs</span> <span class="kn">import</span> <span class="n">SimulationOrchestrator</span><span class="p">,</span> <span class="n">SimulationRequest</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">orchestrator</span> <span class="o">=</span> <span class="n">SimulationOrchestrator</span><span class="p">()</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># Register simulation runner function</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="k">def</span> <span class="nf">my_runner</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="c1"># Custom simulation logic</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="k">pass</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">orchestrator</span><span class="o">.</span><span class="n">register_simulation_runner</span><span class="p">(</span><span class="n">my_runner</span><span class="p">)</span>
+</code></pre></div></p>
+<p><strong>New approach</strong> (v1.0.0):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span> <span class="nn">pyplecs</span> <span class="kn">import</span> <span class="n">SimulationOrchestrator</span><span class="p">,</span> <span class="n">PlecsServer</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Create PLECS server</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">server</span> <span class="o">=</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="s2">&quot;model.plecs&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># Initialize orchestrator with server</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">orchestrator</span> <span class="o">=</span> <span class="n">SimulationOrchestrator</span><span class="p">(</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="n">plecs_server</span><span class="o">=</span><span class="n">server</span><span class="p">,</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="n">batch_size</span><span class="o">=</span><span class="mi">4</span>  <span class="c1"># Match CPU cores for optimal performance</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="p">)</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="c1"># Or set server later</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="n">orchestrator</span><span class="o">.</span><span class="n">set_plecs_server</span><span class="p">(</span><span class="n">server</span><span class="p">)</span>
+</code></pre></div></p>
+<p><strong>Benefits</strong>:
+- ✅ Simpler initialization (no custom runner needed)
+- ✅ Automatic batching for performance
+- ✅ Better integration with cache and retry logic</p>
+<hr />
+<h3 id="5-rest-api-batch-submission-endpoint-added">5. REST API: Batch Submission Endpoint Added<a class="headerlink" href="#5-rest-api-batch-submission-endpoint-added" title="Permanent link">&para;</a></h3>
+<p><strong>What's new</strong>: New <code>/simulations/batch</code> endpoint for submitting multiple simulations at once.</p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Submit batch of simulations</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/simulations/batch<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;[</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="s1">    {&quot;model_file&quot;: &quot;model.plecs&quot;, &quot;parameters&quot;: {&quot;Vi&quot;: 12.0}, &quot;priority&quot;: &quot;HIGH&quot;},</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="s1">    {&quot;model_file&quot;: &quot;model.plecs&quot;, &quot;parameters&quot;: {&quot;Vi&quot;: 24.0}, &quot;priority&quot;: &quot;HIGH&quot;},</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="s1">    {&quot;model_file&quot;: &quot;model.plecs&quot;, &quot;parameters&quot;: {&quot;Vi&quot;: 48.0}, &quot;priority&quot;: &quot;HIGH&quot;}</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="s1">  ]&#39;</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="c1"># Response</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="o">{</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span><span class="s2">&quot;task_ids&quot;</span>:<span class="w"> </span><span class="o">[</span><span class="s2">&quot;abc-123&quot;</span>,<span class="w"> </span><span class="s2">&quot;def-456&quot;</span>,<span class="w"> </span><span class="s2">&quot;ghi-789&quot;</span><span class="o">]</span>,
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">  </span><span class="s2">&quot;batch_size&quot;</span>:<span class="w"> </span><span class="m">3</span>,
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">  </span><span class="s2">&quot;message&quot;</span>:<span class="w"> </span><span class="s2">&quot;Submitted 3 simulations for batch execution&quot;</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="o">}</span>
+</code></pre></div></p>
+<p><strong>Benefits</strong>:
+- ✅ Submit multiple simulations in one API call
+- ✅ Orchestrator batches them for parallel execution
+- ✅ Track all tasks via returned task_ids</p>
+<hr />
+<h2 id="deprecated-but-still-working">Deprecated But Still Working<a class="headerlink" href="#deprecated-but-still-working" title="Permanent link">&para;</a></h2>
+<p>These features are deprecated but still functional in v1.0.0 for backward compatibility. They will be removed in v2.0.0.</p>
+<h3 id="deprecated-methods">Deprecated Methods<a class="headerlink" href="#deprecated-methods" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p><strong><code>run_sim_with_datastream()</code></strong> → Use <code>simulate()</code>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Deprecated (still works)</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">result</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">run_sim_with_datastream</span><span class="p">({</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">})</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Preferred</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">result</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">simulate</span><span class="p">({</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">})</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong><code>load_modelvars()</code></strong> → Pass params directly to <code>simulate()</code>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Deprecated (still works)</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">server</span><span class="o">.</span><span class="n">load_modelvars</span><span class="p">({</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">})</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">result</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">run_sim_with_datastream</span><span class="p">()</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="c1"># Preferred</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">result</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">simulate</span><span class="p">({</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">})</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Legacy PlecsServer API</strong> (sim_path + sim_name) → Use model_file
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Deprecated (still works)</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">server</span> <span class="o">=</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="n">sim_path</span><span class="o">=</span><span class="s2">&quot;./models&quot;</span><span class="p">,</span> <span class="n">sim_name</span><span class="o">=</span><span class="s2">&quot;buck.plecs&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Preferred</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">server</span> <span class="o">=</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="n">model_file</span><span class="o">=</span><span class="s2">&quot;./models/buck.plecs&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+</li>
+</ol>
+<hr />
+<h2 id="migration-checklist">Migration Checklist<a class="headerlink" href="#migration-checklist" title="Permanent link">&para;</a></h2>
+<p>Use this checklist to migrate your code:</p>
+<h3 id="phase-1-update-imports">Phase 1: Update Imports<a class="headerlink" href="#phase-1-update-imports" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Remove imports of <code>GenericConverterPlecsMdl</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Remove imports of <code>generate_variant_plecs_file</code>, <code>generate_variant_plecs_mdl</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Remove imports of <code>ModelVariant</code></li>
+</ul>
+<h3 id="phase-2-replace-file-based-variants">Phase 2: Replace File-Based Variants<a class="headerlink" href="#phase-2-replace-file-based-variants" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Find all uses of <code>generate_variant_plecs_mdl()</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Replace with direct <code>simulate(parameters=...)</code> calls</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Delete generated variant subdirectories</li>
+</ul>
+<h3 id="phase-3-update-plecsserver-usage">Phase 3: Update PlecsServer Usage<a class="headerlink" href="#phase-3-update-plecsserver-usage" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Replace <code>run_sim_with_datastream()</code> with <code>simulate()</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Remove <code>load_modelvars()</code> calls (pass params directly)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Update to <code>model_file</code> parameter instead of <code>sim_path + sim_name</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add context manager (<code>with PlecsServer(...) as server:</code>) where appropriate</li>
+</ul>
+<h3 id="phase-4-optimize-with-batch-api">Phase 4: Optimize with Batch API<a class="headerlink" href="#phase-4-optimize-with-batch-api" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Identify loops that run multiple simulations sequentially</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Replace with <code>simulate_batch(param_list)</code> for 3-5x speedup</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Consider increasing batch_size to match CPU cores</li>
+</ul>
+<h3 id="phase-5-update-orchestrator">Phase 5: Update Orchestrator<a class="headerlink" href="#phase-5-update-orchestrator" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Replace <code>register_simulation_runner()</code> with <code>set_plecs_server()</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Update custom runner logic if needed</li>
+</ul>
+<h3 id="phase-6-test">Phase 6: Test<a class="headerlink" href="#phase-6-test" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run existing tests: <code>pytest tests/</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run new tests: <code>pytest tests/test_*_refactored.py</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run benchmarks: <code>pytest tests/benchmark_batch_speedup.py -v -s</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Verify cache still works as expected</li>
+</ul>
+<hr />
+<h2 id="performance-comparison">Performance Comparison<a class="headerlink" href="#performance-comparison" title="Permanent link">&para;</a></h2>
+<h3 id="before-v0x-sequential-with-file-generation">Before (v0.x) - Sequential with File Generation<a class="headerlink" href="#before-v0x-sequential-with-file-generation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># 100 simulations, 10s each, single-threaded</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># Time: 100 × 10s = 1000s (16.7 minutes)</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    <span class="n">variant_mdl</span> <span class="o">=</span> <span class="n">generate_variant_plecs_mdl</span><span class="p">(</span><span class="n">mdl</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;var_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)})</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>    <span class="n">server</span> <span class="o">=</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="n">variant_mdl</span><span class="o">.</span><span class="n">folder</span><span class="p">,</span> <span class="n">variant_mdl</span><span class="o">.</span><span class="n">simulation_name</span><span class="p">)</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">server</span><span class="o">.</span><span class="n">run_sim_with_datastream</span><span class="p">())</span>
+</code></pre></div>
+<h3 id="after-v100-batch-parallel-with-cache">After (v1.0.0) - Batch Parallel with Cache<a class="headerlink" href="#after-v100-batch-parallel-with-cache" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># 100 simulations, 10s each, 4-core machine, 30% cache hit rate</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="c1"># Time: 30 hits × 0s + 70 misses ÷ 4 cores × 10s = 175s (2.9 minutes)</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="c1"># Speedup: 5.7x faster!</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">with</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="s2">&quot;model.plecs&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">server</span><span class="p">:</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="n">params_list</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">)]</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="n">results</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">simulate_batch</span><span class="p">(</span><span class="n">params_list</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="faq">FAQ<a class="headerlink" href="#faq" title="Permanent link">&para;</a></h2>
+<h3 id="q-will-my-old-code-break">Q: Will my old code break?<a class="headerlink" href="#q-will-my-old-code-break" title="Permanent link">&para;</a></h3>
+<p><strong>A</strong>: No, if you use deprecated methods, they still work in v1.0.0. You'll see deprecation warnings. Update at your convenience before v2.0.0.</p>
+<h3 id="q-do-i-have-to-use-batch-api">Q: Do I have to use batch API?<a class="headerlink" href="#q-do-i-have-to-use-batch-api" title="Permanent link">&para;</a></h3>
+<p><strong>A</strong>: No, single simulations via <code>simulate()</code> still work. But batch API provides significant speedup for multiple simulations.</p>
+<h3 id="q-what-happened-to-my-variant-files">Q: What happened to my variant files?<a class="headerlink" href="#q-what-happened-to-my-variant-files" title="Permanent link">&para;</a></h3>
+<p><strong>A</strong>: They're no longer created. Use ModelVars parameters instead. You can safely delete old variant subdirectories.</p>
+<h3 id="q-is-caching-still-available">Q: Is caching still available?<a class="headerlink" href="#q-is-caching-still-available" title="Permanent link">&para;</a></h3>
+<p><strong>A</strong>: Yes! Caching is 100% preserved and works better than before with the batch API.</p>
+<h3 id="q-how-do-i-get-the-5x-speedup">Q: How do I get the 5x speedup?<a class="headerlink" href="#q-how-do-i-get-the-5x-speedup" title="Permanent link">&para;</a></h3>
+<p><strong>A</strong>: Use <code>simulate_batch()</code> for multiple simulations. Ensure <code>batch_size</code> matches your CPU cores.</p>
+<h3 id="q-can-i-still-use-pywinauto-features">Q: Can I still use pywinauto features?<a class="headerlink" href="#q-can-i-still-use-pywinauto-features" title="Permanent link">&para;</a></h3>
+<p><strong>A</strong>: Yes, the <code>PlecsApp</code> class for GUI automation is unchanged.</p>
+<hr />
+<h2 id="support">Support<a class="headerlink" href="#support" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Issues</strong>: https://github.com/anthropics/pyplecs/issues</li>
+<li><strong>Documentation</strong>: See <code>CLAUDE.md</code> for updated architecture details</li>
+<li><strong>Examples</strong>: Check <code>tests/test_plecs_server_refactored.py</code> for usage patterns</li>
+</ul>
+<hr />
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>PyPLECS v1.0.0 simplifies the codebase by eliminating redundancy with PLECS native capabilities:</p>
+<p>✅ <strong>Removed</strong>: 39% of code (1,581 lines)
+✅ <strong>Preserved</strong>: 100% of value-add features (cache, API, orchestration)
+✅ <strong>Improved</strong>: 5-6x performance boost via PLECS batch parallel API</p>
+<p>The result: A simpler, faster, more maintainable framework that works <em>with</em> PLECS instead of around it.</p>
+<p>Happy simulating! 🚀</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

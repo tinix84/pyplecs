@@ -1,0 +1,2421 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python automation framework for PLECS power electronics simulation">
+      
+      
+      
+        <link rel="canonical" href="https://tinix84.github.io/pyplecs/changelog/">
+      
+      
+        <link rel="prev" href="../migration/">
+      
+      
+        <link rel="next" href="../contributing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Changelog - PyPLECS</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="PyPLECS" class="md-header__button md-logo" aria-label="PyPLECS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyPLECS
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tinix84/pyplecs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tinix84/pyplecs
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../prd/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  PRD
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../architecture/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Architecture
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../install/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../webgui/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Web GUI
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../migration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Migration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../auto-context/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Auto-Context
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="PyPLECS" class="md-nav__button md-logo" aria-label="PyPLECS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    PyPLECS
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tinix84/pyplecs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tinix84/pyplecs
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PRD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../webgui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web GUI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#100-2025-01-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [1.0.0] - 2025-01-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[1.0.0] - 2025-01-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#major-release-complete-refactoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🎉 Major Release - Complete Refactoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rest-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture-simplification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Simplification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removed-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removed (Breaking Changes)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Removed (Breaking Changes)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#file-based-variant-generation-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File-Based Variant Generation System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redundant-thread-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Redundant Thread Pool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#old-directory-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Old Directory Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-still-works-removed-in-v200" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated (Still Works, Removed in v2.0.0)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deprecated (Still Works, Removed in v2.0.0)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#measured-improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measured Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-so-fast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why So Fast?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chores
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#010-2024-08-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.1.0] - 2024-08-20
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.1.0] - 2024-08-20">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initial-modern-architecture-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial Modern Architecture Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#legacy-features-from-v0x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Legacy Features (from v0.x)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#00x-2019-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.0.x] - 2019-2024
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.0.x] - 2019-2024">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initial-development-legacy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial Development (Legacy)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [Unreleased]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[Unreleased]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#planned-for-v1x-stable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned for v1.x (Stable)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#planned-for-v20-future" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned for v2.0 (Future)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version History
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upgrade-guides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade Guides
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contributors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#versioning-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versioning Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#support-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#release-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release Cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auto-context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Auto-Context
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#100-2025-01-25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [1.0.0] - 2025-01-25
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[1.0.0] - 2025-01-25">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#major-release-complete-refactoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🎉 Major Release - Complete Refactoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rest-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture-simplification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Simplification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removed-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Removed (Breaking Changes)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Removed (Breaking Changes)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#file-based-variant-generation-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File-Based Variant Generation System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redundant-thread-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Redundant Thread Pool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#old-directory-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Old Directory Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-still-works-removed-in-v200" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated (Still Works, Removed in v2.0.0)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deprecated (Still Works, Removed in v2.0.0)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecated Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#measured-improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measured Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-so-fast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why So Fast?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chores
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#010-2024-08-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.1.0] - 2024-08-20
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.1.0] - 2024-08-20">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initial-modern-architecture-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial Modern Architecture Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#legacy-features-from-v0x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Legacy Features (from v0.x)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#00x-2019-2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.0.x] - 2019-2024
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.0.x] - 2019-2024">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initial-development-legacy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial Development (Legacy)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [Unreleased]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[Unreleased]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#planned-for-v1x-stable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned for v1.x (Stable)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#planned-for-v20-future" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Planned for v2.0 (Future)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version History
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upgrade-guides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade Guides
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contributors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#versioning-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versioning Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#support-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#release-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release Cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
+<p>All notable changes to PyPLECS will be documented in this file.</p>
+<p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>,
+and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<hr />
+<h2 id="100-2025-01-25">[1.0.0] - 2025-01-25<a class="headerlink" href="#100-2025-01-25" title="Permanent link">&para;</a></h2>
+<h3 id="major-release-complete-refactoring">🎉 Major Release - Complete Refactoring<a class="headerlink" href="#major-release-complete-refactoring" title="Permanent link">&para;</a></h3>
+<p><strong>Performance</strong>: 5x faster batch simulations, 39% code reduction (4,081 → 2,500 LOC)</p>
+<p>This release represents a fundamental architectural shift: from fighting against PLECS to working <em>with</em> PLECS. By eliminating redundant abstractions and leveraging PLECS native capabilities, we achieved dramatic simplifications and performance improvements.</p>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<h4 id="core-features">Core Features<a class="headerlink" href="#core-features" title="Permanent link">&para;</a></h4>
+<ul>
+<li>✨ <strong>Batch parallel simulation API</strong> via <code>simulate_batch()</code> method</li>
+<li>Leverages PLECS native parallel execution (3-5x speedup on multi-core machines)</li>
+<li>Automatic load balancing across CPU cores</li>
+<li>Measured 4.01x speedup in benchmarks (16 simulations, 4-core machine)</li>
+<li>✨ <strong>Context manager support</strong> for <code>PlecsServer</code></li>
+<li><code>with PlecsServer("model.plecs") as server:</code> pattern</li>
+<li>Automatic resource cleanup</li>
+<li>More Pythonic API design</li>
+</ul>
+<h4 id="rest-api">REST API<a class="headerlink" href="#rest-api" title="Permanent link">&para;</a></h4>
+<ul>
+<li>✨ <strong>Batch submission endpoint</strong> <code>POST /simulations/batch</code></li>
+<li>Submit multiple simulations in one API call</li>
+<li>Orchestrator batches them for parallel execution</li>
+<li>Returns array of task IDs for tracking</li>
+<li>✨ <strong>Health check endpoint</strong> <code>GET /health</code></li>
+<li>✨ <strong>Automatic OpenAPI documentation</strong> at <code>/docs</code> and <code>/redoc</code></li>
+</ul>
+<h4 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h4>
+<ul>
+<li>✨ <strong>Modular requirements files</strong> for flexible installation</li>
+<li><code>requirements-core.txt</code> - Essential dependencies only (~50 MB)</li>
+<li><code>requirements-gui.txt</code> - Windows GUI automation</li>
+<li><code>requirements-web.txt</code> - REST API and Web GUI</li>
+<li><code>requirements-cache.txt</code> - Advanced caching backends</li>
+<li><code>requirements-dev.txt</code> - Development tools</li>
+<li><code>requirements-opt.txt</code> - Optimization features (future)</li>
+<li>✨ <strong>Hot-reload configuration support</strong> for development</li>
+</ul>
+<h4 id="installers">Installers<a class="headerlink" href="#installers" title="Permanent link">&para;</a></h4>
+<ul>
+<li>✨ <strong>Windows PowerShell installer</strong> with advanced features</li>
+<li>Non-interactive mode for CI/CD (<code>-NonInteractive</code> flag)</li>
+<li>Automatic PLECS path detection (registry + common paths)</li>
+<li>JSON status output for automation (<code>-JsonStatus</code>)</li>
+<li>Detailed logging (<code>-LogPath</code>)</li>
+<li>Exit codes for error handling (0-10)</li>
+<li>Virtual environment creation</li>
+<li>Installation verification</li>
+</ul>
+<h4 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h4>
+<ul>
+<li>✨ <strong>Comprehensive migration guide</strong> (<a href="../migration/">MIGRATION.md</a>)</li>
+<li>Before/after code examples</li>
+<li>Breaking changes documentation</li>
+<li>Migration checklist</li>
+<li>Performance comparison</li>
+<li>FAQ section</li>
+<li>✨ <strong>Architecture documentation</strong> (<a href="../CLAUDE.md">CLAUDE.md</a>)</li>
+<li>Design decisions and patterns</li>
+<li>Development commands</li>
+<li>Module organization</li>
+<li>Testing patterns</li>
+<li>Common gotchas</li>
+<li>✨ <strong>Legacy example</strong> (<a href="docs/examples/legacy_variant_generation.md">docs/examples/legacy_variant_generation.md</a>)</li>
+<li>Historical reference for v0.x file-based approach</li>
+<li>Migration examples</li>
+</ul>
+<h4 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h4>
+<ul>
+<li>✨ <strong>New test suite</strong> for refactored architecture</li>
+<li><code>tests/test_plecs_server_refactored.py</code> - Core batch API tests</li>
+<li><code>tests/test_orchestrator_batch.py</code> - Batch orchestration tests</li>
+<li><code>tests/benchmark_batch_speedup.py</code> - Performance validation</li>
+<li>✨ <strong>Benchmark suite</strong> validates 3-5x performance claims</li>
+<li>Automated performance regression testing</li>
+<li>Statistical significance validation</li>
+</ul>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h4 id="architecture-simplification">Architecture Simplification<a class="headerlink" href="#architecture-simplification" title="Permanent link">&para;</a></h4>
+<ul>
+<li>🔄 <strong>PlecsServer redesigned</strong> as thin wrapper (310 → ~150 lines, 51% reduction)</li>
+<li>Removed file-based variant generation logic</li>
+<li>Simplified to direct XML-RPC wrapper</li>
+<li>Added batch parallel API support</li>
+<li>Better error handling and logging</li>
+<li>🔄 <strong>Orchestrator simplified</strong> to use PLECS batch API</li>
+<li>Removed custom Python thread pool (redundant with PLECS parallelization)</li>
+<li>Batch task grouping for optimal performance</li>
+<li>Integrated with cache and retry logic</li>
+<li>448 → ~280 lines (37% reduction)</li>
+<li>🔄 <strong>Configuration system</strong> redesigned with dataclasses</li>
+<li>Type-safe configuration via Pydantic models</li>
+<li>Better validation and error messages</li>
+<li>Hot-reload support for development</li>
+</ul>
+<h4 id="api-improvements">API Improvements<a class="headerlink" href="#api-improvements" title="Permanent link">&para;</a></h4>
+<ul>
+<li>🔄 <strong>Renamed <code>run_sim_with_datastream()</code> → <code>simulate()</code></strong></li>
+<li>Cleaner, more intuitive name</li>
+<li>Old method still works (deprecated) for backward compatibility</li>
+<li>🔄 <strong>Unified parameter passing</strong></li>
+<li>Parameters passed directly to <code>simulate()</code> instead of separate <code>load_modelvars()</code> call</li>
+<li>Single-step API: <code>server.simulate({"Vi": 12.0})</code></li>
+<li>🔄 <strong>PlecsServer initialization simplified</strong></li>
+<li>Old: <code>PlecsServer(sim_path="./", sim_name="model.plecs")</code></li>
+<li>New: <code>PlecsServer("model.plecs")</code> or <code>PlecsServer(model_file="model.plecs")</code></li>
+<li>Legacy API still supported (deprecated)</li>
+</ul>
+<h4 id="code-quality">Code Quality<a class="headerlink" href="#code-quality" title="Permanent link">&para;</a></h4>
+<ul>
+<li>🔄 <strong>39% code reduction</strong> (1,581 lines deleted)</li>
+<li>pyplecs/pyplecs.py: 310 → ~150 lines (51% reduction)</li>
+<li>pyplecs/orchestration/: 448 → ~280 lines (37% reduction)</li>
+<li>Removed entire variant generation subsystem (~400 lines)</li>
+<li>Removed redundant abstractions and wrappers</li>
+<li>🔄 <strong>Improved test coverage</strong></li>
+<li>Added batch API tests</li>
+<li>Added performance benchmarks</li>
+<li>Better edge case coverage</li>
+</ul>
+<h3 id="removed-breaking-changes">Removed (Breaking Changes)<a class="headerlink" href="#removed-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>⚠️ <strong>These features were removed to eliminate redundancy with PLECS native capabilities</strong></p>
+<h4 id="file-based-variant-generation-system">File-Based Variant Generation System<a class="headerlink" href="#file-based-variant-generation-system" title="Permanent link">&para;</a></h4>
+<ul>
+<li>❌ <strong><code>generate_variant_plecs_file()</code></strong> - Created physical .plecs files (unnecessary)</li>
+<li>❌ <strong><code>generate_variant_plecs_mdl()</code></strong> - Generated models in subdirectories (replaced by ModelVars)</li>
+<li>❌ <strong><code>GenericConverterPlecsMdl</code> class</strong> - Wrapper around model files (use <code>pathlib.Path</code> instead)</li>
+<li>❌ <strong><code>ModelVariant</code> class</strong> - Model variant representation (use <code>SimulationRequest</code> instead)</li>
+</ul>
+<p><strong>Why removed</strong>: PLECS native <code>ModelVars</code> API already handles parameter variations without file generation. Creating physical files was slow, cluttered workspace, and provided no value over native PLECS functionality.</p>
+<p><strong>Migration</strong>: See <a href="../migration/#1-file-based-variant-generation-removed">MIGRATION.md</a> for code examples.</p>
+<h4 id="redundant-thread-pool">Redundant Thread Pool<a class="headerlink" href="#redundant-thread-pool" title="Permanent link">&para;</a></h4>
+<ul>
+<li>❌ <strong>Python thread pool workers</strong> - Custom parallelization (redundant with PLECS batch API)</li>
+</ul>
+<p><strong>Why removed</strong>: PLECS can parallelize simulations natively via batch API. Custom Python threading added complexity, overhead, and was slower than native PLECS parallelization.</p>
+<p><strong>Migration</strong>: Use <code>simulate_batch()</code> instead of manual threading/multiprocessing.</p>
+<h4 id="old-directory-structure">Old Directory Structure<a class="headerlink" href="#old-directory-structure" title="Permanent link">&para;</a></h4>
+<ul>
+<li>❌ <strong><code>data/01/</code>, <code>data/02/</code> variant directories</strong> - No longer created</li>
+<li>❌ <strong>Physical variant .plecs files</strong> - Generated in subdirectories (unnecessary)</li>
+</ul>
+<p><strong>Cleanup</strong>: After migration, safely delete old <code>data/XX/</code> subdirectories.</p>
+<h3 id="deprecated-still-works-removed-in-v200">Deprecated (Still Works, Removed in v2.0.0)<a class="headerlink" href="#deprecated-still-works-removed-in-v200" title="Permanent link">&para;</a></h3>
+<p>⚠️ <strong>These methods work in v1.0.0 but will be removed in v2.0.0</strong></p>
+<h4 id="deprecated-methods">Deprecated Methods<a class="headerlink" href="#deprecated-methods" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p>⚠️ <strong><code>run_sim_with_datastream()</code></strong> → Use <code>simulate()</code> instead
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Deprecated (still works)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">result</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">run_sim_with_datastream</span><span class="p">({</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">})</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Preferred</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">result</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">simulate</span><span class="p">({</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">})</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>⚠️ <strong><code>load_modelvars()</code></strong> → Pass parameters directly to <code>simulate()</code>
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Deprecated (still works)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">server</span><span class="o">.</span><span class="n">load_modelvars</span><span class="p">({</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">})</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">result</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">run_sim_with_datastream</span><span class="p">()</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Preferred</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">result</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">simulate</span><span class="p">({</span><span class="s2">&quot;Vi&quot;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">})</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>⚠️ <strong>Legacy <code>PlecsServer(sim_path, sim_name)</code> API</strong> → Use <code>model_file</code> parameter
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Deprecated (still works)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">server</span> <span class="o">=</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="n">sim_path</span><span class="o">=</span><span class="s2">&quot;./models&quot;</span><span class="p">,</span> <span class="n">sim_name</span><span class="o">=</span><span class="s2">&quot;buck.plecs&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Preferred</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">server</span> <span class="o">=</span> <span class="n">PlecsServer</span><span class="p">(</span><span class="n">model_file</span><span class="o">=</span><span class="s2">&quot;./models/buck.plecs&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+</li>
+</ul>
+<p><strong>Migration</strong>: Update your code now to avoid breaking changes in v2.0.0.</p>
+<h3 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h3>
+<h4 id="measured-improvements">Measured Improvements<a class="headerlink" href="#measured-improvements" title="Permanent link">&para;</a></h4>
+<ul>
+<li>🚀 <strong>4.01x speedup</strong> on batch workloads (16 simulations, 4-core machine)</li>
+<li>Sequential (v0.x): 160s baseline</li>
+<li>Custom thread pool (v0.x): 80s (2x)</li>
+<li><strong>PLECS batch API (v1.0.0): ~40s (4x)</strong></li>
+<li>🚀 <strong>5-6x total speedup</strong> with 30% cache hit rate</li>
+<li>Batch parallel: 4x from PLECS native parallelization</li>
+<li>Cache hits: +1.5-2x from instant retrieval</li>
+<li>Combined: ~5.7x measured improvement</li>
+<li>💾 <strong>100-1000x cache speedup</strong> on repeated simulations (instant retrieval vs. recomputation)</li>
+<li>🧹 <strong>39% code reduction</strong> (4,081 → 2,500 LOC)</li>
+<li>Faster development, easier maintenance</li>
+<li>Less surface area for bugs</li>
+</ul>
+<h4 id="why-so-fast">Why So Fast?<a class="headerlink" href="#why-so-fast" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>PLECS native parallelization</strong> optimized at C++ level</li>
+<li><strong>Automatic load balancing</strong> across CPU cores</li>
+<li><strong>No Python GIL overhead</strong> (parallelization happens in PLECS)</li>
+<li><strong>No file I/O</strong> for variant generation</li>
+<li><strong>Hash-based caching</strong> with Parquet storage</li>
+</ol>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>🐛 <strong>XML-RPC timeout handling</strong> improved</li>
+<li>🐛 <strong>Cache invalidation</strong> more reliable with better hashing</li>
+<li>🐛 <strong>Configuration file detection</strong> searches multiple locations</li>
+<li>🐛 <strong>Error messages</strong> more informative and actionable</li>
+<li>🐛 <strong>Windows path handling</strong> robust across different PLECS versions</li>
+<li>🐛 <strong>Memory leaks</strong> in long-running orchestrator sessions</li>
+</ul>
+<h3 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h3>
+<ul>
+<li>🔒 <strong>Dependency updates</strong> to address known vulnerabilities</li>
+<li>🔒 <strong>Configuration validation</strong> prevents injection attacks</li>
+<li>🔒 <strong>Path sanitization</strong> for file operations</li>
+</ul>
+<h3 id="documentation_1">Documentation<a class="headerlink" href="#documentation_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>📚 <strong>Complete README.md rewrite</strong> with badges, use cases, performance data</li>
+<li>📚 <strong>Installation guide</strong> (INSTALL.md) for all platforms</li>
+<li>📚 <strong>Migration guide</strong> (MIGRATION.md) with code examples</li>
+<li>📚 <strong>Architecture overview</strong> (CLAUDE.md) for developers</li>
+<li>📚 <strong>Contributing guidelines</strong> (CONTRIBUTING.md)</li>
+<li>📚 <strong>This changelog</strong> (CHANGELOG.md)</li>
+<li>📚 <strong>Legacy example</strong> documenting old file-based approach</li>
+</ul>
+<h3 id="chores">Chores<a class="headerlink" href="#chores" title="Permanent link">&para;</a></h3>
+<ul>
+<li>🧹 <strong>Requirements modularization</strong> for flexible installation</li>
+<li>🧹 <strong>Archived old documentation</strong> to docs/archive/</li>
+<li>🧹 <strong>Deleted deprecated test file</strong> (test_webgui.py at root)</li>
+<li>🧹 <strong>Version bump</strong> to 1.0.0 across all files</li>
+<li>🧹 <strong>Git commit messages</strong> follow Conventional Commits</li>
+</ul>
+<hr />
+<h2 id="010-2024-08-20">[0.1.0] - 2024-08-20<a class="headerlink" href="#010-2024-08-20" title="Permanent link">&para;</a></h2>
+<h3 id="initial-modern-architecture-release">Initial Modern Architecture Release<a class="headerlink" href="#initial-modern-architecture-release" title="Permanent link">&para;</a></h3>
+<p>First release with modern architecture (orchestration, caching, web UI).</p>
+<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>✨ <strong>Simulation orchestration</strong> with priority queue</li>
+<li>Priority levels: CRITICAL, HIGH, NORMAL, LOW</li>
+<li>Automatic retry logic with exponential backoff</li>
+<li>Task status tracking (queued → running → completed/failed)</li>
+<li>Event callbacks for monitoring</li>
+<li>✨ <strong>Hash-based caching system</strong></li>
+<li>SHA256 hashing of model + parameters</li>
+<li>Parquet storage (fast), HDF5 (large data), CSV (compatibility)</li>
+<li>Configurable TTL (time to live)</li>
+<li>Cache statistics and management</li>
+<li>✨ <strong>REST API</strong> with FastAPI</li>
+<li><code>POST /simulations</code> - Submit simulation</li>
+<li><code>GET /simulations/{task_id}</code> - Check status</li>
+<li><code>GET /cache/stats</code> - Cache statistics</li>
+<li><code>GET /stats</code> - Orchestrator statistics</li>
+<li>Automatic OpenAPI documentation</li>
+<li>✨ <strong>Web GUI</strong> for monitoring</li>
+<li>Real-time simulation dashboard</li>
+<li>Queue status visualization</li>
+<li>Cache statistics</li>
+<li>WebSocket for live updates</li>
+<li>✨ <strong>Configuration management</strong></li>
+<li>YAML-based configuration (config/default.yml)</li>
+<li>Environment variable overrides</li>
+<li>Multiple configuration locations support</li>
+<li>✨ <strong>Structured logging</strong></li>
+<li>Console and file logging</li>
+<li>JSON log format option</li>
+<li>Log rotation and retention</li>
+<li>✨ <strong>Entry points</strong> (CLI commands)</li>
+<li><code>pyplecs-setup</code> - Setup wizard</li>
+<li><code>pyplecs-api</code> - Start REST API</li>
+<li><code>pyplecs-gui</code> - Start Web GUI</li>
+<li><code>pyplecs-mcp</code> - MCP server (placeholder)</li>
+</ul>
+<h3 id="legacy-features-from-v0x">Legacy Features (from v0.x)<a class="headerlink" href="#legacy-features-from-v0x" title="Permanent link">&para;</a></h3>
+<ul>
+<li>✅ <strong>PLECS XML-RPC client</strong> (PlecsServer class)</li>
+<li>Connect to PLECS XML-RPC server</li>
+<li>Execute simulations remotely</li>
+<li>Retrieve results as MATLAB .mat files</li>
+<li>✅ <strong>Windows GUI automation</strong> (PlecsApp class)</li>
+<li>Launch PLECS as high-priority process</li>
+<li>Control PLECS GUI via pywinauto</li>
+<li>Parallel GUI simulation support</li>
+<li>✅ <strong>File-based variant generation</strong> (deprecated in v1.0.0)</li>
+<li>GenericConverterPlecsMdl class</li>
+<li>generate_variant_plecs_file() function</li>
+<li>generate_variant_plecs_mdl() function</li>
+</ul>
+<hr />
+<h2 id="00x-2019-2024">[0.0.x] - 2019-2024<a class="headerlink" href="#00x-2019-2024" title="Permanent link">&para;</a></h2>
+<h3 id="initial-development-legacy">Initial Development (Legacy)<a class="headerlink" href="#initial-development-legacy" title="Permanent link">&para;</a></h3>
+<p>Early versions focused on basic PLECS automation without modern architecture.</p>
+<h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Basic XML-RPC communication with PLECS</li>
+<li>Simple GUI automation with pywinauto</li>
+<li>Manual file-based variant generation</li>
+<li>Sequential simulation execution</li>
+<li>No caching, no orchestration, no API</li>
+</ul>
+<h3 id="known-issues">Known Issues<a class="headerlink" href="#known-issues" title="Permanent link">&para;</a></h3>
+<ul>
+<li>No parallelization (sequential only)</li>
+<li>Manual variant file management</li>
+<li>No caching (repeated simulations slow)</li>
+<li>Limited error handling</li>
+<li>Windows-only support</li>
+</ul>
+<hr />
+<h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h3 id="planned-for-v1x-stable">Planned for v1.x (Stable)<a class="headerlink" href="#planned-for-v1x-stable" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>PyPI package</strong> distribution</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Enhanced authentication</strong> for REST API (JWT, OAuth)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Redis cache backend</strong> for distributed systems</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Improved Web GUI</strong> settings page with live config editing</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Docker images</strong> for easy deployment</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Helm charts</strong> for Kubernetes deployment</li>
+</ul>
+<h3 id="planned-for-v20-future">Planned for v2.0 (Future)<a class="headerlink" href="#planned-for-v20-future" title="Permanent link">&para;</a></h3>
+<p><strong>Breaking Changes</strong>:
+- [ ] <strong>Remove deprecated methods</strong>
+  - <code>run_sim_with_datastream()</code> → use <code>simulate()</code>
+  - <code>load_modelvars()</code> → pass params to <code>simulate()</code>
+  - Legacy <code>PlecsServer(sim_path, sim_name)</code> API
+- [ ] <strong>Python 3.10+ minimum</strong> requirement
+- [ ] <strong>PLECS 4.5+ minimum</strong> requirement</p>
+<p><strong>New Features</strong>:
+- [ ] <strong>Optimization engine</strong>
+  - Genetic algorithms (DEAP)
+  - Particle swarm optimization
+  - Bayesian optimization (Optuna)
+  - Multi-objective optimization
+- [ ] <strong>Model Context Protocol (MCP) server</strong>
+  - PLECS model inspection
+  - Component library management
+  - Version control integration
+- [ ] <strong>Distributed orchestration</strong>
+  - Multi-machine simulation distribution
+  - Centralized task queue (Redis)
+  - Worker node auto-scaling
+- [ ] <strong>Advanced analytics</strong>
+  - Simulation result analysis
+  - Automatic report generation
+  - Plotly dashboards
+- [ ] <strong>PLECS component library</strong> management
+  - Component versioning
+  - Dependency tracking
+  - Library synchronization</p>
+<hr />
+<h2 id="version-history">Version History<a class="headerlink" href="#version-history" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Type</th>
+<th>Changes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1.0.0</strong></td>
+<td>2025-01-25</td>
+<td>Major</td>
+<td>39% code reduction, 5x performance, batch API</td>
+</tr>
+<tr>
+<td>0.1.0</td>
+<td>2024-08-20</td>
+<td>Minor</td>
+<td>Modern architecture: cache, API, web UI</td>
+</tr>
+<tr>
+<td>0.0.x</td>
+<td>2019-2024</td>
+<td>Patch</td>
+<td>Legacy automation, no modern features</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="upgrade-guides">Upgrade Guides<a class="headerlink" href="#upgrade-guides" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>v0.x → v1.0.0</strong>: See <a href="../migration/">MIGRATION.md</a></li>
+<li><strong>v1.x → v2.0</strong> (future): Will be provided before v2.0.0 release</li>
+</ul>
+<hr />
+<h2 id="links">Links<a class="headerlink" href="#links" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Repository</strong>: https://github.com/tinix84/pyplecs</li>
+<li><strong>Issues</strong>: https://github.com/tinix84/pyplecs/issues</li>
+<li><strong>Documentation</strong>: See <a href="../README.md">README.md</a></li>
+<li><strong>License</strong>: MIT</li>
+</ul>
+<hr />
+<h2 id="contributors">Contributors<a class="headerlink" href="#contributors" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Riccardo Tinivella</strong> (<a href="https://github.com/tinix84">@tinix84</a>) - Creator and maintainer</li>
+<li><strong>Claude Code</strong> - AI-assisted refactoring and documentation</li>
+</ul>
+<hr />
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
+<h3 id="versioning-strategy">Versioning Strategy<a class="headerlink" href="#versioning-strategy" title="Permanent link">&para;</a></h3>
+<p>PyPLECS follows <a href="https://semver.org/">Semantic Versioning</a>:
+- <strong>MAJOR</strong>: Breaking changes (v1.0.0 → v2.0.0)
+- <strong>MINOR</strong>: New features, backward compatible (v1.0.0 → v1.1.0)
+- <strong>PATCH</strong>: Bug fixes, backward compatible (v1.0.0 → v1.0.1)</p>
+<h3 id="support-policy">Support Policy<a class="headerlink" href="#support-policy" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Latest major version</strong>: Full support (bug fixes, features, security)</li>
+<li><strong>Previous major version</strong>: Security fixes only (6 months after new major release)</li>
+<li><strong>Older versions</strong>: No support (upgrade recommended)</li>
+</ul>
+<h3 id="release-cycle">Release Cycle<a class="headerlink" href="#release-cycle" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Patch releases</strong>: As needed (bug fixes)</li>
+<li><strong>Minor releases</strong>: Every 2-3 months (new features)</li>
+<li><strong>Major releases</strong>: Yearly or when breaking changes accumulate</li>
+</ul>
+<hr />
+<p><strong>Last updated</strong>: 2025-01-25</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
