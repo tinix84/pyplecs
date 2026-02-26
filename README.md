@@ -1,5 +1,6 @@
 # PyPLECS v1.0.0
-<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/6d805959-16b3-4ff5-8adc-a7564a151d05" />
+<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/a7774d40-494a-43a9-ac0c-3b110dfedbae" />
+
 
 **Fast, cached, scalable PLECS simulation framework with REST API and Web GUI**
 
