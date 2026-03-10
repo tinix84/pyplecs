@@ -23,7 +23,7 @@ __email__ = "tinix84@gmail.com"
 
 # Legacy imports (optional - only if pywinauto is available)
 try:
-    from .pyplecs import PlecsServer, PlecsApp
+    from .pyplecs import PlecsApp, PlecsServer
 
     # GenericConverterPlecsMdl and generate_variant_plecs_mdl removed in v1.0.0
     _legacy_available = True
@@ -34,18 +34,18 @@ except ImportError:
     _legacy_available = False
 
 # New architecture imports
+from .cache import SimulationCache
 from .config import get_config, init_config
 from .core import (
-    SimulationRequest,
-    SimulationResult,
-    SimulationStatus,
     ComponentParameter,
     # ModelVariant removed in v1.0.0
     OptimizationRequest,
     OptimizationResult,
+    SimulationRequest,
+    SimulationResult,
+    SimulationStatus,
 )
 from .orchestration import SimulationOrchestrator, TaskPriority
-from .cache import SimulationCache
 
 # Optional logging (requires structlog)
 try:

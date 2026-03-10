@@ -79,7 +79,7 @@ def create_cache_hit_savings():
     colors_pie = ['#2ecc71', '#e74c3c']
     explode = (0.05, 0)
 
-    wedges, texts, autotexts = ax1.pie(
+    _wedges, _texts, _autotexts = ax1.pie(
         [cache_hits, cache_misses],
         labels=['Cache Hits\n(instant)', 'Cache Misses\n(run simulation)'],
         autopct='%1.1f%%',

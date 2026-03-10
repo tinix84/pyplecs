@@ -35,3 +35,11 @@ utils/
 
 articles/output/
 FORCE_PUSH_PLAN.txt
+
+# Build artifacts
+site/
+cache/
+*.egg-info/
+
+# IDE artifacts
+.vscode/.ropeproject/

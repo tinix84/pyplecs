@@ -1,10 +1,5 @@
 import sys
-import os
-import importlib
-import tempfile
 from pathlib import Path
-
-import pytest
 
 from pyplecs.cli import installer
 

@@ -1,8 +1,8 @@
 """Tests for refactored PlecsServer with batch API support."""
 
-import pytest
-from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from pyplecs.pyplecs import PlecsServer, dict_to_plecs_opts
 
@@ -17,7 +17,7 @@ class TestPlecsServerRefactored:
         mock_server_class.return_value = mock_server
 
         # Create server with model file path
-        server = PlecsServer(model_file="test_model.plecs")
+        PlecsServer(model_file="test_model.plecs")
 
         # Verify XML-RPC server was created
         mock_server_class.assert_called_once_with('http://localhost:1080/RPC2')
@@ -33,7 +33,7 @@ class TestPlecsServerRefactored:
         mock_server_class.return_value = mock_server
 
         # Create server with legacy parameters
-        server = PlecsServer(sim_path="/path/to/models", sim_name="test.plecs")
+        PlecsServer(sim_path="/path/to/models", sim_name="test.plecs")
 
         # Verify model was loaded with legacy path format
         mock_server.plecs.load.assert_called_once_with("/path/to/models//test.plecs")
@@ -67,7 +67,7 @@ class TestPlecsServerRefactored:
 
         # Run simulation with parameters
         params = {"Vi": 12.0, "Vo": 5.0}
-        result = server.simulate(parameters=params)
+        server.simulate(parameters=params)
 
         # Verify PLECS simulate was called with ModelVars options
         call_args = mock_server.plecs.simulate.call_args

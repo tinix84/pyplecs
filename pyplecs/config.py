@@ -1,9 +1,10 @@
 """Configuration management for PyPLECS."""
 
-import yaml
-from pathlib import Path
-from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import yaml
 
 
 @dataclass
@@ -15,6 +16,8 @@ class PlecsConfig:
     xmlrpc_port: int = 1080
     xmlrpc_timeout: int = 30
     priority: str = "HIGH_PRIORITY_CLASS"
+    auto_launch: bool = True
+    auto_launch_wait: int = 30
     simulation_timeout: int = 300
     auto_save: bool = True
     save_format: str = "mat"
@@ -167,6 +170,8 @@ class ConfigManager:
             xmlrpc_port=plecs_data.get("xmlrpc", {}).get("port", 1080),
             xmlrpc_timeout=plecs_data.get("xmlrpc", {}).get("timeout", 30),
             priority=plecs_data.get("priority", "HIGH_PRIORITY_CLASS"),
+            auto_launch=plecs_data.get("auto_launch", True),
+            auto_launch_wait=plecs_data.get("auto_launch_wait", 30),
             simulation_timeout=plecs_data.get("simulation", {}).get("timeout", 300),
             auto_save=plecs_data.get("simulation", {}).get("auto_save", True),
             save_format=plecs_data.get("simulation", {}).get("save_format", "mat"),

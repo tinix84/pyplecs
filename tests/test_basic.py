@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from context import pyplecs
-
-import unittest
 import time
-from pywinauto.application import Application
-import os
-
+import unittest
 from pathlib import Path
+
+from context import pyplecs
+from pywinauto.application import Application
+
 
 class BasicTestSuite(unittest.TestCase):
     """Basic test cases."""

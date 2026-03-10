@@ -5,8 +5,10 @@ provides significant speedup (3-5x) over sequential execution.
 """
 
 import time
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from pyplecs.pyplecs import PlecsServer
 
 
@@ -30,12 +32,12 @@ class TestBatchSpeedup:
         mock_server = MagicMock()
 
         # Sequential simulation: each call takes 0.1s
-        def simulate_sequential(model, opts=None):
+        def simulate_sequential(_model, opts=None):
             simulate_work(0.1)
             return {"result": "success"}
 
         # Batch simulation: entire batch takes ~0.1s (parallelized)
-        def simulate_batch_parallel(model, opt_list):
+        def simulate_batch_parallel(_model, opt_list):
             # Simulate PLECS parallel execution
             # On 4 cores, 16 sims take ~4x 0.1s = 0.4s instead of 16x 0.1s = 1.6s
             num_batches = (len(opt_list) + 3) // 4  # 4 cores
@@ -66,7 +68,7 @@ class TestBatchSpeedup:
         # Calculate speedup
         speedup = sequential_time / batch_time
 
-        print(f"\nPerformance Results:")
+        print("\nPerformance Results:")
         print(f"  Sequential: {sequential_time:.2f}s for {len(params_list)} simulations")
         print(f"  Batch:      {batch_time:.2f}s for {len(params_list)} simulations")
         print(f"  Speedup:    {speedup:.2f}x")
@@ -80,7 +82,7 @@ class TestBatchSpeedup:
         """Test that larger batches maintain performance benefits."""
         mock_server = MagicMock()
 
-        def simulate_batch(model, opt_list):
+        def simulate_batch(_model, opt_list):
             # Simulate parallel execution on 4 cores
             num_batches = (len(opt_list) + 3) // 4
             simulate_work(0.05 * num_batches)  # Shorter sim time
@@ -114,8 +116,9 @@ class TestBatchSpeedup:
     @pytest.mark.benchmark
     def test_cache_impact_on_performance(self):
         """Test cache provides significant speedup on repeated simulations."""
-        from pyplecs.cache import SimulationCache
         import pandas as pd
+
+        from pyplecs.cache import SimulationCache
 
         cache = SimulationCache()
         cache.config.cache.enabled = True
@@ -138,7 +141,7 @@ class TestBatchSpeedup:
         cached = cache.get_cached_result(model_file, parameters)
         hit_time = time.time() - start
 
-        print(f"\nCache Performance:")
+        print("\nCache Performance:")
         print(f"  Cache miss: {miss_time:.4f}s")
         print(f"  Cache hit:  {hit_time:.4f}s")
         print(f"  Speedup:    {miss_time / hit_time:.0f}x")

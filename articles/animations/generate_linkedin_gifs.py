@@ -5,12 +5,13 @@ Generates 10 animated GIFs for LinkedIn posts using matplotlib.animation.
 Each GIF is optimized for LinkedIn (square format, <5MB, eye-catching).
 """
 
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.patches import Rectangle, FancyBboxPatch, Circle, FancyArrow
-import numpy as np
-import sys
 import os
+import sys
+
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.patches import Circle, FancyBboxPatch, Rectangle
 
 # Output directory
 OUTPUT_DIR = "../animations"
@@ -47,9 +48,9 @@ def save_animation(fig, anim, filename, fps=FPS):
         print(f"  [OK] Saved: {filename} ({size_mb:.2f} MB)")
 
         if size_mb > 5:
-            print(f"  [WARNING] File size > 5MB (LinkedIn limit: 5MB)")
+            print("  [WARNING] File size > 5MB (LinkedIn limit: 5MB)")
     except ImportError:
-        print(f"  [ERROR] Pillow not installed. Run: pip install pillow")
+        print("  [ERROR] Pillow not installed. Run: pip install pillow")
         sys.exit(1)
 
 
@@ -200,10 +201,9 @@ def create_animation_04_cache_accumulation():
 
         # Pie chart: cache hits growing
         cache_hit = 63 * progress
-        cache_miss = 100 - cache_hit
 
         colors_pie = ['#2ecc71', '#e74c3c']
-        wedges, texts, autotexts = ax1.pie(
+        _wedges, _texts, _autotexts = ax1.pie(
             [cache_hit, 100 - cache_hit],
             labels=['Cache Hits', 'Cache Misses'],
             autopct=lambda p: f'{p:.0f}%' if p > 1 else '',
@@ -455,7 +455,6 @@ def create_animation_09_documentation_roi():
     months = np.array([0, 1, 3, 6, 12])
     time_invested = np.array([0, 8, 8, 8, 8])
     time_saved = np.array([0, 10, 35, 70, 140])
-    net_benefit = time_saved - time_invested
 
     def animate(frame):
         ax.clear()
@@ -486,8 +485,7 @@ def create_animation_09_documentation_roi():
 
         # Show ROI at end
         if progress > 0.8 and month_idx >= len(months):
-            roi = time_saved[-1] / time_invested[-1]
-            ax.text(6, 130, f'17.5× ROI', ha='center', fontsize=18,
+            ax.text(6, 130, '17.5× ROI', ha='center', fontsize=18,
                    weight='bold', color='#2ecc71',
                    bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.5))
 

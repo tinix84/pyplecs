@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from ..config import get_config
 from ..core.models import SimulationRequest, SimulationStatus
 from ..orchestration import SimulationOrchestrator, TaskPriority
-
+from .simulation_sync import router as sync_router
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,7 @@ def create_api_app() -> FastAPI:
 
 
 app = create_api_app()
+app.include_router(sync_router, prefix="/api/v1")
 
 
 @app.on_event("startup")
@@ -100,7 +101,9 @@ async def startup_event():
     # Register a dummy simulation runner for now
     def dummy_runner(request: SimulationRequest):
         import time
+
         import pandas as pd
+
         from ..core.models import SimulationResult
 
         # Simulate some work

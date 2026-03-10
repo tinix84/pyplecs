@@ -1,6 +1,3 @@
-import sys
-import subprocess
-import pytest
 
 from pyplecs.cli import installer
 

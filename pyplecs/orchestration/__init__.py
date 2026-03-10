@@ -10,10 +10,9 @@ from enum import Enum
 from queue import PriorityQueue
 from typing import Any, Callable, Dict, List, Optional
 
-from ..config import get_config
 from ..cache import SimulationCache
+from ..config import get_config
 from ..core.models import SimulationRequest, SimulationResult, SimulationStatus
-
 
 logger = logging.getLogger(__name__)
 

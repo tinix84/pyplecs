@@ -10,10 +10,10 @@ Usage:
     python generate_all.py --skip-diagrams  # Skip diagrams library (if Graphviz not installed)
 """
 
-import os
-import sys
-import subprocess
 import argparse
+import importlib.util
+import subprocess
+import sys
 from pathlib import Path
 
 
@@ -21,16 +21,12 @@ def check_dependencies():
     """Check if required Python packages are installed."""
     missing = []
 
-    try:
-        import matplotlib
-        import numpy
-        import seaborn
-    except ImportError as e:
-        missing.append("matplotlib/numpy/seaborn")
+    for pkg in ("matplotlib", "numpy", "seaborn"):
+        if importlib.util.find_spec(pkg) is None:
+            missing.append("matplotlib/numpy/seaborn")
+            break
 
-    try:
-        import diagrams
-    except ImportError:
+    if importlib.util.find_spec("diagrams") is None:
         missing.append("diagrams (optional - for architecture diagrams)")
 
     return missing
@@ -92,7 +88,7 @@ def main():
         for pkg in missing:
             print(f"   - {pkg}")
 
-        if "diagrams" in str(missing) and not args.skip-diagrams:
+        if "diagrams" in str(missing) and not args.skip_diagrams:
             print("\n[TIP] Use --skip-diagrams to skip architecture diagram generation")
 
         if "matplotlib" in str(missing):
@@ -119,11 +115,11 @@ def main():
         results.append(("Performance Charts", False))
 
     # Generate architecture diagrams (optional)
-    if not args.skip-diagrams:
+    if not args.skip_diagrams:
         script_path = Path("python/architecture_diagrams.py")
         if script_path.exists():
             try:
-                import diagrams
+                import diagrams  # noqa: F401
                 success = run_script(
                     script_path,
                     "Generating Architecture Diagrams"

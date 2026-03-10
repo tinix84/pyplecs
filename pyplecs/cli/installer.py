@@ -14,10 +14,10 @@ from __future__ import annotations
 import argparse
 import platform
 import shutil
-import sys
 import subprocess
+import sys
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List
 
 DEFAULT_CONFIG = """# Minimal PyPLECS generated config
 app:

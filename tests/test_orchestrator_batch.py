@@ -1,13 +1,13 @@
 """Tests for batch orchestration with PLECS native parallel API."""
 
-import pytest
-import asyncio
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock
 
-from pyplecs.orchestration import SimulationOrchestrator, TaskPriority, BatchSimulationExecutor
-from pyplecs.core.models import SimulationRequest, SimulationResult
+import pytest
+
+from pyplecs.core.models import SimulationRequest
+from pyplecs.orchestration import BatchSimulationExecutor, SimulationOrchestrator, TaskPriority
 
 
 @pytest.fixture

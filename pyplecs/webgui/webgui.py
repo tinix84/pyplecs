@@ -5,14 +5,13 @@ import logging
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, HTTPException
+import uvicorn
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-import uvicorn
 
 from ..config import get_config
-
 
 logger = logging.getLogger(__name__)
 

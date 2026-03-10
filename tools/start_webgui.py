@@ -3,16 +3,17 @@
 Project-local helper to start the PyPLECS web GUI. Moved from repository root to
 `tools/` to keep the repository root minimal.
 """
-from pathlib import Path
 import os
 import sys
+from pathlib import Path
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from pyplecs.webgui import create_web_app
     import uvicorn
+
+    from pyplecs.webgui import create_web_app
 except Exception as e:
     print('Error importing webgui or uvicorn:', e)
     print('Make sure you created and activated a virtual environment and installed requirements.')

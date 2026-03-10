@@ -1,11 +1,13 @@
-from pathlib import Path
-import xmlrpc.client
+import logging
 import subprocess
+import time
+import xmlrpc.client
+from pathlib import Path
 
 # Optional imports (Windows-specific GUI automation)
 try:
-    import pywinauto
     import psutil
+    import pywinauto
 
     _gui_automation_available = True
 except ImportError:
@@ -19,9 +21,7 @@ try:
 except ImportError:
     sio = None
 
-command = r"C:/Program Files/Plexim/PLECS 4.2 (64 bit)/plecs.exe"
-command = r"C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe"
-# command = r"C:\Users\tinix\Documents\Plexim\PLECS 4.3 (64 bit)\PLECS.exe"
+logger = logging.getLogger(__name__)
 
 
 def load_mat_file(file):
@@ -58,30 +58,143 @@ def dict_to_plecs_opts(varin: dict):
 # See migration guide for examples.
 
 
+def _get_plecs_executable() -> str:
+    """Resolve the PLECS executable path from config.
+
+    Searches ``plecs.executable_paths`` in config/default.yml, returning
+    the first path that exists on disk.  Falls back to common install
+    locations if none are configured.
+    """
+    try:
+        from .config import get_config
+        cfg = get_config()
+        paths = cfg.plecs.executable_paths
+    except Exception:
+        paths = []
+
+    for p in paths:
+        if Path(p).exists():
+            return str(p)
+
+    # Fallback: well-known Windows locations
+    fallbacks = [
+        r"D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe",
+        r"C:/Program Files/Plexim/PLECS 4.7 (64 bit)/plecs.exe",
+        r"C:/Program Files/Plexim/PLECS 4.6 (64 bit)/plecs.exe",
+        r"C:/Program Files/Plexim/PLECS 4.5 (64 bit)/plecs.exe",
+        r"C:/Program Files/Plexim/PLECS 4.3 (64 bit)/plecs.exe",
+    ]
+    for p in fallbacks:
+        if Path(p).exists():
+            return str(p)
+
+    raise FileNotFoundError(
+        "PLECS executable not found. Add the path to config/default.yml "
+        "under plecs.executable_paths"
+    )
+
+
+def _is_plecs_xmlrpc_alive(host: str = "localhost", port: int = 1080, timeout: float = 3.0) -> bool:
+    """Check if PLECS XML-RPC server is responding."""
+    try:
+        server = xmlrpc.client.ServerProxy(
+            f"http://{host}:{port}/RPC2",
+        )
+        # PLECS XML-RPC supports system.listMethods
+        server.system.listMethods()
+        return True
+    except Exception:
+        return False
+
+
+def ensure_plecs_running(
+    host: str = "localhost",
+    port: int = 1080,
+    auto_launch: bool = True,
+    max_wait: float = 30.0,
+) -> bool:
+    """Ensure PLECS is running and its XML-RPC server is reachable.
+
+    Parameters
+    ----------
+    host : str
+        XML-RPC host (default: localhost).
+    port : int
+        XML-RPC port (default: 1080).
+    auto_launch : bool
+        If True, launch PLECS.exe when XML-RPC is not responding.
+        If False, only check and return status.
+    max_wait : float
+        Maximum seconds to wait for PLECS to start after launch.
+
+    Returns
+    -------
+    bool
+        True if PLECS XML-RPC is reachable.
+    """
+    if _is_plecs_xmlrpc_alive(host, port):
+        logger.info("PLECS XML-RPC already running on %s:%d", host, port)
+        return True
+
+    if not auto_launch:
+        logger.warning(
+            "PLECS XML-RPC not reachable on %s:%d and auto_launch is disabled",
+            host, port,
+        )
+        return False
+
+    # Launch PLECS
+    try:
+        exe_path = _get_plecs_executable()
+    except FileNotFoundError as e:
+        logger.error("Cannot auto-launch PLECS: %s", e)
+        return False
+
+    logger.info("Launching PLECS from %s ...", exe_path)
+    try:
+        subprocess.Popen([exe_path])
+    except Exception as e:
+        logger.error("Failed to launch PLECS: %s", e)
+        return False
+
+    # Wait for XML-RPC to come up
+    poll_interval = 2.0
+    elapsed = 0.0
+    while elapsed < max_wait:
+        time.sleep(poll_interval)
+        elapsed += poll_interval
+        if _is_plecs_xmlrpc_alive(host, port):
+            logger.info("PLECS XML-RPC ready after %.1fs", elapsed)
+            return True
+        logger.debug("Waiting for PLECS XML-RPC... (%.1fs / %.1fs)", elapsed, max_wait)
+
+    logger.error("PLECS XML-RPC did not respond within %.1fs", max_wait)
+    return False
+
+
 class PlecsApp:
-    def __init__(self):
+    def __init__(self, command=None):
+        if command is None:
+            command = _get_plecs_executable()
         self.command = command
         self.app = pywinauto.application.Application(backend="uia")
         self.app.start(self.command)
         self.app_gui = self.app.connect(path=self.command)
 
-    #    @staticmethod
     def set_plecs_high_priority(self):
         proc_iter = psutil.process_iter(attrs=["pid", "name"])
         for p in proc_iter:
             if p.info["name"] == "PLECS.exe":
-                # print (p.pid)
                 proc = psutil.Process(p.pid)
                 proc.nice(psutil.HIGH_PRIORITY_CLASS)
 
-    #    @staticmethod
     def open_plecs(self):
         try:
             subprocess.Popen(
-                [command], creationflags=psutil.ABOVE_NORMAL_PRIORITY_CLASS
+                [self.command], creationflags=psutil.ABOVE_NORMAL_PRIORITY_CLASS
             ).pid
         except Exception:
-            print("Plecs opening problem")
+            logger.error("PLECS opening problem")
 
     # return pid
 
@@ -159,9 +272,19 @@ class PlecsServer:
     """
 
     def __init__(
-        self, model_file=None, sim_path=None, sim_name=None, port="1080", load=True
+        self,
+        model_file=None,
+        sim_path=None,
+        sim_name=None,
+        port="1080",
+        load=True,
+        auto_launch=True,
     ):
         """Initialize PLECS XML-RPC connection and load model.
+
+        If PLECS XML-RPC is not reachable and ``auto_launch`` is True,
+        attempts to start PLECS.exe from the configured executable path
+        and waits for the XML-RPC server to become available.
 
         Args:
             model_file: Path to .plecs file (new API, recommended)
@@ -169,7 +292,24 @@ class PlecsServer:
             sim_name: Legacy - model filename (deprecated, use model_file)
             port: XML-RPC server port (default: 1080)
             load: Whether to load model on initialization (default: True)
+            auto_launch: If True, auto-start PLECS.exe when XML-RPC is
+                         not responding (default: True). Set to False to
+                         disable auto-start.
         """
+        # Ensure PLECS is running before connecting
+        int_port = int(port)
+        if not _is_plecs_xmlrpc_alive("localhost", int_port):
+            ok = ensure_plecs_running(
+                host="localhost",
+                port=int_port,
+                auto_launch=auto_launch,
+            )
+            if not ok:
+                raise ConnectionError(
+                    f"PLECS XML-RPC not reachable on localhost:{port}. "
+                    "Start PLECS manually or check plecs.executable_paths in config."
+                )
+
         self.server = xmlrpc.client.Server("http://localhost:" + str(port) + "/RPC2")
 
         # Support both new API (model_file) and legacy API (sim_path + sim_name)

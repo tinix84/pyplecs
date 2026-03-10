@@ -5,16 +5,17 @@ Generates architecture diagrams for Articles 5, 7
 """
 
 try:
-    from diagrams import Diagram, Cluster, Edge
-    from diagrams.programming.language import Python
+    import os
+
+    from diagrams import Cluster, Diagram, Edge
+    from diagrams.custom import Custom  # noqa: F401
+    from diagrams.generic.blank import Blank  # noqa: F401
+    from diagrams.generic.database import SQL
+    from diagrams.generic.storage import Storage
     from diagrams.onprem.client import Client
     from diagrams.onprem.compute import Server
     from diagrams.onprem.queue import Celery
-    from diagrams.generic.storage import Storage
-    from diagrams.generic.database import SQL
-    from diagrams.generic.blank import Blank
-    from diagrams.custom import Custom
-    import os
+    from diagrams.programming.language import Python
 
     DIAGRAMS_AVAILABLE = True
 except ImportError:
@@ -57,7 +58,7 @@ def create_api_architecture():
                 sim_endpoint = Python("POST /simulations")
                 status_endpoint = Python("GET /simulations/{id}")
                 results_endpoint = Python("GET /results")
-                cache_endpoint = Python("POST /cache/clear")
+                _cache_endpoint = Python("POST /cache/clear")
 
         with Cluster("Orchestration Layer"):
             orchestrator = Celery("SimulationOrchestrator")
