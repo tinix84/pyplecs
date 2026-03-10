@@ -8,7 +8,7 @@ python -m ruff check pyplecs/ tests/
 echo "[pre-push] ruff passed."
 
 echo "[pre-push] Running vulture..."
-python -m vulture pyplecs/ tests/ vulture_whitelist.py --min-confidence 90
+python -m vulture pyplecs/ tests/ --min-confidence 90
 echo "[pre-push] vulture passed."
 
 echo "[pre-push] All checks passed."
