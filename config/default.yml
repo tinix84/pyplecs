@@ -26,6 +26,10 @@ plecs:
   # Process Priority Settings
   priority: "HIGH_PRIORITY_CLASS"
   
+  # Auto-launch PLECS.exe if XML-RPC is not responding
+  auto_launch: true       # set to false to disable automatic startup
+  auto_launch_wait: 30    # max seconds to wait for PLECS to start
+
   # Default simulation settings
   simulation:
     timeout: 300  # seconds
@@ -167,18 +171,24 @@ database:
 model_defaults:
   Vi: 0.0
   Vo: 0.0
-  
+
   # Component defaults
   mosfet:
     Ron: 1e-6
-  
+
   inductor:
     L: 1e-6
     R: 1e-3
-  
+
   capacitor:
     C: 1e-6
     ESR: 1e-3
+
+  # Lossless buck converter defaults (for L1-vs-L2 validation)
+  buck_lossless:
+    ron: 1.0e-4
+    Vf_d: 0.05
+    Ron_d: 1.0e-4
 
 # File Paths and Directories
 paths:

@@ -56,13 +56,13 @@ This release represents a fundamental architectural shift: from fighting against
   - Installation verification
 
 #### Documentation
-- ✨ **Comprehensive migration guide** ([MIGRATION.md](MIGRATION.md))
+- ✨ **Comprehensive migration guide** ([MIGRATION.md](migration.md))
   - Before/after code examples
   - Breaking changes documentation
   - Migration checklist
   - Performance comparison
   - FAQ section
-- ✨ **Architecture documentation** ([CLAUDE.md](CLAUDE.md))
+- ✨ **Architecture documentation** ([CLAUDE.md](../CLAUDE.md))
   - Design decisions and patterns
   - Development commands
   - Module organization
@@ -134,7 +134,7 @@ This release represents a fundamental architectural shift: from fighting against
 
 **Why removed**: PLECS native `ModelVars` API already handles parameter variations without file generation. Creating physical files was slow, cluttered workspace, and provided no value over native PLECS functionality.
 
-**Migration**: See [MIGRATION.md](MIGRATION.md#1-file-based-variant-generation-removed) for code examples.
+**Migration**: See [MIGRATION.md](migration.md#1-file-based-variant-generation-removed) for code examples.
 
 #### Redundant Thread Pool
 - ❌ **Python thread pool workers** - Custom parallelization (redundant with PLECS batch API)
@@ -384,7 +384,7 @@ Early versions focused on basic PLECS automation without modern architecture.
 
 ## Upgrade Guides
 
-- **v0.x → v1.0.0**: See [MIGRATION.md](MIGRATION.md)
+- **v0.x → v1.0.0**: See [MIGRATION.md](migration.md)
 - **v1.x → v2.0** (future): Will be provided before v2.0.0 release
 
 ---
@@ -393,7 +393,7 @@ Early versions focused on basic PLECS automation without modern architecture.
 
 - **Repository**: https://github.com/tinix84/pyplecs
 - **Issues**: https://github.com/tinix84/pyplecs/issues
-- **Documentation**: See [README.md](README.md)
+- **Documentation**: See [README.md](../README.md)
 - **License**: MIT
 
 ---

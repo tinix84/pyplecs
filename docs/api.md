@@ -937,7 +937,7 @@ ws.onopen = () => {
 };
 ```
 
-See [WEBGUI.md](WEBGUI.md) for Web GUI usage with WebSocket.
+See [WEBGUI.md](webgui.md) for Web GUI usage with WebSocket.
 
 ---
 

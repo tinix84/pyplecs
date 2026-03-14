@@ -214,7 +214,7 @@ with PlecsServer("model.plecs") as server:
 rm -rf data/01/ data/02/ data/03/ ...
 ```
 
-**Complete migration guide**: See [MIGRATION.md](MIGRATION.md)
+**Complete migration guide**: See [MIGRATION.md](migration.md)
 
 ---
 
@@ -251,20 +251,20 @@ pytest tests/test_plecs_server_refactored.py -v
 cat MIGRATION.md
 ```
 
-**Installation guide**: See [INSTALL.md](INSTALL.md)
+**Installation guide**: See [INSTALL.md](install.md)
 
 ---
 
 ## Documentation Links
 
-- **Quick Start**: [README.md](README.md#quick-start)
-- **Installation**: [INSTALL.md](INSTALL.md)
-- **Migration from v0.x**: [MIGRATION.md](MIGRATION.md)
-- **REST API**: [API.md](API.md)
-- **Web GUI**: [WEBGUI.md](WEBGUI.md)
-- **Architecture**: [CLAUDE.md](CLAUDE.md)
-- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Changelog**: [CHANGELOG.md](CHANGELOG.md)
+- **Quick Start**: [README.md](../README.md#quick-start)
+- **Installation**: [INSTALL.md](install.md)
+- **Migration from v0.x**: [MIGRATION.md](migration.md)
+- **REST API**: [API.md](api.md)
+- **Web GUI**: [WEBGUI.md](webgui.md)
+- **Architecture**: [CLAUDE.md](../CLAUDE.md)
+- **Contributing**: [CONTRIBUTING.md](contributing.md)
+- **Changelog**: [CHANGELOG.md](changelog.md)
 
 ---
 

@@ -47,7 +47,7 @@ cd pyplecs
 pip install -e .
 ```
 
-For detailed installation instructions, see [INSTALL.md](INSTALL.md).
+For detailed installation instructions, see [install.md](docs/install.md).
 
 ### Basic Usage
 
@@ -108,7 +108,7 @@ Major refactoring with **39% code reduction** and **5x performance improvement**
 ### ✅ Added
 - **Batch parallel API** leveraging PLECS native parallelization (`simulate_batch()`)
 - **Simplified architecture** aligned with PLECS capabilities
-- **Comprehensive migration guide** ([MIGRATION.md](MIGRATION.md))
+- **Comprehensive migration guide** ([migration.md](docs/migration.md))
 - **Modular requirements** for minimal installations
 
 ### ❌ Removed (Breaking Changes)
@@ -122,7 +122,7 @@ Major refactoring with **39% code reduction** and **5x performance improvement**
 - `load_modelvars()` → Pass parameters directly to `simulate()`
 - Legacy `PlecsServer(sim_path, sim_name)` → Use `PlecsServer(model_file)`
 
-**See [MIGRATION.md](MIGRATION.md) for detailed upgrade instructions.**
+**See [migration.md](docs/migration.md) for detailed upgrade instructions.**
 
 ---
 
@@ -148,19 +148,19 @@ Major refactoring with **39% code reduction** and **5x performance improvement**
 ## Documentation
 
 ### User Guides
-- 📖 [Installation Guide](INSTALL.md) - Setup, configuration, troubleshooting
-- 🔄 [Migration Guide v0.x → v1.0.0](MIGRATION.md) - Upgrade instructions
-- 🌐 [REST API Reference](API.md) - Endpoints, examples, authentication
-- 💻 [Web GUI Guide](WEBGUI.md) - Features, screenshots, usage
+- [Installation Guide](docs/install.md) - Setup, configuration, troubleshooting
+- [Migration Guide v0.x to v1.0.0](docs/migration.md) - Upgrade instructions
+- [REST API Reference](docs/api.md) - Endpoints, examples, authentication
+- [Web GUI Guide](docs/webgui.md) - Features, screenshots, usage
 
 ### Developer Guides
-- 🏗️ [Architecture Overview](CLAUDE.md) - Design decisions, patterns, conventions
-- 👥 [Contributing Guidelines](CONTRIBUTING.md) - Development setup, workflow
-- 📋 [Changelog](CHANGELOG.md) - Version history, breaking changes
+- [Architecture Overview](docs/architecture.md) - Design decisions, patterns, conventions
+- [Contributing Guidelines](docs/contributing.md) - Development setup, workflow
+- [Changelog](docs/changelog.md) - Version history, breaking changes
 
 ### Examples
-- 📂 [Legacy Variant Generation](docs/examples/legacy_variant_generation.md) - Migration reference
-- 🧪 [Test Suite](tests/) - Usage patterns and examples
+- [Legacy Variant Generation](docs/examples/legacy_variant_generation.md) - Migration reference
+- [Test Suite](tests/) - Usage patterns and examples
 
 ---
 
@@ -278,7 +278,7 @@ const {task_id} = await response.json();
 - Web features: `fastapi`, `uvicorn`, `plotly`
 - Advanced caching: `pyarrow`, `h5py`, `redis`
 
-See [INSTALL.md](INSTALL.md) for detailed requirements and platform-specific instructions.
+See [install.md](docs/install.md) for detailed requirements and platform-specific instructions.
 
 ---
 
@@ -378,7 +378,7 @@ flake8 pyplecs/
 mypy pyplecs/
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines.
+See [contributing.md](docs/contributing.md) for detailed development guidelines.
 
 ---
 
@@ -415,7 +415,7 @@ The lesson: **Sometimes the best code is the code you don't write.**
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+Contributions welcome! See [contributing.md](docs/contributing.md) for:
 - Development setup
 - Code style guidelines
 - Testing requirements

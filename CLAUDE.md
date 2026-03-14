@@ -1,89 +1,49 @@
-# CLAUDE.md
+# PyPLECS — Python automation framework for PLECS power electronics simulation
 
-PyPLECS: Python automation framework for PLECS power electronics simulation.
+**Stack**: python | **Version**: 1.0.0
 
-**Commands**: See `skills.md` for all development commands.
-
-## Architecture
-
-Two layers:
-- **Core**: `pyplecs/pyplecs.py` - PLECS XML-RPC wrapper, GUI automation (Windows)
-- **Modern**: REST API, web UI, caching, orchestration
-
-### Module Map
-```
-pyplecs/
-├── config.py              # YAML config management
-├── pyplecs.py             # PlecsApp, PlecsServer classes
-├── plecs_components.py    # Component definitions
-├── core/models.py         # SimulationRequest, SimulationResult
-├── orchestration/         # TaskPriority, SimulationOrchestrator
-├── cache/                 # SimulationCache, CacheBackend
-├── api/                   # FastAPI endpoints
-├── webgui/                # Dashboard, templates, WebSocket
-├── logging/               # Structured logging
-└── cli/installer.py       # Setup wizard
+## Build & Test
+```bash
+pip install -e ".[dev]"
+pytest
+ruff check .
 ```
 
-## Key Classes
+CI runs only platform-independent tests on Ubuntu. PLECS XML-RPC tests require a running PLECS instance (Windows).
 
-| Class | Purpose |
-|-------|---------|
-| `PlecsServer` | XML-RPC wrapper, `simulate()`, `simulate_batch()` |
-| `PlecsApp` | Windows GUI automation via pywinauto |
-| `SimulationOrchestrator` | Priority queue, batch execution |
-| `SimulationCache` | SHA256 hash-based caching |
+## Key Documents
+- [PRD](docs/prd.md) — requirements and roadmap
+- [Architecture](docs/architecture.md) — system design, layers, data flow
+- [Auto-Context](docs/auto-context.md) — generated project summary
+- [API](docs/api.md) — REST API reference
+- [Install](docs/install.md) — installation and configuration
+- [Changelog](docs/changelog.md) — version history
+- [Web GUI](docs/webgui.md) — dashboard guide
+- [Contributing](docs/contributing.md) — development workflow
+- [Migration](docs/migration.md) — v0.x to v1.0.0 upgrade
 
-## PLECS Communication
+## Sprint Plans
+Convention: `docs/sprints/sprint-*.md` | Default model: **sonnet**
 
-1. **XML-RPC** (primary): Port 1080, cross-platform
-2. **GUI Automation** (legacy): pywinauto, Windows-only
-
-## Priority Queue
-
-| Level | Value |
-|-------|-------|
-| CRITICAL | 0 |
-| HIGH | 1 |
-| NORMAL | 2 |
-| LOW | 3 |
-
-## v1.0.0 API
-
-**Removed**: `generate_variant_plecs_file()`, `GenericConverterPlecsMdl`, `ModelVariant`
-
-**Deprecated** (use alternatives):
-- `run_sim_with_datastream()` → `simulate()`
-- `load_modelvars()` → pass params to `simulate()`
-
-**Use**:
-```python
-# Single
-server.simulate({"Vi": 12.0})
-
-# Batch (3-5x faster)
-server.simulate_batch([{"Vi": 12.0}, {"Vi": 24.0}])
+## Skills
+Central pool (WSL): `\\wsl$\Ubuntu\home\tinix\claude_wsl\agents_pool\`
+```bash
+python -m src.cli list           # List all skills
+python -m src.cli run sw-arch .  # Run architecture analysis
 ```
+Domain: pe-expert | Local skills reference: `.claude/skills.md`
 
-## Config
+## Task Protocol
+1. **90% Rule**: Ask clarifying questions until task is >= 90% clear
+2. Complex tasks -> sprint plan in `docs/sprints/` -> execute with sonnet
+3. Run tests after changes: `pytest`
+4. On commit: update CLAUDE.md, prd.md, architecture.md if behavior changed
 
-`config/default.yml` - PLECS paths, XML-RPC, cache, orchestration settings.
-
-Search order:
-1. Current directory
-2. Parent directories (3 levels)
-3. Package directory
-4. `~/.pyplecs/config.yml`
-
-## Platform Notes
-
-- **Windows**: pywinauto for GUI, psutil for priority
-- **Linux/WSL**: XML-RPC only
-
-## Gotchas
-
-1. Port 1080 conflicts - change `plecs.xmlrpc.port`
-2. Use absolute paths for model files
-3. Missing pywinauto degrades gracefully
-4. Run `pyplecs-setup` if PLECS not found
-5. Batch size = CPU cores for best performance
+## Decision Log
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-02-24 | Align with agents_pool standard | Consistent hooks, CLAUDE.md, settings across all projects |
+| 2026-02-24 | Local Python hooks (not bash) | Native Windows project; Python hooks are cross-platform |
+| 2026-02-24 | Architecture details in docs/ | Keep CLAUDE.md <50 lines; link to detailed docs |
+| 2026-02-24 | All doc filenames lowercase | URL-friendly mkdocs output; consistent across projects |
+| 2026-02-24 | mkdocs gh-deploy to GitHub Pages | Public docs at tinix84.github.io/pyplecs |

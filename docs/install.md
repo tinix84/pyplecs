@@ -673,17 +673,17 @@ pytest tests/ -v
 
 After successful installation:
 
-1. **Read the Quick Start**: [README.md](README.md#quick-start)
+1. **Read the Quick Start**: [README.md](../README.md#quick-start)
 2. **Explore the Web GUI**: `pyplecs-gui` → http://localhost:5000
-3. **Try the REST API**: [API.md](API.md)
+3. **Try the REST API**: [API.md](api.md)
 4. **Run examples**: Check `tests/` for usage patterns
-5. **Optimize performance**: [CLAUDE.md](CLAUDE.md) for architecture details
+5. **Optimize performance**: [CLAUDE.md](../CLAUDE.md) for architecture details
 
 ---
 
 ## Getting Help
 
-- **Documentation**: See [README.md](README.md#documentation)
+- **Documentation**: See [README.md](../README.md#documentation)
 - **GitHub Issues**: https://github.com/tinix84/pyplecs/issues
 - **Email**: tinix84@gmail.com
 
@@ -691,7 +691,7 @@ After successful installation:
 
 ## Upgrading from v0.x
 
-If upgrading from PyPLECS v0.x, see [MIGRATION.md](MIGRATION.md) for:
+If upgrading from PyPLECS v0.x, see [MIGRATION.md](migration.md) for:
 - Breaking changes
 - Deprecated methods
 - Migration checklist

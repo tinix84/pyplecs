@@ -163,7 +163,7 @@ Modern features that make PLECS scalable:
 3. **Explicit is better than implicit**: No magic, clear data flow
 4. **Optional dependencies**: Core works without web/cache/GUI features
 
-See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
+See [CLAUDE.md](../CLAUDE.md) for detailed architecture documentation.
 
 ---
 

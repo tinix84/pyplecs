@@ -724,7 +724,7 @@ Web GUI is built on top of REST API. You can:
 - Submit via API, monitor via Web GUI
 - Mix Web GUI and programmatic access
 
-See [API.md](API.md) for API documentation.
+See [API.md](api.md) for API documentation.
 
 ### Custom Dashboards
 
@@ -773,7 +773,7 @@ pyplecs-gui
 
 - **GitHub Issues**: https://github.com/tinix84/pyplecs/issues
 - **Email**: tinix84@gmail.com
-- **Documentation**: See [README.md](README.md)
+- **Documentation**: See [README.md](../README.md)
 
 ---
 

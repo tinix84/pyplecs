@@ -1,0 +1,62 @@
+site_name: PyPLECS
+site_description: Python automation framework for PLECS power electronics simulation
+site_url: https://tinix84.github.io/pyplecs/
+repo_url: https://github.com/tinix84/pyplecs
+repo_name: tinix84/pyplecs
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - PRD: prd.md
+  - Architecture: architecture.md
+  - API Reference: api.md
+  - Installation: install.md
+  - Web GUI: webgui.md
+  - Migration: migration.md
+  - Changelog: changelog.md
+  - Contributing: contributing.md
+  - Auto-Context: auto-context.md

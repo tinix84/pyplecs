@@ -203,6 +203,6 @@ with PlecsServer("model.plecs") as server:
     results = server.simulate(params)
 ```
 
-**For complete migration guide**, see [MIGRATION.md](../../MIGRATION.md)
+**For complete migration guide**, see [MIGRATION.md](../migration.md)
 
 **Performance boost**: Use `simulate_batch()` for 3-5x speedup on multiple simulations!
