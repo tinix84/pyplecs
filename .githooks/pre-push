@@ -4,11 +4,11 @@
 set -e
 
 echo "[pre-push] Running ruff..."
-python -m ruff check pyplecs/ tests/
+python3 -m ruff check pyplecs/ tests/
 echo "[pre-push] ruff passed."
 
 echo "[pre-push] Running vulture..."
-python -m vulture pyplecs/ tests/ --min-confidence 90
+python3 -m vulture pyplecs/ tests/ --min-confidence 90
 echo "[pre-push] vulture passed."
 
 echo "[pre-push] All checks passed."
