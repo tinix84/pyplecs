@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import structlog
-
 from pycircuitsim_core.logging import StructuredLoggerBase
 
 from ..config import get_config
