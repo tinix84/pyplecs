@@ -88,298 +88,210 @@ def create_api_app() -> FastAPI:
     return app
 
 
-app = create_api_app()
-app.include_router(sync_router, prefix="/api/v1")
+def _get_app():
+    """Lazy app creation for uvicorn."""
+    _app = create_api_app()
+    _app.include_router(sync_router, prefix="/api/v1")
+    return _app
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the orchestrator on startup."""
-    global orchestrator
-    orchestrator = SimulationOrchestrator()
+def _register_routes(app):
+    """Register all routes on the app instance."""
 
-    # Register a dummy simulation runner for now
-    def dummy_runner(request: SimulationRequest):
-        import time
+    @app.on_event("startup")
+    async def startup_event():
+        """Initialize the orchestrator on startup."""
+        global orchestrator
+        orchestrator = SimulationOrchestrator()
+        await orchestrator.start()
 
-        import pandas as pd
+    @app.on_event("shutdown")
+    async def shutdown_event():
+        """Clean shutdown of the orchestrator."""
+        global orchestrator
+        if orchestrator:
+            await orchestrator.stop()
 
-        from ..core.models import SimulationResult
-
-        # Simulate some work
-        time.sleep(1)
-
-        # Create dummy result
-        df = pd.DataFrame(
-            {
-                "time": [0, 1, 2, 3, 4],
-                "voltage": [0, 5, 10, 15, 20],
-                "current": [0, 1, 2, 3, 4],
-            }
-        )
-
-        return SimulationResult(
-            task_id="",
-            success=True,
-            timeseries_data=df,
-            metadata={"simulation_completed": True},
-            execution_time=1.0,
-        )
-
-    # Note: register_simulation_runner is deprecated - use set_plecs_server instead
-    # orchestrator.register_simulation_runner(dummy_runner)
-    await orchestrator.start()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Clean shutdown of the orchestrator."""
-    global orchestrator
-    if orchestrator:
-        await orchestrator.stop()
-
-
-@app.post("/simulations", response_model=dict)
-async def submit_simulation(
-    request: SimulationRequestAPI,
-    orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
-):
-    """Submit a new simulation for execution."""
-    try:
-        # Convert API model to core model
-        sim_request = SimulationRequest(
-            model_file=request.model_file,
-            parameters=request.parameters,
-            simulation_time=request.simulation_time,
-            output_variables=request.output_variables,
-            metadata=request.metadata,
-        )
-
-        # Parse priority
+    @app.post("/simulations", response_model=dict)
+    async def submit_simulation(
+        request: SimulationRequestAPI,
+        orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
+    ):
+        """Submit a new simulation for execution."""
         try:
-            priority = TaskPriority[request.priority.upper()]
-        except KeyError:
-            priority = TaskPriority.NORMAL
-
-        # Submit simulation
-        task_id = await orchestrator.submit_simulation(
-            sim_request, priority=priority, use_cache=request.use_cache
-        )
-
-        return {"task_id": task_id, "status": "submitted"}
-
-    except Exception as e:
-        logger.error(f"Error submitting simulation: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.post("/simulations/batch", response_model=dict)
-async def submit_simulation_batch(
-    requests: List[SimulationRequestAPI],
-    orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
-):
-    """Submit multiple simulations for parallel batch execution.
-
-    This endpoint allows submitting multiple simulations at once. The orchestrator
-    will batch them together and leverage PLECS native parallel API for optimal
-    performance (3-5x faster than sequential execution).
-
-    Args:
-        requests: List of simulation requests to execute
-
-    Returns:
-        Dict with list of task IDs and batch info
-
-    Example:
-        POST /simulations/batch
-        [
-            {"model_file": "model.plecs", "parameters": {"Vi": 12.0}, "priority": "HIGH"},
-            {"model_file": "model.plecs", "parameters": {"Vi": 24.0}, "priority": "HIGH"},
-            {"model_file": "model.plecs", "parameters": {"Vi": 48.0}, "priority": "HIGH"}
-        ]
-
-        Response:
-        {"task_ids": ["abc-123", "def-456", "ghi-789"], "batch_size": 3}
-    """
-    try:
-        task_ids = []
-
-        for req in requests:
-            # Convert API model to core model
             sim_request = SimulationRequest(
-                model_file=req.model_file,
-                parameters=req.parameters,
-                simulation_time=req.simulation_time,
-                output_variables=req.output_variables,
-                metadata=req.metadata,
+                model_file=request.model_file,
+                parameters=request.parameters,
+                simulation_time=request.simulation_time,
+                output_variables=request.output_variables,
+                metadata=request.metadata,
             )
-
-            # Parse priority
             try:
-                priority = TaskPriority[req.priority.upper()]
+                priority = TaskPriority[request.priority.upper()]
             except KeyError:
                 priority = TaskPriority.NORMAL
-
-            # Submit simulation
             task_id = await orchestrator.submit_simulation(
-                sim_request, priority=priority, use_cache=req.use_cache
+                sim_request, priority=priority, use_cache=request.use_cache
             )
+            return {"task_id": task_id, "status": "submitted"}
+        except Exception as e:
+            logger.error(f"Error submitting simulation: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
 
-            task_ids.append(task_id)
-
-        return {
-            "task_ids": task_ids,
-            "batch_size": len(task_ids),
-            "message": f"Submitted {len(task_ids)} simulations for batch execution",
-        }
-
-    except Exception as e:
-        logger.error(f"Error submitting batch: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/simulations/{task_id}", response_model=SimulationStatusAPI)
-async def get_simulation_status(
-    task_id: str, orchestrator: SimulationOrchestrator = Depends(get_orchestrator)
-):
-    """Get the status of a specific simulation."""
-    task = await orchestrator.get_task_status(task_id)
-
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    return SimulationStatusAPI(
-        task_id=task.id,
-        status=task.status.value,
-        created_at=task.created_at,
-        started_at=task.started_at,
-        completed_at=task.completed_at,
-        error=task.error,
-    )
-
-
-@app.get("/simulations/{task_id}/result", response_model=SimulationResultAPI)
-async def get_simulation_result(
-    task_id: str, orchestrator: SimulationOrchestrator = Depends(get_orchestrator)
-):
-    """Get the result of a completed simulation."""
-    task = await orchestrator.get_task_status(task_id)
-
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    if task.status != SimulationStatus.COMPLETED:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Task not completed. Current status: {task.status.value}",
-        )
-
-    if not task.result:
-        raise HTTPException(status_code=500, detail="Result not available")
-
-    return SimulationResultAPI(
-        task_id=task.result.task_id,
-        success=task.result.success,
-        timeseries_data=task.result.timeseries_data.to_dict()
-        if task.result.timeseries_data is not None
-        else None,
-        metadata=task.result.metadata,
-        error_message=task.result.error_message,
-        execution_time=task.result.execution_time,
-        cached=task.result.cached,
-    )
-
-
-@app.delete("/simulations/{task_id}")
-async def cancel_simulation(
-    task_id: str, orchestrator: SimulationOrchestrator = Depends(get_orchestrator)
-):
-    """Cancel a queued or running simulation."""
-    success = await orchestrator.cancel_task(task_id)
-
-    if not success:
-        raise HTTPException(
-            status_code=404, detail="Task not found or cannot be cancelled"
-        )
-
-    return {"message": "Task cancelled successfully"}
-
-
-@app.get("/simulations")
-async def list_simulations(
-    status: Optional[str] = None,
-    limit: int = 100,
-    orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
-):
-    """List simulations with optional status filter."""
-    # Get all tasks
-    all_tasks = []
-    all_tasks.extend(orchestrator.active_tasks.values())
-    all_tasks.extend(orchestrator.completed_tasks.values())
-
-    # Filter by status if provided
-    if status:
+    @app.post("/simulations/batch", response_model=dict)
+    async def submit_simulation_batch(
+        requests: List[SimulationRequestAPI],
+        orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
+    ):
+        """Submit multiple simulations for parallel batch execution."""
         try:
-            status_filter = SimulationStatus(status.lower())
-            all_tasks = [t for t in all_tasks if t.status == status_filter]
-        except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
-
-    # Sort by creation time (newest first) and limit
-    all_tasks.sort(key=lambda t: t.created_at, reverse=True)
-    all_tasks = all_tasks[:limit]
-
-    # Convert to API format
-    results = []
-    for task in all_tasks:
-        results.append(
-            {
-                "task_id": task.id,
-                "status": task.status.value,
-                "created_at": task.created_at,
-                "started_at": task.started_at,
-                "completed_at": task.completed_at,
-                "error": task.error,
-                "model_file": task.request.model_file if task.request else None,
+            task_ids = []
+            for req in requests:
+                sim_request = SimulationRequest(
+                    model_file=req.model_file,
+                    parameters=req.parameters,
+                    simulation_time=req.simulation_time,
+                    output_variables=req.output_variables,
+                    metadata=req.metadata,
+                )
+                try:
+                    priority = TaskPriority[req.priority.upper()]
+                except KeyError:
+                    priority = TaskPriority.NORMAL
+                task_id = await orchestrator.submit_simulation(
+                    sim_request, priority=priority, use_cache=req.use_cache
+                )
+                task_ids.append(task_id)
+            return {
+                "task_ids": task_ids,
+                "batch_size": len(task_ids),
+                "message": f"Submitted {len(task_ids)} simulations for batch execution",
             }
+        except Exception as e:
+            logger.error(f"Error submitting batch: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
+
+    @app.get("/simulations/{task_id}", response_model=SimulationStatusAPI)
+    async def get_simulation_status(
+        task_id: str, orchestrator: SimulationOrchestrator = Depends(get_orchestrator)
+    ):
+        """Get the status of a specific simulation."""
+        task = await orchestrator.get_task_status(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        return SimulationStatusAPI(
+            task_id=task.id,
+            status=task.status.value,
+            created_at=task.created_at,
+            started_at=task.started_at,
+            completed_at=task.completed_at,
+            error=task.error,
         )
 
-    return {"simulations": results, "total": len(results)}
+    @app.get("/simulations/{task_id}/result", response_model=SimulationResultAPI)
+    async def get_simulation_result(
+        task_id: str, orchestrator: SimulationOrchestrator = Depends(get_orchestrator)
+    ):
+        """Get the result of a completed simulation."""
+        task = await orchestrator.get_task_status(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        if task.status != SimulationStatus.COMPLETED:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Task not completed. Current status: {task.status.value}",
+            )
+        if not task.result:
+            raise HTTPException(status_code=500, detail="Result not available")
+        return SimulationResultAPI(
+            task_id=task.result.task_id,
+            success=task.result.success,
+            timeseries_data=task.result.timeseries_data.to_dict()
+            if task.result.timeseries_data is not None
+            else None,
+            metadata=task.result.metadata,
+            error_message=task.result.error_message,
+            execution_time=task.result.execution_time,
+            cached=task.result.cached,
+        )
 
+    @app.delete("/simulations/{task_id}")
+    async def cancel_simulation(
+        task_id: str, orchestrator: SimulationOrchestrator = Depends(get_orchestrator)
+    ):
+        """Cancel a queued or running simulation."""
+        success = await orchestrator.cancel_task(task_id)
+        if not success:
+            raise HTTPException(
+                status_code=404, detail="Task not found or cannot be cancelled"
+            )
+        return {"message": "Task cancelled successfully"}
 
-@app.get("/stats")
-async def get_system_stats(
-    orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
-):
-    """Get system and orchestrator statistics."""
-    return orchestrator.get_orchestrator_stats()
+    @app.get("/simulations")
+    async def list_simulations(
+        status: Optional[str] = None,
+        limit: int = 100,
+        orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
+    ):
+        """List simulations with optional status filter."""
+        all_tasks = []
+        all_tasks.extend(orchestrator.active_tasks.values())
+        all_tasks.extend(orchestrator.completed_tasks.values())
+        if status:
+            try:
+                status_filter = SimulationStatus(status.lower())
+                all_tasks = [t for t in all_tasks if t.status == status_filter]
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+        all_tasks.sort(key=lambda t: t.created_at, reverse=True)
+        all_tasks = all_tasks[:limit]
+        results = []
+        for task in all_tasks:
+            results.append(
+                {
+                    "task_id": task.id,
+                    "status": task.status.value,
+                    "created_at": task.created_at,
+                    "started_at": task.started_at,
+                    "completed_at": task.completed_at,
+                    "error": task.error,
+                    "model_file": task.request.model_file if task.request else None,
+                }
+            )
+        return {"simulations": results, "total": len(results)}
 
+    @app.get("/stats")
+    async def get_system_stats(
+        orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
+    ):
+        """Get system and orchestrator statistics."""
+        return orchestrator.get_orchestrator_stats()
 
-@app.post("/cache/clear")
-async def clear_cache(orchestrator: SimulationOrchestrator = Depends(get_orchestrator)):
-    """Clear the simulation cache."""
-    orchestrator.cache.clear_cache()
-    return {"message": "Cache cleared successfully"}
+    @app.post("/cache/clear")
+    async def clear_cache(orchestrator: SimulationOrchestrator = Depends(get_orchestrator)):
+        """Clear the simulation cache."""
+        orchestrator.cache.clear_cache()
+        return {"message": "Cache cleared successfully"}
 
+    @app.get("/cache/stats")
+    async def get_cache_stats(
+        orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
+    ):
+        """Get cache statistics."""
+        return orchestrator.cache.get_cache_stats()
 
-@app.get("/cache/stats")
-async def get_cache_stats(
-    orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
-):
-    """Get cache statistics."""
-    return orchestrator.cache.get_cache_stats()
-
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "service": "PyPLECS API"}
+    @app.get("/health")
+    async def health_check():
+        """Health check endpoint."""
+        return {"status": "healthy", "service": "PyPLECS API"}
 
 
 def main():
     """Entry point for pyplecs-api command."""
     import uvicorn
 
+    app = _get_app()
+    _register_routes(app)
     config = get_config()
     uvicorn.run(app, host=config.api.host, port=config.api.port)
 

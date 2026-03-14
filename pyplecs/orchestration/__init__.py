@@ -6,24 +6,17 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass, field
-from enum import Enum
 from queue import PriorityQueue
 from typing import Any, Callable, Dict, List, Optional
+
+from pycircuitsim_core.models import TaskPriority
+from pycircuitsim_core.orchestration import SimulationOrchestratorBase
 
 from ..cache import SimulationCache
 from ..config import get_config
 from ..core.models import SimulationRequest, SimulationResult, SimulationStatus
 
 logger = logging.getLogger(__name__)
-
-
-class TaskPriority(Enum):
-    """Task priority levels."""
-
-    LOW = 3
-    NORMAL = 2
-    HIGH = 1
-    CRITICAL = 0
 
 
 @dataclass
@@ -169,7 +162,7 @@ class BatchSimulationExecutor:
             )
 
 
-class SimulationOrchestrator:
+class SimulationOrchestrator(SimulationOrchestratorBase):
     """Orchestrates simulation execution with caching, queuing, and batch parallelization.
 
     Value-add over PLECS native XML-RPC:

@@ -6,6 +6,8 @@ from typing import Any, Dict, Optional
 
 import yaml
 
+from pycircuitsim_core.config import ConfigManagerBase
+
 
 @dataclass
 class PlecsConfig:
@@ -106,7 +108,7 @@ class McpConfig:
     )
 
 
-class ConfigManager:
+class ConfigManager(ConfigManagerBase):
     """Centralized configuration manager for PyPLECS."""
 
     def __init__(self, config_path: Optional[str] = None):

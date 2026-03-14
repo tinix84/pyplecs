@@ -9,11 +9,13 @@ from typing import Any, Dict, Optional
 
 import structlog
 
+from pycircuitsim_core.logging import StructuredLoggerBase
+
 from ..config import get_config
 from ..core.models import LogEntry
 
 
-class StructuredLogger:
+class StructuredLogger(StructuredLoggerBase):
     """Centralized structured logging for PyPLECS."""
 
     def __init__(self):

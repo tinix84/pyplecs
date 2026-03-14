@@ -3,6 +3,9 @@ import subprocess
 import time
 import xmlrpc.client
 from pathlib import Path
+from typing import Any
+
+from pycircuitsim_core.server import SimulationServer
 
 # Optional imports (Windows-specific GUI automation)
 try:
@@ -248,7 +251,7 @@ class PlecsApp:
         pass
 
 
-class PlecsServer:
+class PlecsServer(SimulationServer):
     """Thin wrapper around PLECS XML-RPC with helper methods.
 
     This class provides a simplified interface to PLECS simulations while
@@ -422,6 +425,23 @@ class PlecsServer:
             value: Parameter value
         """
         self.server.plecs.set(self.modelName + "/" + ref, parameter, str(value))
+
+    def is_available(self) -> bool:
+        """Check if PLECS XML-RPC server is reachable."""
+        try:
+            self.server.system.listMethods()
+            return True
+        except Exception:
+            return False
+
+    def health_check(self) -> dict[str, Any]:
+        """Return PLECS health status."""
+        available = self.is_available()
+        return {
+            "available": available,
+            "backend": "plecs-xmlrpc",
+            "model": self.modelName if available else None,
+        }
 
     def close(self):
         """Close the model in PLECS."""

@@ -13,6 +13,8 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from pycircuitsim_core.cache import SimulationCacheBase
+
 from ..config import get_config
 
 
@@ -355,7 +357,7 @@ class SimulationResultStore:
             return None
 
 
-class SimulationCache:
+class SimulationCache(SimulationCacheBase):
     """High-level simulation caching interface."""
 
     def __init__(self):
