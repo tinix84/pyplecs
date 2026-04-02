@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.1] - 2026-04-02
+
+### Fixed
+- **setup_env.bat / start_plecs.bat**: `conda` called without `call` keyword caused scripts to hang (conda is a .bat on Windows)
+- **start_plecs.bat**: conda scan missing `%PROGRAMDATA%` paths — failed on system-wide Anaconda installs
+- **setup_env.bat**: conda installation path not saved to `config/default.yml`, forcing rediscovery on every launch
+- **_start_api.py**: imported non-existent `app` from `pyplecs.api` — now uses `_get_app()` + `_register_routes()`
+- **pyplecs/orchestration**: `self.executor.batch_size` crash when orchestrator started without PLECS server
+- **pyproject.toml**: `packages = ["pyplecs"]` missed all subpackages — changed to `find` with `include = ["pyplecs*"]`
+- **setup.py**: `-r` includes in requirements.txt parsed as literal dependency strings
+- **setup_env.bat**: missing `requirements-cache.txt` install step (pyarrow unavailable at runtime)
+
+### Added
+- `conda_root` saved to `config/default.yml` for reliable conda activation
+- `pyproject.toml`: optional dependency groups `[web]` and `[dev]`
+- `pyplecs-api` entry point in `pyproject.toml`
+- `tools/read_plecs_path.py`: `conda_root` key support
+- `tools/configure_plecs.py`: interactive PLECS path configuration
+
+---
+
 ## [1.0.0] - 2025-01-25
 
 ### 🎉 Major Release - Complete Refactoring

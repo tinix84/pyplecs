@@ -8,9 +8,21 @@ with open('README.md', encoding='utf-8') as f:
 with open('LICENSE', encoding='utf-8') as f:
     license = f.read()
 
-# Read requirements from requirements.txt
-with open('requirements.txt', encoding='utf-8') as f:
-    requirements = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+# Read requirements from requirements.txt, following -r includes
+def _read_requirements(path):
+    reqs = []
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if line.startswith('-r '):
+                reqs.extend(_read_requirements(line[3:].strip()))
+            else:
+                reqs.append(line)
+    return reqs
+
+requirements = _read_requirements('requirements.txt')
 
 setup(
     name='pyplecs',

@@ -87,11 +87,21 @@ pip install -e . -r requirements.txt
 
 ---
 
-### Method 3: Windows Installer
+### Method 3: Quick Setup (Windows)
 
-PyPLECS provides an interactive Windows installer with automatic PLECS detection:
+PyPLECS provides batch scripts for one-step environment setup and launch:
 
-#### Basic Installation
+```batch
+:: First time: configure Python env + PLECS path (saved to config/default.yml)
+setup_env.bat
+
+:: Launch PLECS + REST API server
+start_plecs.bat
+```
+
+`setup_env.bat` auto-discovers conda/Python installations, lets you choose an environment, installs all dependencies, and configures the PLECS executable path. Settings (including `conda_root`) are persisted to `config/default.yml` so `start_plecs.bat` works without re-scanning.
+
+#### Legacy Windows Installer
 
 ```batch
 :: Double-click or run from command prompt

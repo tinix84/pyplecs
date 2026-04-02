@@ -192,11 +192,11 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
 
         # Batch executor (created when plecs_server is set)
         self.plecs_server = plecs_server
-        batch_size = batch_size or self.config.get(
+        self.batch_size = batch_size or self.config.get(
             "orchestration.max_concurrent_simulations", 4
         )
         self.executor = (
-            BatchSimulationExecutor(plecs_server, batch_size) if plecs_server else None
+            BatchSimulationExecutor(plecs_server, self.batch_size) if plecs_server else None
         )
 
         # Task management
@@ -396,8 +396,9 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
 
                 # Collect batch from priority queue
                 batch = []
+                max_batch = self.executor.batch_size if self.executor else self.batch_size
                 while (
-                    len(batch) < self.executor.batch_size
+                    len(batch) < max_batch
                     and not self.task_queue.empty()
                 ):
                     try:
@@ -420,9 +421,11 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
                     except Exception as e:
                         logger.error(f"Error dequeuing task: {e}")
 
-                # Execute batch if we have tasks
-                if batch:
+                # Execute batch if we have tasks and executor is available
+                if batch and self.executor:
                     asyncio.create_task(self._execute_batch(batch))
+                elif batch and not self.executor:
+                    logger.warning("Tasks queued but no PLECS server configured. Call set_plecs_server() first.")
 
                 # Update statistics
                 with self._lock:

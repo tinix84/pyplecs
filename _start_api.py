@@ -7,7 +7,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import uvicorn
 
-from pyplecs.api import app
+from pyplecs.api import _get_app, _register_routes
+
+app = _get_app()
+_register_routes(app)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8081)
