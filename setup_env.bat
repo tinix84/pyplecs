@@ -253,16 +253,40 @@ if "%ENV_TYPE%"=="conda" (
 echo       Installing dependencies...
 python -m pip install --quiet --upgrade pip 2>nul
 
+python -m pip install --quiet -e .
+if errorlevel 1 (
+    echo [ERROR] Failed to install pyplecs in editable mode.
+    pause
+    exit /b 1
+) else (
+    echo       pyplecs editable install completed.
+)
+
 if exist "requirements-core.txt" (
     python -m pip install --quiet -r requirements-core.txt
+    if errorlevel 1 (
+        echo [ERROR] Failed to install requirements-core.txt.
+        pause
+        exit /b 1
+    )
     echo       requirements-core.txt installed.
 )
 if exist "requirements-web.txt" (
     python -m pip install --quiet -r requirements-web.txt
+    if errorlevel 1 (
+        echo [ERROR] Failed to install requirements-web.txt.
+        pause
+        exit /b 1
+    )
     echo       requirements-web.txt installed.
 )
 if exist "requirements-cache.txt" (
     python -m pip install --quiet -r requirements-cache.txt
+    if errorlevel 1 (
+        echo [ERROR] Failed to install requirements-cache.txt.
+        pause
+        exit /b 1
+    )
     echo       requirements-cache.txt installed.
 )
 
