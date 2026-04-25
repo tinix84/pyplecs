@@ -333,7 +333,7 @@ tests/
 - Require PLECS running with XML-RPC enabled
 - Test real simulation workflows
 - Mark with `@pytest.mark.integration`
-- Run in CI with PLECS mock/stub
+- Run manually on Windows with real PLECS instance
 
 **Benchmark Tests**:
 - Validate performance claims (5x speedup, etc.)
@@ -370,6 +370,14 @@ open htmlcov/index.html  # macOS
 xdg-open htmlcov/index.html  # Linux
 start htmlcov/index.html  # Windows
 ```
+
+### Pre-push enforcement
+
+This repo has no GitHub Actions CI. A Claude Code pre-push hook
+(`.claude/hooks/pre_push_lint.py`) runs `ruff check .` + the four
+platform-independent test files (`test_installer.py`, `test_entrypoint.py`,
+`test_install_full.py`, `test_abc_contract.py`). The hook blocks `git push`
+on failure. Full PLECS-dependent suite must be run manually on Windows.
 
 ---
 
@@ -660,7 +668,7 @@ Relates to #456
 
 ### Review Process
 
-1. **Automated checks**: CI runs tests, linting, type checking
+1. **Pre-push enforcement**: Pre-push hook (`.claude/hooks/pre_push_lint.py`) enforces linting and platform-independent tests before push
 2. **Maintainer review**: Code review by project maintainer
 3. **Discussion**: Address feedback, make changes
 4. **Approval**: Maintainer approves PR

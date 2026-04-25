@@ -367,6 +367,14 @@ pytest --cov=pyplecs tests/
 pytest tests/benchmark_batch_speedup.py -v -s
 ```
 
+### Pre-push enforcement
+
+This repo has no GitHub Actions CI. A Claude Code pre-push hook
+(`.claude/hooks/pre_push_lint.py`) runs `ruff check .` + the four
+platform-independent test files (`test_installer.py`, `test_entrypoint.py`,
+`test_install_full.py`, `test_abc_contract.py`). The hook blocks `git push`
+on failure. Full PLECS-dependent suite must be run manually on Windows.
+
 ### Code Quality
 ```bash
 # Format code
