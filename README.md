@@ -6,7 +6,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
 
 ---
 
@@ -377,14 +377,11 @@ on failure. Full PLECS-dependent suite must be run manually on Windows.
 
 ### Code Quality
 ```bash
-# Format code
-black pyplecs/
-isort pyplecs/
-
-# Lint
-flake8 pyplecs/
-mypy pyplecs/
+# Lint and format
+ruff check .
+ruff format .
 ```
+Configuration in `pyproject.toml` under `[tool.ruff]`.
 
 See [contributing.md](docs/contributing.md) for detailed development guidelines.
 

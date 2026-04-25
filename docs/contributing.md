@@ -92,9 +92,8 @@ pip install -r requirements.txt
 # Run tests to verify setup
 pytest
 
-# Check code formatting
-black --check pyplecs/
-flake8 pyplecs/
+# Check code quality
+ruff check .
 
 # Verify import works
 python -c "import pyplecs; print(pyplecs.__version__)"
@@ -286,24 +285,17 @@ Update relevant documentation:
 - **CHANGELOG.md**: Version history
 - **CLAUDE.md**: Architecture changes
 
-### 5. Format and Lint
+### 5. Lint and Format
+
+This project uses `ruff` for both linting and formatting.
 
 ```bash
-# Format code with black
-black pyplecs/
-
-# Sort imports with isort
-isort pyplecs/
-
-# Lint with flake8
-flake8 pyplecs/
-
-# Type check with mypy
-mypy pyplecs/
-
-# Or run all checks
-./scripts/check_code.sh  # If available
+ruff check .         # report issues
+ruff check --fix .   # auto-fix
+ruff format .        # format code
 ```
+
+Configuration is in `pyproject.toml` under `[tool.ruff]`.
 
 ---
 
@@ -391,16 +383,17 @@ PyPLECS follows **PEP 8** with some customizations.
 - **100 characters** maximum (vs PEP 8's 79)
 - Break long lines logically
 
-#### Formatting
-```python
-# Use black for auto-formatting
-black pyplecs/
+#### Formatting and Linting
 
-# Configuration in pyproject.toml
-[tool.black]
-line-length = 100
-target-version = ['py38']
+This project uses `ruff` for code quality:
+
+```bash
+ruff check .         # lint
+ruff format .        # format
+ruff check --fix .   # auto-fix issues
 ```
+
+Configuration in `pyproject.toml` under `[tool.ruff]`.
 
 #### Imports
 ```python
@@ -413,9 +406,6 @@ from fastapi import FastAPI
 
 from pyplecs import PlecsServer
 from pyplecs.cache import SimulationCache
-
-# Sort with isort
-isort pyplecs/
 ```
 
 #### Type Hints
@@ -590,7 +580,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 #### Checklist
 
 - [ ] Tests pass locally (`pytest`)
-- [ ] Code follows style guidelines (`black`, `flake8`, `mypy`)
+- [ ] Code follows style guidelines (`ruff check . && ruff format .`)
 - [ ] Documentation updated (README, MIGRATION, CHANGELOG)
 - [ ] Commit messages follow conventions
 - [ ] No merge conflicts with `dev` branch
