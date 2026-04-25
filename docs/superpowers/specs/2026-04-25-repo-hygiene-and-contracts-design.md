@@ -108,41 +108,39 @@ __all__ = [
 
 The `_source` private attribute is queryable for diagnostics. Upstream `pycircuitsim_core/__init__.py` must expose `__contract_version__`; our vendored copy is amended to do so during the port.
 
-### `pyplecs/core/models.py` — thin re-export
+### Models — two flavors, no merge
 
-```python
-from pyplecs.contracts import (
-    SimulationRequest, SimulationResult, SimulationStatus, TaskPriority,
-)
-# pyplecs-only models stay defined here:
-from pydantic import BaseModel
-class ComponentParameter(BaseModel): ...
-class OptimizationRequest(BaseModel): ...
-class OptimizationResult(BaseModel): ...
-```
+**Audit finding (2026-04-25, during writing-plans):** upstream `pycircuitsim_core.models` is incompatible with `pyplecs/core/models.py` at the field level:
+
+| Type | Upstream | pyplecs local |
+|---|---|---|
+| `SimulationRequest` | pydantic `BaseModel`, has `time_step` + `options` | dataclass, has `output_variables` + validates file existence in `__post_init__` |
+| `SimulationResult` | pydantic, `time: list[float]` + `signals: dict[str, list[float]]` + `execution_time_ms` | dataclass, `timeseries_data: pd.DataFrame` + `execution_time` |
+| `SimulationStatus` | `str, Enum` with uppercase values | plain `Enum` with lowercase values |
+| `TaskPriority` | `Enum` | (current vendored stub uses `IntEnum`) |
+
+Re-exporting from upstream would silently break every `result.timeseries_data` call site in pyplecs.
+
+**Decision:** keep both flavors, distinct namespaces. **Do not modify** `pyplecs/core/models.py`. Instead:
+
+- Vendored `_contracts/models.py` ships the **upstream flavor** verbatim. Reachable via `pyplecs.contracts.SimulationRequest` etc.
+- Local `pyplecs/core/models.py` keeps the **pyplecs flavor** unchanged. Reachable via `pyplecs.SimulationRequest` etc. (existing public re-exports in `pyplecs/__init__.py` keep working).
+- Concrete classes (`PlecsServer`, `SimulationCache`, ...) keep their existing method signatures using **local pyplecs types**. They inherit from contracts ABCs by name (already done in commit `d1f0ccb`); Python's `abstractmethod` machinery checks method *presence*, not signature equivalence, so instantiation succeeds even though static type-checkers would flag a signature mismatch.
+- A future ecosystem-level adapter (when PyCircuitSim umbrella exists) is responsible for translating pyplecs-local model instances ↔ upstream model instances at the orchestrator boundary. **Out of scope for this spec.**
+
+This honestly admits there's an unfinished interop gap, while satisfying the constraint that `from pyplecs import SimulationRequest` keeps working unchanged for existing users.
 
 ### Concrete-class adaptation
 
 For each of `PlecsServer`, `SimulationCache`, `ConfigManager`, `StructuredLogger`, `SimulationOrchestrator`:
 
-1. Update the import: `from pyplecs.contracts import <Base>` (no longer `from pycircuitsim_core ...`).
-2. Compare existing public methods to the ABC's `@abstractmethod` list.
-3. Where signatures don't match (e.g., upstream `SimulationServer.simulate(self, request: SimulationRequest)` vs. existing `PlecsServer.simulate(self, parameters: dict)`), add a thin adapter that satisfies the ABC by calling the existing implementation. **Do not** remove or rename existing methods.
+1. Update the import: `from pyplecs.contracts import <Base>` (no longer `from pycircuitsim_core ...`). The shim resolves to the vendored copy by default, the PyPI package when present and version-compatible.
+2. Audit each abstract method declared on the base class against the concrete class. For methods present on both: leave the concrete method's existing signature unchanged (it operates on local pyplecs models). For methods declared abstract but missing on the concrete: add a minimal stub that delegates to the closest existing method or raises `NotImplementedError("Pending interop port — see spec 2026-04-25")`. **Do not** rewrite existing methods to match upstream signatures — that's the future interop work that's out of scope here.
+3. Verify `Class.__abstractmethods__` is empty after the changes (Python's check during instantiation). If any abstract method has no concrete counterpart at all, add the `NotImplementedError` stub from step 2.
 
-The single adapter pattern, illustrated with `simulate`:
-```python
-# pyplecs/pyplecs.py
-class PlecsServer(SimulationServer):
-    def simulate(self, request_or_params, **kwargs):
-        # Backward-compat: dict goes to legacy path
-        if isinstance(request_or_params, dict):
-            return self._legacy_simulate(request_or_params, **kwargs)
-        # ABC path
-        return self._simulate_request(request_or_params)
-    ...
-```
+Specifically: upstream `SimulationServer` declares 4 abstract methods — `simulate`, `simulate_batch`, `is_available`, `health_check`. Existing `PlecsServer` already has all four (the latter two were added in commit `d1f0ccb`). Verify with `assert not PlecsServer.__abstractmethods__`. Repeat for the other four classes.
 
-If method-by-method comparison reveals more than 5 mismatches, escalate — that's a sign the contract doesn't fit pyplecs and needs negotiation upstream.
+If any class ends up with more than 1–2 `NotImplementedError` stubs, that's a signal the contract doesn't fit and we should revisit upstream — but we expect 0 such stubs based on the d1f0ccb commit.
 
 ### Sync policy
 
@@ -173,7 +171,7 @@ def test_contracts_source_reports_consistently():
 
 ### Risk
 
-- **Signature drift** — upstream ABC signatures may not match pyplecs's existing methods. Mitigation: adapter-pattern wrappers. Escalation if >5 mismatches.
+- **Signature drift** — upstream ABC method signatures use upstream's pydantic models, while pyplecs concrete methods use pyplecs's local dataclass models. Mitigation: rely on Python's name-only abstractmethod check; defer signature reconciliation to a future ecosystem-level adapter. Static type-checkers (mypy, pyright) will warn — that's acceptable noise for now.
 - **Passthrough silently broken by upstream** — version guard + `_source` diagnostic mitigate.
 - **`__contract_version__` not present in upstream yet** — handled by the shim's `getattr(_ext, "__contract_version__", None) or _ext.__version__` fallback to the package's regular `__version__` (upstream already exposes `__version__ = "1.0.0"`). The vendored `_contracts/__init__.py` adds `__contract_version__` so pyplecs has an authoritative answer locally.
 
@@ -247,6 +245,6 @@ Decision deferred to first build measurement; defaulting to keeping GIFs in-tree
 ## Out of scope
 
 - Publishing `pycircuitsim-core` to PyPI (separate effort in `tinix84/pycircuitsim` monorepo).
-- Removing or refactoring `pyplecs/core/models.py`'s pyplecs-only models (`ComponentParameter`, `OptimizationRequest`, `OptimizationResult`) — they stay where they are.
+- Reconciling pyplecs's local pydantic-incompatible models (`SimulationRequest`, `SimulationResult`, `SimulationStatus`, `TaskPriority`) with upstream's. The two flavors coexist in distinct namespaces; ecosystem-level interop is a future effort.
 - Reviving CI as GitHub Actions if/when contributors return — explicitly deferred.
 - Cleaning up `pyplecs/__init__.py`'s graceful-degradation `None` fallbacks for missing optional deps. Worth doing eventually, not in this spec.
