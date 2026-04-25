@@ -59,4 +59,9 @@ nav:
   - Migration: migration.md
   - Changelog: changelog.md
   - Contributing: contributing.md
+  - Articles:
+    - Overview: articles/README.md
+    - LinkedIn Articles: articles/linkedin/README.md
+    - LinkedIn Posts: articles/linkedin-posts/README.md
+    - Substack Articles: articles/substack/README.md
   - Auto-Context: auto-context.md

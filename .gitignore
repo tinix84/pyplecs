@@ -33,7 +33,7 @@ utils/
 .idea/
 .claude/
 
-articles/output/
+docs/articles/diagrams/output/
 FORCE_PUSH_PLAN.txt
 
 # Build artifacts
