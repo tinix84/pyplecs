@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Claude Code PostToolUse hook: enforce lint + platform-independent tests on git push.
 
 Reads the tool invocation from CLAUDE_TOOL_INPUT (JSON). If the command is a
