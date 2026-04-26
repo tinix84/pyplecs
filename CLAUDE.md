@@ -47,3 +47,4 @@ Domain: pe-expert | Local skills reference: `.claude/skills.md`
 | 2026-02-24 | Architecture details in docs/ | Keep CLAUDE.md <50 lines; link to detailed docs |
 | 2026-02-24 | All doc filenames lowercase | URL-friendly mkdocs output; consistent across projects |
 | 2026-02-24 | mkdocs gh-deploy to GitHub Pages | Public docs at tinix84.github.io/pyplecs |
+| 2026-04-25 | Remove GitHub Actions CI | Single-maintainer project; pre-push hook covers lint + platform-independent tests; PLECS-dependent tests run manually on Windows. |
