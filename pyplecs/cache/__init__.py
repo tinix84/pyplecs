@@ -13,7 +13,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from pycircuitsim_core.cache import SimulationCacheBase
+from pyplecs.contracts import SimulationCacheBase
 
 from ..config import get_config
 

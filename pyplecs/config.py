@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
-from pycircuitsim_core.config import ConfigManagerBase
+from pyplecs.contracts import ConfigManagerBase
 
 
 @dataclass

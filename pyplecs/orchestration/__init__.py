@@ -9,8 +9,7 @@ from dataclasses import dataclass, field
 from queue import PriorityQueue
 from typing import Any, Callable, Dict, List, Optional
 
-from pycircuitsim_core.models import TaskPriority
-from pycircuitsim_core.orchestration import SimulationOrchestratorBase
+from pyplecs.contracts import SimulationOrchestratorBase, TaskPriority
 
 from ..cache import SimulationCache
 from ..config import get_config

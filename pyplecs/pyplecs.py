@@ -5,7 +5,7 @@ import xmlrpc.client
 from pathlib import Path
 from typing import Any
 
-from pycircuitsim_core.server import SimulationServer
+from pyplecs.contracts import SimulationServer
 
 # Optional imports (Windows-specific GUI automation)
 try:
