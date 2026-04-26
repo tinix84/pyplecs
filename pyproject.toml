@@ -40,7 +40,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["pyplecs*", "pycircuitsim_core*"]
+include = ["pyplecs*"]
 
 [project.scripts]
 pyplecs-api = "pyplecs.api:main"
