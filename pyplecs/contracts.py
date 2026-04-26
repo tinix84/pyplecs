@@ -44,6 +44,9 @@ _source = _resolve_source()
 
 
 if _source == "pypi":
+    # StructuredLoggerBase is missing from upstream __all__; import directly:
+    from pycircuitsim_core.logging import StructuredLoggerBase  # type: ignore[import-not-found]
+
     from pycircuitsim_core import (  # type: ignore[import-not-found]
         ConfigManagerBase,
         SimulationCacheBase,
@@ -56,8 +59,6 @@ if _source == "pypi":
         SyncSimulationResponse,
         TaskPriority,
     )
-    # StructuredLoggerBase is missing from upstream __all__; import directly:
-    from pycircuitsim_core.logging import StructuredLoggerBase  # type: ignore[import-not-found]
 else:
     from pyplecs._contracts import (
         ConfigManagerBase,

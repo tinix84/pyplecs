@@ -17,8 +17,8 @@ def test_contracts_facade_resolves():
 
 def test_plecs_server_subclasses_simulation_server():
     """PlecsServer inherits from contracts.SimulationServer."""
-    from pyplecs.pyplecs import PlecsServer
     from pyplecs.contracts import SimulationServer
+    from pyplecs.pyplecs import PlecsServer
 
     assert issubclass(PlecsServer, SimulationServer)
     assert PlecsServer.__abstractmethods__ == frozenset(), (
@@ -48,8 +48,8 @@ def test_config_manager_subclasses_config_base():
 
 def test_structured_logger_subclasses_logger_base():
     pytest.importorskip("structlog")
-    from pyplecs.logging import StructuredLogger
     from pyplecs.contracts import StructuredLoggerBase
+    from pyplecs.logging import StructuredLogger
 
     assert issubclass(StructuredLogger, StructuredLoggerBase)
     assert StructuredLogger.__abstractmethods__ == frozenset(), (
@@ -58,8 +58,8 @@ def test_structured_logger_subclasses_logger_base():
 
 
 def test_simulation_orchestrator_subclasses_orchestrator_base():
-    from pyplecs.orchestration import SimulationOrchestrator
     from pyplecs.contracts import SimulationOrchestratorBase
+    from pyplecs.orchestration import SimulationOrchestrator
 
     assert issubclass(SimulationOrchestrator, SimulationOrchestratorBase)
     assert SimulationOrchestrator.__abstractmethods__ == frozenset(), (
