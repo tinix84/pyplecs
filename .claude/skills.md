@@ -84,11 +84,16 @@ tools\installers\windows_installer.bat --yes --plecs-path "C:\Program Files\Plex
 |---------|------|
 | Config | `config/default.yml` |
 | Core PLECS wrapper | `pyplecs/pyplecs.py` |
-| Data models | `pyplecs/core/models.py` |
+| Data models (pyplecs-local) | `pyplecs/core/models.py` |
+| Tool-agnostic ABC façade | `pyplecs/contracts.py` |
+| Vendored ABCs (pinned) | `pyplecs/_contracts/` |
 | Orchestration | `pyplecs/orchestration/__init__.py` |
 | Cache | `pyplecs/cache/__init__.py` |
 | REST API | `pyplecs/api/__init__.py` |
 | Web GUI | `pyplecs/webgui/webgui.py` |
+| Pre-push hook | `.claude/hooks/pre_push_lint.py` |
+| Re-sync vendored ABCs | `tools/SYNC_PYCIRCUITSIM_CORE.md` |
+| ABC compliance test | `tests/test_abc_contract.py` |
 
 ## Code Patterns
 
@@ -121,11 +126,21 @@ task_id = await orchestrator.submit_simulation(request, priority=TaskPriority.HI
 result = await orchestrator.wait_for_completion(task_id)
 ```
 
+### Tool-Agnostic Contracts (pyplecs.contracts)
+```python
+from pyplecs.contracts import (
+    SimulationServer, SimulationCacheBase, SimulationOrchestratorBase,
+    ConfigManagerBase, StructuredLoggerBase,
+    SimulationRequest, SimulationResult, SimulationStatus, TaskPriority,
+)
+# Resolves to PyPI pycircuitsim_core if installed and major-version-compatible,
+# otherwise to pyplecs._contracts. Diagnostic via `from pyplecs import contracts; contracts._source`.
+```
+
 ## Entry Points
 
 | Command | Module |
 |---------|--------|
 | `pyplecs-setup` | `pyplecs.cli.installer:main` |
-| `pyplecs-gui` | `pyplecs.webgui:main` |
+| `pyplecs-gui` | `pyplecs.webgui:run_app` |
 | `pyplecs-api` | `pyplecs.api:main` |
-| `pyplecs-mcp` | `pyplecs.mcp:main` |
