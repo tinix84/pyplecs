@@ -44,23 +44,31 @@ _source = _resolve_source()
 
 
 if _source == "pypi":
-    # StructuredLoggerBase is missing from upstream __all__; import directly:
-    from pycircuitsim_core.logging import StructuredLoggerBase  # type: ignore[import-not-found]
+    try:
+        # StructuredLoggerBase is missing from upstream __all__; import directly:
+        from pycircuitsim_core.logging import StructuredLoggerBase  # type: ignore[import-not-found]
 
-    from pycircuitsim_core import (  # type: ignore[import-not-found]
-        ConfigManagerBase,
-        SimulationCacheBase,
-        SimulationOrchestratorBase,
-        SimulationRequest,
-        SimulationResult,
-        SimulationServer,
-        SimulationStatus,
-        SyncSimulationRequest,
-        SyncSimulationResponse,
-        TaskPriority,
-    )
-else:
-    from pyplecs._contracts import (
+        from pycircuitsim_core import (  # type: ignore[import-not-found]
+            ConfigManagerBase,
+            SimulationCacheBase,
+            SimulationOrchestratorBase,
+            SimulationRequest,
+            SimulationResult,
+            SimulationServer,
+            SimulationStatus,
+            SyncSimulationRequest,
+            SyncSimulationResponse,
+            TaskPriority,
+        )
+    except ImportError:
+        # External pycircuitsim_core is importable as a package but one or
+        # more expected names is missing (upstream rename, partial install,
+        # contract drift not caught by the major-version check). Fall back
+        # to the vendored copy so pyplecs.contracts always loads.
+        _source = "vendored"
+
+if _source == "vendored":
+    from pyplecs._contracts import (  # noqa: F811 - intentional fallback override
         ConfigManagerBase,
         SimulationCacheBase,
         SimulationOrchestratorBase,
