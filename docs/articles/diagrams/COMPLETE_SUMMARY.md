@@ -228,7 +228,7 @@ Neutral:           #95a5a6 (gray)
 If you need to regenerate any charts:
 
 ```bash
-cd articles/diagrams/
+cd docs/articles/diagrams/
 
 # Regenerate all matplotlib charts
 python python/performance_comparison.py

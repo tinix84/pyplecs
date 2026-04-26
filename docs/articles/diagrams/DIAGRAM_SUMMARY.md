@@ -155,7 +155,7 @@ pip install diagrams
 ### Generate All Diagrams
 
 ```bash
-cd articles/diagrams/
+cd docs/articles/diagrams/
 
 # Generate matplotlib charts only (no Graphviz needed)
 python generate_all.py --skip-diagrams
