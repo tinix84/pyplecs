@@ -1,5 +1,11 @@
 # solver
 
+Solver settings live in the model's Simulation Parameters dialog. Override per run via the `SolverOpts` field; see [rpc-api.md](rpc-api.md). Wrapped via `pyplecs.PlecsServer.simulate` and `simulate_raw` — pass `solver_opts={'Solver': 'radau', ...}` etc.
+
+## Simulation Time
+
+Top-level run window. `StartTime` and `TimeSpan` are also exposed in `SolverOpts`.
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-simulation-time -->
 
 | Name | Description |
@@ -11,6 +17,13 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-simulation-time -->
 
+### Notes
+- `StartTime` ignored when running from a stored system state.
+
+## Solver — variable-step
+
+Two variable-step methods: DOPRI (non-stiff, default) and RADAU (stiff). `auto` picks DOPRI then switches to RADAU on stiffness detection.
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-solver -->
 
 | Name | Description |
@@ -21,6 +34,10 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-solver -->
 
+## Solver — fixed-step
+
+Fixed-step `discrete` solver. Used for real-time simulation and code-gen. Forward Euler for non-state-space dynamics.
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-solver-2 -->
 
 | Name | Description |
@@ -30,6 +47,10 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/_
 
 <!-- END VERBATIM TABLE: simulation-parameters-solver-2 -->
+
+## Variable-step solver options
+
+Tuning knobs for DOPRI / RADAU. Defaults are usable; tighten `RelTol` and `AbsTol` if curves look noisy.
 
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-variable-step-solver-options -->
 
@@ -45,6 +66,12 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-variable-step-solver-options -->
 
+### Notes
+- `Refine factor` >1 cheaper than reducing `MaxStep` for smoother plots.
+- `analytical` Jacobian preferred over `finite differences` for RADAU.
+
+## Fixed-step options
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-fixed-step-solver-options -->
 
 | Name | Description |
@@ -55,6 +82,10 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-fixed-step-solver-options -->
 
+## Circuit model — diode threshold
+
+Globally controls turn-on detection for line-commutated devices.
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-circuit-model-options -->
 
 | Name | Description |
@@ -64,6 +95,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/_
 
 <!-- END VERBATIM TABLE: simulation-parameters-circuit-model-options -->
+
+## Circuit model — discretization and switch behavior
 
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-circuit-model-options-2 -->
 
@@ -78,6 +111,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-circuit-model-options-2 -->
 
+## Sample times
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-sample-times -->
 
 | Name | Description |
@@ -88,6 +123,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/_
 
 <!-- END VERBATIM TABLE: simulation-parameters-sample-times -->
+
+## State-space calculation
 
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-state-space-calculation -->
 
@@ -102,6 +139,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-state-space-calculation -->
 
+## Data types
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-data-types -->
 
 | Name | Description |
@@ -111,6 +150,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/_
 
 <!-- END VERBATIM TABLE: simulation-parameters-data-types -->
+
+## Assertions
 
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-assertions -->
 
@@ -122,6 +163,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-assertions -->
 
+## Algebraic loops
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-algebraic-loops -->
 
 | Name | Description |
@@ -132,6 +175,10 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/_
 
 <!-- END VERBATIM TABLE: simulation-parameters-algebraic-loops -->
+
+## Diagnostics
+
+Severity controls per failure mode. Default action: `error` for most.
 
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-diagnostics -->
 
@@ -150,6 +197,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-diagnostics -->
 
+## System State
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-system-state -->
 
 | Name | Description |
@@ -162,6 +211,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-system-state -->
 
+## Diode Turn-On Threshold and Type (Blockset variant)
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-id1 -->
 
 | Name | Description |
@@ -172,6 +223,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/_
 
 <!-- END VERBATIM TABLE: simulation-parameters-id1 -->
+
+## Discrete state-space options (Blockset)
 
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-discrete-state-space-options -->
 
@@ -186,6 +239,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/_
 
 <!-- END VERBATIM TABLE: simulation-parameters-discrete-state-space-options -->
+
+## Diagnostics (Blockset variant)
 
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-id2 -->
 
@@ -206,6 +261,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-id2 -->
 
+## Sample times (Blockset variant)
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-id3 -->
 
 | Name | Description |
@@ -217,6 +274,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-id3 -->
 
+## Algebraic loops (Blockset variant)
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-id4 -->
 
 | Name | Description |
@@ -227,6 +286,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/_
 
 <!-- END VERBATIM TABLE: simulation-parameters-id4 -->
+
+## State-space calculation (Blockset variant)
 
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-id5 -->
 
@@ -241,6 +302,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 
 <!-- END VERBATIM TABLE: simulation-parameters-id5 -->
 
+## Simulink Coder integration (Blockset)
+
 <!-- BEGIN VERBATIM TABLE: simulation-parameters-simulink-coder -->
 
 | Name | Description |
@@ -251,3 +314,7 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/_
 
 <!-- END VERBATIM TABLE: simulation-parameters-simulink-coder -->
+
+### Notes
+- "Blockset variant" tables (id1..id5) duplicate fields from PLECS Standalone with Simulink-specific names. Treat them as the same knobs.
+- For pyplecs (Standalone XML-RPC) only the non-Blockset tables apply at run time.
