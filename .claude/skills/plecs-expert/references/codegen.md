@@ -1,5 +1,9 @@
 # codegen
 
+PLECS Coder generates ANSI C from a schematic. Two targets: RSim (rapid sim, interpreted parameters) and Real-Time (inlined). Not wrapped in pyplecs — drive code-gen via PLECS GUI or direct RPC `plecs_rpc('plecs.generateCode', ...)`.
+
+## Targets at a glance
+
 <!-- BEGIN VERBATIM TABLE: codegeneration-table-0 -->
 
 |  | RSim Target | Real-Time Target |
@@ -15,6 +19,12 @@ _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 
 <!-- END VERBATIM TABLE: codegeneration-table-0 -->
 
+### Notes
+- RSim ships everywhere with no extra deps but needs the RSim runtime DLL.
+- Real-Time embeds zero deps in the C output. Best for HIL targets.
+
+## RSim runtime libraries
+
 <!-- BEGIN VERBATIM TABLE: codegeneration-table-1 -->
 
 | Platform | Library Files |
@@ -27,6 +37,13 @@ _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 
 <!-- END VERBATIM TABLE: codegeneration-table-1 -->
 
+### Notes
+- Ship the platform DLL/dylib/so next to the generated code when deploying RSim.
+
+## Switching algorithm
+
+How the coder resolves switch transitions in generated C. Iterative: small code, variable per-step time. Direct Look-up: bigger code, uniform per-step time.
+
 <!-- BEGIN VERBATIM TABLE: codegeneration-switching-algorithm -->
 
 | Name | Description |
@@ -38,6 +55,12 @@ _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 
 <!-- END VERBATIM TABLE: codegeneration-switching-algorithm -->
 
+### Notes
+- Direct Look-up scales as O(2^n) over n switches in build time. Use for small switching topologies on real-time targets.
+- Iterative scales linearly in build time. Variable execution time per step.
+
+## Switch model in generated code
+
 <!-- BEGIN VERBATIM TABLE: codegeneration-codegenswitchtypes -->
 
 | Name | Description |
@@ -48,6 +71,14 @@ _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 
 <!-- END VERBATIM TABLE: codegeneration-codegenswitchtypes -->
+
+### Notes
+- Ideal model = combinatorial state-space matrix per switching combination.
+- Non-ideal model = constant matrix; cheap for many switches but adds leakage.
+
+## Generated C entry points
+
+The PLECS-Standalone code-gen output exposes these C functions. Wrap them in a sample-time loop on the target.
 
 <!-- BEGIN VERBATIM TABLE: codegeneration-code-generation-with-plecs-standalone -->
 
@@ -63,6 +94,12 @@ _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 
 <!-- END VERBATIM TABLE: codegeneration-code-generation-with-plecs-standalone -->
 
+### Notes
+- Loop order: `model_initialize` → repeat (`model_output`, `model_update` OR single `model_step`) → `model_terminate`.
+- Split output/update needed for low-latency I/O paths (DMA, DAC).
+
+## General code-gen options
+
 <!-- BEGIN VERBATIM TABLE: codegeneration-general -->
 
 | Name | Description |
@@ -77,6 +114,12 @@ _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 
 <!-- END VERBATIM TABLE: codegeneration-general -->
 
+### Notes
+- Default output dir = `<model>_codegen` next to `.plecs` file.
+- Float vs double: pick float on MCU FPUs without 64-bit support.
+
+## Parameter inlining
+
 <!-- BEGIN VERBATIM TABLE: codegeneration-parameter-inlining -->
 
 | Name | Description |
@@ -88,6 +131,12 @@ _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 
 <!-- END VERBATIM TABLE: codegeneration-parameter-inlining -->
 
+### Notes
+- Inline = smaller, faster, recompile to retune.
+- Tunable = larger, slower, runtime-writable struct.
+
+## Target options
+
 <!-- BEGIN VERBATIM TABLE: codegeneration-target -->
 
 | Name | Description |
@@ -97,6 +146,8 @@ _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 
 <!-- END VERBATIM TABLE: codegeneration-target -->
+
+## Scheduling — multi-tasking
 
 <!-- BEGIN VERBATIM TABLE: codegeneration-scheduling -->
 
@@ -110,6 +161,12 @@ _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 _Source: https://docs.plexim.com/plecs/latest/codegeneration/_
 
 <!-- END VERBATIM TABLE: codegeneration-scheduling -->
+
+### Notes
+- Multi-tasking spawns one C task per row in the table.
+- Sample time per task = integer multiple of base step. 0 means base.
+
+## Simulink Coder options (Blockset)
 
 <!-- BEGIN VERBATIM TABLE: codegeneration-simulink-coder-options -->
 
