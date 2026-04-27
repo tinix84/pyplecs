@@ -220,5 +220,27 @@
       "prose_section_hashes": {},
       "_note": "No public docs page; hand-authored from data/*.plecs samples in Task 15. sync_tables.py skips entries with empty source_urls."
     }
+  },
+  "pyplecs_snapshot": {
+    "wrappers": [
+      "CapacitorPlecsMdl",
+      "InductorPlecsMdl",
+      "MosfetWithDiodePlecsMdl",
+      "ResistorPlecsMdl",
+      "TransformerPlecsMdl",
+      "TurnOnDelayPlecsMdl"
+    ],
+    "rpc_methods": [
+      "close",
+      "health_check",
+      "is_available",
+      "load_modelvars",
+      "run_sim_with_datastream",
+      "run_sim_with_mat_file",
+      "set_value",
+      "simulate",
+      "simulate_batch",
+      "simulate_raw"
+    ]
   }
 }
