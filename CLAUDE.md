@@ -7,10 +7,10 @@
 pip install -e ".[dev]"        # ruff + pytest
 ruff check .                   # lint (must be clean)
 pytest                         # full suite (Windows + PLECS on port 1080)
-pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_full.py tests/test_abc_contract.py  # platform-independent subset
+pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_full.py tests/test_abc_contract.py tests/test_plecs_expert.py  # platform-independent subset
 ```
 
-**No GitHub Actions CI.** A Claude Code pre-push hook (`.claude/hooks/pre_push_lint.py`) runs `ruff check .` plus the 4 platform-independent test files on `git push`; PLECS XML-RPC tests run manually on Windows.
+**No GitHub Actions CI.** A Claude Code pre-push hook (`.claude/hooks/pre_push_lint.py`) runs `ruff check .` plus the 5 platform-independent test files on `git push`; PLECS XML-RPC tests run manually on Windows.
 
 ## Architecture quick reference
 - **Two layers** (full detail in [architecture.md](docs/architecture.md)): `pyplecs/pyplecs.py` is a thin XML-RPC wrapper over PLECS; the orchestration / cache / api / webgui packages are built on top.
