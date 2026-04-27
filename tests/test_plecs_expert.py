@@ -126,3 +126,40 @@ def test_slash_command_routes():
     assert cmd.exists(), f"missing: {cmd}"
     text = cmd.read_text(encoding="utf-8")
     assert "plecs-expert" in text, "command does not reference the plecs-expert skill"
+
+
+EXPECTED_MCP_TOOLS = {
+    "plecs_lookup",
+    "plecs_search",
+    "plecs_xml",
+    "plecs_url",
+    "plecs_component",
+    "plecs_rpc",
+    "pyplecs_wrappers",
+    "pyplecs_rpc_surface",
+}
+
+
+def test_pyplecs_wrappers_introspectable():
+    """pyplecs.plecs_components imports clean and exposes *PlecsMdl classes."""
+    import pyplecs.plecs_components as comps  # noqa: F401
+    from pyplecs.mcp.plecs_tools import pyplecs_wrappers
+
+    wrappers = pyplecs_wrappers()
+    assert wrappers, "no wrapper classes found in pyplecs.plecs_components"
+    assert any(w.endswith("PlecsMdl") for w in wrappers), (
+        f"expected *PlecsMdl naming convention; got: {wrappers}"
+    )
+
+
+def test_mcp_tools_register():
+    """Importing pyplecs.mcp.plecs_tools exposes the expected 8 tools."""
+    from pyplecs.mcp.plecs_tools import TOOL_REGISTRY
+
+    assert set(TOOL_REGISTRY) == EXPECTED_MCP_TOOLS, (
+        f"tool registry mismatch: extra={set(TOOL_REGISTRY) - EXPECTED_MCP_TOOLS} "
+        f"missing={EXPECTED_MCP_TOOLS - set(TOOL_REGISTRY)}"
+    )
+    # Each entry is callable
+    for name, fn in TOOL_REGISTRY.items():
+        assert callable(fn), f"{name} not callable"
