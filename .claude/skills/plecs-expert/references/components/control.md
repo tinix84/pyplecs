@@ -1,5 +1,13 @@
 # control
 
+Note: pyplecs wraps the Turn-On Delay control block as `pyplecs.plecs_components.TurnOnDelayPlecsMdl`. Other control blocks below have no pyplecs wrapper — set parameters via `PlecsServer.set_value` and route signals through Output ports.
+
+## Continuous PID Controller
+
+`Lib/Control/Continuous/Continuous PID Controller`. P / I / PI / PD / PID controller in continuous time with anti-windup. Pins: 1=ref/error in, 2=control out, optional reset/initial-condition/saturation aux ports.
+
+Wrapped in pyplecs: no.
+
 <!-- BEGIN VERBATIM TABLE: continuouspidcontroller-anti-windup-methods -->
 
 | Name | Description |
@@ -68,13 +76,24 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/continuousp
 
 <!-- END VERBATIM TABLE: continuouspidcontroller-probes -->
 
+### Notes
+- Anti-windup options: none, back-calculation, conditional. Pick back-calc for full PID; conditional integration for PI without `K_bc`.
+- External saturation gives access to a `u*` feedback port for proper anti-windup.
+- Reset edge selectable: rising, falling, either, level.
+
+## Transfer Function
+
+`Lib/Control/Continuous/Transfer Function`. Continuous-time LTI block in `s`. Pins: 1=in, 2=out.
+
+Wrapped in pyplecs: no.
+
 <!-- BEGIN VERBATIM TABLE: transferfcn-parameters -->
 
 | Name | Description |
 | --- | --- |
 | Numerator coefficients | A vector of the \(s\) term coefficients \([n_n \ldots  n_1, n_0]\) for the numerator, written in descending order of powers of \(s\) . For example, the numerator \(s^3+2s\) would be entered as [1,0,2,0] }. The Transfer Function supports multiple outputs for a single input by entering a matrix for the numerator. Each row of the matrix defines the numerator coefficients of an output. |
 | Denominator coefficients | A vector of the \(s\) term coefficients \([d_n \ldots d_1, d_0]\) for the denominator, written in descending order of powers of \(s\) . Note The order of the denominator (highest power of \(s\) ) must be greater than or equal to the order of the numerator. |
-| Initial condition | The initial condition vector of the internal states of the Transfer Function in the form \([x_n \ldots  x_1, x_0]\) . The initial condition must be specified for the controller normal form, depicted below for the transfer function \[\frac{Y(s)}{U(s)}=\frac{n_2s^2+n_1s+n_0}{d_2s^2+d_1s+d_0} = b_2\left(a_2 + \frac{a_1s + a_0}{s^2 + b_1s + b_0}\right)\] Fig. 161 Transfer function controller normal form  where \[\begin{split}\begin{array}{rcll} b_i & = & \frac{\displaystyle d_i}{\displaystyle d_n} & \mbox{for $i<n$ }\\ b_n & = & \frac{\displaystyle 1}{\displaystyle d_n}\\ a_i & = & n_i - \frac{\displaystyle n_n d_i}{\displaystyle d_n} & \mbox{for $i<n$}\\ a_n & = & n_n \end{array}\end{split}\] For the normalized transfer function (with \(n_n = 0\) and \(d_n = 1\) ) this simplifies to \(b_i = d_i\) and \(a_i = n_i\) . Note The number of internal states is defined by the highest power of \(s\) of the denominator. Note A scalar initial condition will be applied to all internal states. Note In case of scalar expansion (multiple input signals), the initial condition can also be a matrix, where each row defines the initial condition for the individual inputs. |
+| Initial condition | The initial condition vector of the internal states of the Transfer Function in the form \([x_n \ldots  x_1, x_0]\) . The initial condition must be specified for the controller normal form, depicted below for the transfer function \[\frac{Y(s)}{U(s)}=\frac{n_2s^2+n_1s+n_0}{d_2s^2+d_1s+d_0} = b_2\left(a_2 + \frac{a_1s + a_0}{s^2 + b_1s + b_0}\right)\] Fig. 161 Transfer function controller normal form  where \[\begin{split}\begin{array}{rcll} b_i & = & \frac{\displaystyle d_i}{\displaystyle d_n} & \mbox{for $i<n$ }\\ b_n & = & \frac{\displaystyle 1}{\displaystyle d_n}\\ a_i & = & n_i - \frac{\displaystyle n_n d_i}{\displaystyle d_n} & \mbox{for $i<n$}\\ a_n & = & n_n \end{array}\end{split}\] For the normalized transfer function (with \(n_n = 0\) and \(d_n = 1\) ) this simplifies to \(b_i = d_i\) and \(a_i = n_i\) . Note The number of internal states is defined by the highest power of \(s\) of the denominator. Note A scalar initial condition will be applied to all internal states. Note In case of scalar expansion (multiple input signals), the initial condition can also be a matrix, where each row defines the initial condition for the individual inputs. |
 
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/transferfcn/_
 
@@ -91,6 +110,17 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/transferfcn
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/transferfcn/_
 
 <!-- END VERBATIM TABLE: transferfcn-probes -->
+
+### Notes
+- Coefficients descending order of `s`. Pad zeros for missing terms (e.g. `s^3 + 2s` → `[1 0 2 0]`).
+- Denominator order ≥ numerator order. Required for proper transfer function.
+- Multi-output via matrix numerator: row per output.
+
+## State Machine
+
+`Lib/Control/State Machine`. Discrete event-driven FSM with C-code transition logic.
+
+Wrapped in pyplecs: no.
 
 <!-- BEGIN VERBATIM TABLE: statemachines-table-0 -->
 
@@ -115,3 +145,7 @@ _Source: https://docs.plexim.com/plecs/latest/statemachines/_
 _Source: https://docs.plexim.com/plecs/latest/statemachines/_
 
 <!-- END VERBATIM TABLE: statemachines-table-1 -->
+
+### Notes
+- Sample-time conventions same as elsewhere in PLECS: -1 inherit, 0 continuous, [Tp Toff] discrete.
+- `SetErrorMessage` aborts after the current step. Pair with a `return` statement.
