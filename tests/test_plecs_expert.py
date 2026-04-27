@@ -28,8 +28,6 @@ def test_skill_md_under_4kb():
 def test_references_no_dead_links():
     """Every relative link in references/*.md resolves to an existing file."""
     root = SKILL_ROOT / "references"
-    if not root.exists():
-        return  # phase 1 vacuous pass
     failures: list[str] = []
     for md in _walk_md(root):
         text = md.read_text(encoding="utf-8")
@@ -46,8 +44,6 @@ def test_license_notes_complete():
     """Every references/*.md is classified in LICENSE-NOTES.md."""
     notes = SKILL_ROOT / "LICENSE-NOTES.md"
     refs = SKILL_ROOT / "references"
-    if not refs.exists() or not notes.exists():
-        return  # phase 1 vacuous pass
     notes_text = notes.read_text(encoding="utf-8")
     failures: list[str] = []
     for md in _walk_md(refs):
@@ -60,8 +56,6 @@ def test_license_notes_complete():
 def test_url_index_resolvable():
     """URLs in url-index.md are syntactically valid (no fetch)."""
     idx = SKILL_ROOT / "references" / "url-index.md"
-    if not idx.exists():
-        return  # phase 1 vacuous pass
     failures: list[str] = []
     for url in URL_RE.findall(idx.read_text(encoding="utf-8")):
         if "docs.plexim.com" not in url:

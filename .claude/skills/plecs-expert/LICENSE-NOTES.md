@@ -17,3 +17,4 @@
 | `references/codegen.md` | https://docs.plexim.com/plecs/latest/codegeneration/ | tables (verbatim) | prose (caveman, hand-authored — Task 6) |
 | `references/cscript.md` | https://docs.plexim.com/plecs/latest/c-scripts/ | tables (verbatim) | prose (caveman, hand-authored — Task 6) |
 | `references/plecs-xml-grammar.md` | n/a (no public docs page) | n/a | hand-authored from `data/*.plecs` samples in Task 15 |
+| `references/url-index.md` | n/a (URL list only) | n/a | URL pointers (no Plexim prose mirrored) |
