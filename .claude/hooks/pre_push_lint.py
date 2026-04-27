@@ -16,6 +16,7 @@ PYTEST_FILES = [
     "tests/test_entrypoint.py",
     "tests/test_install_full.py",
     "tests/test_abc_contract.py",
+    "tests/test_plecs_expert.py",
 ]
 
 
