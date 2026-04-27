@@ -1,0 +1,115 @@
+{
+  "plecs_version_pinned": "4.7",
+  "files": {
+    "references/components/electrical-passive.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Resistor.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Inductor.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Capacitor.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Transformer.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/components/electrical-sources.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/VoltageSourceAC.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/VoltageSourceDC.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/VoltageSourceControlled.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/CurrentSourceControlled.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/components/electrical-switches.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Mosfet.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Igbt.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Diode.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/SwitchIdeal.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/components/electrical-meters.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Voltmeter.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Ammeter.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/System/Scope.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/components/magnetic.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/Magnetic/Permeance.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Magnetic/MmfSource.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Magnetic/FluxMeter.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/components/thermal.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/Thermal/HeatSink.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Thermal/ThermalCapacitor.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Thermal/AmbientTemperature.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/components/control.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/Control/PIController.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Control/TransferFunction.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/Control/StateMachine.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/components/system.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/System/Subsystem.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/System/ConfigurableSubsystem.html",
+        "https://docs.plexim.com/plecs/latest/UserManual/System/Mask.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/rpc-api.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/XmlRpcInterface.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/plecs-xml-grammar.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/PlecsFileFormat.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/solver.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/Simulation/SolverSettings.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/codegen.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/CodeGeneration/Overview.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    },
+    "references/cscript.md": {
+      "source_urls": [
+        "https://docs.plexim.com/plecs/latest/UserManual/CScript.html"
+      ],
+      "table_section_hashes": {},
+      "prose_section_hashes": {}
+    }
+  }
+}
