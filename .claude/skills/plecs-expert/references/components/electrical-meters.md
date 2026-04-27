@@ -1,5 +1,13 @@
 # electrical-meters
 
+## Voltmeter
+
+`Lib/Electrical/Meters/Voltmeter`. Reads voltage between two electrical nodes. Pins: 1=p, 2=n, 3=signal out. Sign: V_out = V_p − V_n.
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (PLECS-specific instrumentation).
+
 <!-- BEGIN VERBATIM TABLE: voltmeter-probes -->
 
 | Probe signal | Description |
@@ -10,6 +18,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/voltmeter/_
 
 <!-- END VERBATIM TABLE: voltmeter-probes -->
 
+### Notes
+- No parameters. Outputs control-domain signal.
+- Use a wire from the signal port to a Scope or controller block.
+
+## Ammeter
+
+`Lib/Electrical/Meters/Ammeter`. Reads current through a series branch. Pins: 1=p, 2=n, 3=signal out. Sign: I_out flows p→n.
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (PLECS-specific instrumentation).
+
 <!-- BEGIN VERBATIM TABLE: ammeter-probes -->
 
 | Probe signal | Description |
@@ -19,6 +39,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/voltmeter/_
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/ammeter/_
 
 <!-- END VERBATIM TABLE: ammeter-probes -->
+
+### Notes
+- Inserts in series. Acts as a zero-impedance branch.
+- For loss-free measurement use ammeter, not a small resistor.
+
+## Scope
+
+`Lib/System/Scope`. Multi-channel time-series viewer. Pins: 1..N=signal in.
+
+Wrapped in pyplecs: no (data extraction goes through PlecsProbe + datastream RPC).
+
+SPICE map: n/a (PLECS-specific instrumentation).
 
 <!-- BEGIN VERBATIM TABLE: scope-scope-setup -->
 
@@ -56,3 +88,8 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/scope/_
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/scope/_
 
 <!-- END VERBATIM TABLE: scope-individual-plot-parameters -->
+
+### Notes
+- Sample time -1 = inherit. 0 = continuous. Pair of [Tp Toff] = discrete.
+- Limit samples option drops oldest data once cap is hit. Use in long sims.
+- For programmatic readout, route signals to Output ports and use `simulate` RPC.
