@@ -1,5 +1,13 @@
 # cscript
 
+C-Script block. User-supplied C code runs at each major time step. Useful for custom logic, lookup tables, foreign-function calls. Pins: configurable input/output terminals.
+
+Wrapped in pyplecs: no.
+
+## Macro reference
+
+The PLECS C-Script API exposes these macros to the user code. R = read-only, W = write-only, R/W = read-write.
+
 <!-- BEGIN VERBATIM TABLE: c-scripts-table-0 -->
 
 | Macro | Type | Access | Description |
@@ -37,3 +45,10 @@
 _Source: https://docs.plexim.com/plecs/latest/c-scripts/_
 
 <!-- END VERBATIM TABLE: c-scripts-table-0 -->
+
+### Notes
+- `OutputSignal` writes are only valid inside the output function call. Other phases see them as read-only.
+- `ContState` / `DiscState` cannot change during minor time steps. Update only in `update` function.
+- `SetErrorMessage` aborts at end of step. Pair with `return` to skip the rest of the step.
+- Error / warning string pointers must point to static memory. Don't pass stack buffers.
+- For non-trivial logic prefer C-Script over masking-Lua: faster, debugger-friendly, type-checked.
