@@ -1138,20 +1138,32 @@ Topics not covered offline. Skill should `WebFetch` the URL, summarize in cavema
 | `references/url-index.md` | n/a (URL list only) | n/a | URL pointers (no Plexim prose mirrored) |
 ```
 
-- [ ] **Step 3: Run all tests**
+- [ ] **Step 3: Remove vacuous-pass guards from `tests/test_plecs_expert.py`**
+
+By the end of Task 18, `references/` is fully populated. The three early-return guards introduced in Task 1 must now be removed so the tests start enforcing.
+
+In `tests/test_plecs_expert.py`, delete:
+- `if not root.exists(): return  # phase 1 vacuous pass` from `test_references_no_dead_links`
+- `if not refs.exists() or not notes.exists(): return  # phase 1 vacuous pass` from `test_license_notes_complete`
+- `if not idx.exists(): return  # phase 1 vacuous pass` from `test_url_index_resolvable`
+
+If a guard's removal would make a test fail, that's the point — fix the underlying gap (missing file, dead link, missing license-notes row) before committing.
+
+- [ ] **Step 4: Run all tests**
 
 ```bash
 pytest tests/test_plecs_expert.py -v
 ```
 
-Expected: pass; `test_url_index_resolvable` now scans real URLs.
+Expected: pass; `test_url_index_resolvable` now scans real URLs; the other two tests are now actively enforcing.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add .claude/skills/plecs-expert/references/url-index.md \
-        .claude/skills/plecs-expert/LICENSE-NOTES.md
-git commit -m "feat(skill): url-index.md fallback table"
+        .claude/skills/plecs-expert/LICENSE-NOTES.md \
+        tests/test_plecs_expert.py
+git commit -m "feat(skill): url-index.md + drop vacuous-pass guards"
 ```
 
 ---
