@@ -1,5 +1,13 @@
 # electrical-sources
 
+## AC Voltage Source
+
+`Lib/Electrical/Sources/AC Voltage Source`. Sinusoidal voltage source. Pins: 1=p, 2=n. Sign: v = A·sin(ω·t + φ).
+
+Wrapped in pyplecs: no.
+
+SPICE map: `V<name> p n SIN(0 {A} {f} 0 0 {phi_deg})`.
+
 <!-- BEGIN VERBATIM TABLE: acvoltagesource-parameters -->
 
 | Name | Description |
@@ -24,6 +32,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/acvoltageso
 
 <!-- END VERBATIM TABLE: acvoltagesource-probes -->
 
+### Notes
+- Frequency parameter is angular (rad/s), not Hz. Use `2*pi*f_hz` for Hz input.
+- Default 2*pi*50 → 50 Hz mains.
+
+## DC Voltage Source
+
+`Lib/Electrical/Sources/DC Voltage Source`. Ideal constant voltage source. Pins: 1=p, 2=n.
+
+Wrapped in pyplecs: no.
+
+SPICE map: `V<name> p n {V}`.
+
 <!-- BEGIN VERBATIM TABLE: dcvoltagesource-parameters -->
 
 | Name | Description |
@@ -45,6 +65,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/dcvoltageso
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/dcvoltagesource/_
 
 <!-- END VERBATIM TABLE: dcvoltagesource-probes -->
+
+### Notes
+- Vector form widens component into n parallel scalar sources.
+- In `.plecs` file Type=`DCVoltageSource`, parameter Variable="V".
+
+## Controlled Voltage Source
+
+`Lib/Electrical/Sources/Controlled Voltage Source`. Voltage = signal input. Pins: 1=p, 2=n, 3=signal in.
+
+Wrapped in pyplecs: no.
+
+SPICE map: `B<name> p n V={signal}` (behavioral source).
 
 <!-- BEGIN VERBATIM TABLE: controlledvoltagesource-parameters -->
 
@@ -69,6 +101,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/controlledv
 
 <!-- END VERBATIM TABLE: controlledvoltagesource-probes -->
 
+### Notes
+- Discretization sets ZOH vs FOH on input signal.
+- State-space inlining = expert flag. Default off.
+
+## Controlled Current Source
+
+`Lib/Electrical/Sources/Controlled Current Source`. Current = signal input. Pins: 1=p, 2=n, 3=signal in. Sign: i flows p→n.
+
+Wrapped in pyplecs: no.
+
+SPICE map: `B<name> p n I={signal}` (behavioral source).
+
 <!-- BEGIN VERBATIM TABLE: controlledcurrentsource-parameters -->
 
 | Name | Description |
@@ -91,3 +135,7 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/controlledc
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/controlledcurrentsource/_
 
 <!-- END VERBATIM TABLE: controlledcurrentsource-probes -->
+
+### Notes
+- Same discretization options as controlled voltage source.
+- Probes report measured V across the source plus injected I.
