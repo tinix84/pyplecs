@@ -69,3 +69,46 @@ def test_url_index_resolvable():
         if " " in url or url.endswith((".",  ",", ";")):
             failures.append(f"malformed URL: {url}")
     assert not failures, "\n".join(failures)
+
+
+BANNED_WORDS = {
+    # caveman methodology — drop articles, fillers, hedging.
+    # We can't strip articles globally without false positives, so the
+    # banned set is just fillers + hedges. See style/caveman.md.
+    "basically",
+    "really",
+    "actually",
+    "essentially",
+    "obviously",
+    "simply",
+    "just",     # ambiguous in code contexts; allow override via marker
+    "very",
+    "quite",
+    "perhaps",
+    "maybe",
+}
+
+ALLOW_MARKER = "<!-- caveman:allow -->"
+
+
+def _strip_code_blocks(text: str) -> str:
+    return re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+
+
+def test_caveman_compliance():
+    """Rewritten prose in references/*.md must avoid banned filler words."""
+    refs = SKILL_ROOT / "references"
+    if not refs.exists():
+        return
+    failures: list[str] = []
+    for md in _walk_md(refs):
+        text = md.read_text(encoding="utf-8")
+        if ALLOW_MARKER in text:
+            continue
+        prose = _strip_code_blocks(text)
+        for line_no, line in enumerate(prose.splitlines(), start=1):
+            tokens = re.findall(r"\b\w+\b", line.lower())
+            for word in BANNED_WORDS:
+                if word in tokens:
+                    failures.append(f"{md.relative_to(SKILL_ROOT)}:{line_no} banned: {word}")
+    assert not failures, "\n".join(failures)
