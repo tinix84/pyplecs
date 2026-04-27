@@ -118,3 +118,11 @@ def test_caveman_compliance():
                 if word in tokens:
                     failures.append(f"{md.relative_to(SKILL_ROOT)}:{line_no} banned: {word}")
     assert not failures, "\n".join(failures)
+
+
+def test_slash_command_routes():
+    """The /plecs slash command exists and routes to the plecs-expert skill."""
+    cmd = SKILL_ROOT.parent.parent / "commands" / "plecs.md"
+    assert cmd.exists(), f"missing: {cmd}"
+    text = cmd.read_text(encoding="utf-8")
+    assert "plecs-expert" in text, "command does not reference the plecs-expert skill"
