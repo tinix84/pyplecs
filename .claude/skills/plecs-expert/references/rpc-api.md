@@ -1,5 +1,11 @@
 # rpc-api
 
+PLECS exposes an XML-RPC interface on `localhost:1080` (default). pyplecs wraps a curated subset via `pyplecs.PlecsServer`. Methods on that wrapper: `close`, `health_check`, `is_available`, `load_modelvars`, `run_sim_with_datastream`, `run_sim_with_mat_file`, `set_value`, `simulate`, `simulate_batch`, `simulate_raw`. Anything else use `plecs_rpc(...)` for live introspection.
+
+## Scope export — bitmap options
+
+Field bag passed to `plecs.scope.SaveAsImage` and similar. Not wrapped — call via `plecs_rpc('plecs.scope.SaveAsImage', ...)`.
+
 <!-- BEGIN VERBATIM TABLE: scripting-table-0 -->
 
 | Name | Description |
@@ -20,6 +26,10 @@
 _Source: https://docs.plexim.com/plecs/latest/scripting/_
 
 <!-- END VERBATIM TABLE: scripting-table-0 -->
+
+## SolverOpts — simulate / simulate_raw
+
+`SolverOpts` overrides solver settings for one simulation run. Wrapped via `pyplecs.PlecsServer.simulate` and `simulate_raw` — pass dict as `solver_opts=` kwarg.
 
 <!-- BEGIN VERBATIM TABLE: scripting-table-1 -->
 
@@ -43,6 +53,10 @@ _Source: https://docs.plexim.com/plecs/latest/scripting/_
 
 <!-- END VERBATIM TABLE: scripting-table-1 -->
 
+## OutputTimesOption — output-time mode
+
+Controls how `OutputTimes` is interpreted by the scripted simulator. Use via `solver_opts={'OutputTimes': [...], 'OutputTimesOption': 'specified'}`.
+
 <!-- BEGIN VERBATIM TABLE: scripting-table-2 -->
 
 | OutputTimesOption | Interpretation of OutputTimes |
@@ -54,6 +68,10 @@ _Source: https://docs.plexim.com/plecs/latest/scripting/_
 _Source: https://docs.plexim.com/plecs/latest/scripting/_
 
 <!-- END VERBATIM TABLE: scripting-table-2 -->
+
+## AnalysisOpts — steady-state and small-signal
+
+Field bag for `plecs.analyze(...)`. Not wrapped — call via `plecs_rpc('plecs.analyze', mdl, name, opts)`.
 
 <!-- BEGIN VERBATIM TABLE: scripting-table-3 -->
 
@@ -82,12 +100,16 @@ _Source: https://docs.plexim.com/plecs/latest/scripting/_
 
 <!-- END VERBATIM TABLE: scripting-table-3 -->
 
+## OutputFormat / ModelVars / SolverOpts — top-level options struct
+
+Top-level dict given to `plecs.simulate(mdl, opts)` or `plecs.analyze(mdl, name, opts)`. `ModelVars` is wrapped via `pyplecs.PlecsServer.load_modelvars` (loads a `.m` file) and via `set_value` (per-parameter). `SolverOpts` is wrapped via `simulate` / `simulate_raw`. `OutputFormat` controls return shape; pyplecs wrappers select the right value.
+
 <!-- BEGIN VERBATIM TABLE: scripting-scripted-simulation-and-analysis-options -->
 
 | Name | Description |
 | --- | --- |
 | OutputFormat | The optional field OutputFormat is a string that lets you choose whether the results of a simulation or analysis should be returned as a RPC struct ( Plain ) or in binary form using the MAT-file format ( MatFile ). The binary format is much more efficient if the result contains many data points, but the client may not be able to interpret it, so the default is Plain . |
-| ModelVars | The optional field ModelVars is a struct variable that allows you to override variable values defined by the model initialization commands. Each field name is treated as a variable name; the field value is assigned to the corresponding variable. Values can be numerical scalars, vectors, matrices or 3d arrays or strings. The override values are applied after the model initialization commands have been evaluated and before the component parameters are evaluated as shown in Fig. 117 . Fig. 117 Execution order for Simulation Scripts (left) and RPC (right)  |
+| ModelVars | The optional field ModelVars is a struct variable that allows you to override variable values defined by the model initialization commands. Each field name is treated as a variable name; the field value is assigned to the corresponding variable. Values can be numerical scalars, vectors, matrices or 3d arrays or strings. The override values are applied after the model initialization commands have been evaluated and before the component parameters are evaluated as shown in Fig. 117 . Fig. 117 Execution order for Simulation Scripts (left) and RPC (right)  |
 | SolverOpts | The optional field SolverOpts is a struct variable that allows you to override the solver settings specified in the Simulation Parameters dialog. Each field name is treated as a solver parameter name; the field value is assigned to the corresponding solver parameter. Tab. 18 lists the possible parameters. |
 
 _Source: https://docs.plexim.com/plecs/latest/scripting/_
@@ -103,3 +125,8 @@ _Source: https://docs.plexim.com/plecs/latest/scripting/_
 _Source: https://docs.plexim.com/plecs/latest/scripting/_
 
 <!-- END VERBATIM TABLE: scripting-scripted-simulation-and-analysis-options-2 -->
+
+### Notes
+- pyplecs targets the simulation path. Steady-state and small-signal analysis are not wrapped — call via `plecs_rpc('plecs.analyze', mdl, name, opts)`.
+- `MatFile` mode returns binary; `simulate_raw` covers it. `Plain` returns dict; `simulate` covers it.
+- Variable overrides via `ModelVars` apply after init commands and before component param evaluation.
