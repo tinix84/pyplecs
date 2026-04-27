@@ -1,5 +1,13 @@
 # electrical-switches
 
+## MOSFET
+
+`Lib/Electrical/Power Semiconductors/MOSFET`. Externally controlled switch with on-resistance and optional thermal model. Pins: 1=drain, 2=source, 3=gate. Sign: i flows drain→source when on.
+
+Wrapped in pyplecs: yes — `pyplecs.plecs_components.MosfetWithDiodePlecsMdl`.
+
+SPICE map: n/a (ideal-switch model). Closest analog: `M<name> d g s body NMOS` plus parallel body diode.
+
 <!-- BEGIN VERBATIM TABLE: mosfet-parameters -->
 
 | Name | Description |
@@ -31,6 +39,19 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/mosfet/_
 
 <!-- END VERBATIM TABLE: mosfet-probes -->
 
+### Notes
+- pyplecs wrapper covers MOSFET with body diode model.
+- Loss probes (conduction, switching, junction temp) require placement on a Heat Sink.
+- In `.plecs` files Type=`Mosfet`. Parameters: `Ron`, `s_init`, `thermal`, `Rth`, `T_init`.
+
+## IGBT
+
+`Lib/Electrical/Power Semiconductors/IGBT`. Externally controlled switch with forward-voltage drop and on-resistance. Pins: 1=collector, 2=emitter, 3=gate. Sign: i flows C→E when on.
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (ideal-switch model).
+
 <!-- BEGIN VERBATIM TABLE: igbt-parameters -->
 
 | Name | Description |
@@ -61,6 +82,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/igbt/_
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/igbt/_
 
 <!-- END VERBATIM TABLE: igbt-probes -->
+
+### Notes
+- IGBT on-state drop = `V_f + R_on * i`. MOSFET drop = `R_on * i` only.
+- No body diode by default — pair with `IGBT with Diode` block when free-wheel needed.
+
+## Diode
+
+`Lib/Electrical/Power Semiconductors/Diode`. Self-commutated rectifier. Pins: 1=anode, 2=cathode. Sign: i flows A→K when forward-biased.
+
+Wrapped in pyplecs: no.
+
+SPICE map: `D<name> p n DMOD`.
 
 <!-- BEGIN VERBATIM TABLE: diode-parameters -->
 
@@ -94,6 +127,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/diode/_
 
 <!-- END VERBATIM TABLE: diode-probes -->
 
+### Notes
+- Self-commutated. Turn-on threshold set globally via `TurnOnThreshold` solver param.
+- In `.plecs` Type=`Diode`. Parameters: `Vf`, `Ron`, `thermal`, `Rth`, `T_init`.
+
+## Switch (ideal)
+
+`Lib/Electrical/Switches/Switch`. Externally controlled ideal short/open. Pins: 1=p, 2=n, 3=control.
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (ideal-switch model).
+
 <!-- BEGIN VERBATIM TABLE: switch-parameters -->
 
 | Name | Description |
@@ -115,3 +160,7 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/switch/_
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/switch/_
 
 <!-- END VERBATIM TABLE: switch-probes -->
+
+### Notes
+- Lossless. No `Ron`, no `Vf`. Use MOSFET/IGBT for non-ideal modeling.
+- Control input >0 closes the switch.
