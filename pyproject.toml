@@ -50,6 +50,7 @@ include = ["pyplecs*"]
 pyplecs-api = "pyplecs.api:main"
 pyplecs-setup = "pyplecs.cli.installer:main"
 pyplecs-gui = "pyplecs.webgui:run_app"
+pyplecs-mcp = "pyplecs.mcp:main"
 
 [tool.ruff]
 target-version = "py38"
