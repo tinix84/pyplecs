@@ -16,6 +16,7 @@ pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_fu
 - **Two layers** (full detail in [architecture.md](docs/architecture.md)): `pyplecs/pyplecs.py` is a thin XML-RPC wrapper over PLECS; the orchestration / cache / api / webgui packages are built on top.
 - **Tool-agnostic ABCs at `pyplecs.contracts`** — public façade that prefers an installed PyPI `pycircuitsim_core` (when major-version-compatible) and falls back to the vendored copy at `pyplecs/_contracts/`. **Hard rule:** PyPLECS is standalone — never add `pycircuitsim-core` to `pyproject.toml` dependencies. See `tools/SYNC_PYCIRCUITSIM_CORE.md` for re-sync procedure.
 - **Optional deps degrade to `None`** — `pyplecs/__init__.py` sets `PlecsServer`, `create_api_app`, `create_web_app`, etc. to `None` when their optional packages aren't installed; callers must handle `None`.
+- **PLECS docs reference at `.claude/skills/plecs-expert/`** — single source of truth for the skill, `/plecs` command, and `pyplecs-mcp` MCP server. Refresh procedure in `.claude/skills/plecs-expert/tools/REFRESH.md`.
 
 ## Key Documents
 - [PRD](docs/prd.md) — requirements and roadmap
@@ -25,6 +26,7 @@ pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_fu
 - [Install](docs/install.md) — installation and configuration
 - [Migration](docs/migration.md) — v0.x to v1.0.0 upgrade
 - [Contributing](docs/contributing.md) — development workflow
+- [PLECS Expert Skill](.claude/skills/plecs-expert/SKILL.md) — PLECS docs reference (offline + URL fallback)
 
 ## Specs & Plans
 - Specs: `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
@@ -54,3 +56,4 @@ Central pool (WSL): `\\wsl$\Ubuntu\home\tinix\claude_wsl\agents_pool\` | Domain:
 | 2026-04-25 | Vendor `pycircuitsim_core` ABCs at `pyplecs/_contracts/`, expose via `pyplecs.contracts` façade with PyPI passthrough | PyPLECS must work standalone (no transitive dep on `pycircuitsim-core`); umbrella PyCircuitSim ecosystem is auto-detected when present. Vendored copy stays forever; no exit clause. |
 | 2026-04-25 | Move `articles/` under `docs/articles/` | Ship long-form posts via mkdocs to GitHub Pages instead of bloating repo root. |
 | 2026-04-25 | Unify lint on ruff (drop black/flake8/mypy/isort) | Single tool covers format + lint + isort; one config in `pyproject.toml`. |
+| 2026-04-27 | Add `plecs-expert` skill + `pyplecs-mcp` MCP server | Ground PLECS authoring help, netlist converter, and PlecsServer wrapper in docs.plexim.com via offline caveman-style reference. Closes #23. |
