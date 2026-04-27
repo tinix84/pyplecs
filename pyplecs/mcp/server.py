@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import sys
 from typing import Any
@@ -42,11 +43,22 @@ def build_server() -> Server:
         fn = TOOL_REGISTRY.get(name)
         if fn is None:
             return [TextContent(type="text", text=f"unknown tool: {name}")]
+        sig = inspect.signature(fn)
+        required_params = [
+            p for p in sig.parameters.values()
+            if p.default is inspect.Parameter.empty
+            and p.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.POSITIONAL_ONLY)
+        ]
         arg = arguments.get("argument", "")
+        if required_params and not arg:
+            return [TextContent(
+                type="text",
+                text=f"tool '{name}' requires an 'argument' string",
+            )]
         try:
-            result = fn(arg) if arg else fn()
-        except TypeError:
-            result = fn()
+            result = fn(arg) if required_params else fn()
+        except Exception as exc:  # surface real errors as text rather than crashing the loop
+            return [TextContent(type="text", text=f"tool '{name}' error: {exc}")]
         return [TextContent(type="text", text=_to_text(result))]
 
     return server

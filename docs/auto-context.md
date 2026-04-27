@@ -53,7 +53,7 @@ pyplecs/
 ├── cli/
 │   ├── __init__.py
 │   └── installer.py         # Setup wizard (pyplecs-setup)
-├── mcp/                     # Model Context Protocol server (planned, gracefully degraded)
+├── mcp/                     # Stdio MCP server backing the plecs-expert skill (gracefully degraded if `mcp` extra not installed)
 ├── optimizer/               # Optimization algorithms (planned, gracefully degraded)
 └── logging/
     └── __init__.py          # StructuredLogger inheriting StructuredLoggerBase
@@ -66,7 +66,7 @@ pyplecs/
 | `pyplecs-setup` | `pyplecs.cli.installer:main` | Setup wizard |
 | `pyplecs-gui` | `pyplecs.webgui:run_app` | Web dashboard |
 | `pyplecs-api` | `pyplecs.api:main` | REST API server |
-| `pyplecs-mcp` | `pyplecs.mcp:main` | MCP server (planned) |
+| `pyplecs-mcp` | `pyplecs.mcp:main` | Stdio MCP server exposing the `plecs-expert` skill (8 read-only tools) |
 
 ## Dependencies
 

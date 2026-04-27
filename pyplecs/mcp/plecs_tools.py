@@ -15,13 +15,24 @@ PYPLECS_PKG = Path(__file__).resolve().parent.parent  # <repo>/pyplecs
 REPO_ROOT = PYPLECS_PKG.parent  # <repo>
 SKILL_ROOT = REPO_ROOT / ".claude" / "skills" / "plecs-expert"
 REFERENCES = SKILL_ROOT / "references"
+_REFERENCES_RESOLVED = REFERENCES.resolve()
 
 
 def _read_ref(rel: str) -> str:
-    path = REFERENCES / rel
-    if not path.exists():
+    """Read references/<rel>; reject path-traversal attempts.
+
+    `rel` is treated as a path under REFERENCES. After resolving, the path
+    must be inside REFERENCES — otherwise the call is rejected. This prevents
+    a malicious MCP client from passing e.g. `../../../etc/passwd`.
+    """
+    candidate = (REFERENCES / rel).resolve()
+    try:
+        candidate.relative_to(_REFERENCES_RESOLVED)
+    except ValueError:
+        return f"(invalid reference path: {rel})"
+    if not candidate.exists():
         return f"(no offline reference for `{rel}`)"
-    return path.read_text(encoding="utf-8")
+    return candidate.read_text(encoding="utf-8")
 
 
 def plecs_lookup(topic: str) -> str:
