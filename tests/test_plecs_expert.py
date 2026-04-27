@@ -91,8 +91,20 @@ BANNED_WORDS = {
 ALLOW_MARKER = "<!-- caveman:allow -->"
 
 
-def _strip_code_blocks(text: str) -> str:
-    return re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+def _strip_non_prose(text: str) -> str:
+    """Strip fenced code blocks AND verbatim-table sections from text.
+
+    Verbatim sections (between BEGIN/END VERBATIM TABLE markers) are facts
+    quoted from PLECS docs; they are exempt from caveman-style enforcement.
+    """
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    text = re.sub(
+        r"<!--\s*BEGIN VERBATIM TABLE:.*?<!--\s*END VERBATIM TABLE:.*?-->",
+        "",
+        text,
+        flags=re.DOTALL,
+    )
+    return text
 
 
 def test_caveman_compliance():
@@ -105,7 +117,7 @@ def test_caveman_compliance():
         text = md.read_text(encoding="utf-8")
         if ALLOW_MARKER in text:
             continue
-        prose = _strip_code_blocks(text)
+        prose = _strip_non_prose(text)
         for line_no, line in enumerate(prose.splitlines(), start=1):
             tokens = re.findall(r"\b\w+\b", line.lower())
             for word in BANNED_WORDS:

@@ -35,6 +35,8 @@ web = [
     "tqdm>=4.62.0",
 ]
 dev = [
+    "beautifulsoup4>=4.12",
+    "httpx>=0.25",
     "pytest",
     "ruff",
 ]

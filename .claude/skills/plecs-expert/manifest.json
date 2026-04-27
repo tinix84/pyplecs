@@ -3,112 +3,215 @@
   "files": {
     "references/components/electrical-passive.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Resistor.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Inductor.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Capacitor.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Transformer.html"
+        "https://docs.plexim.com/plecs/latest/components-by-category/resistor/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/inductor/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/capacitor/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/transformer/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "resistor-parameters": "ca3b5fcfbe3318b65ef6aec3d9a6fc6370fec21734192b1a87d591d285f7144c",
+        "resistor-probes": "6aad1a42f08d871db6c0537c085b1860c6aad4f3d71b0c66c971bb6716a454ea",
+        "inductor-parameters": "4edd45f6bb59c2eaaf6786ee05eec9e99defdd2b147937402c385c5ac5f523e9",
+        "inductor-probes": "ebba6dda24746e39dec493c352d1d2a7f9068fd18e1f1821c15e7716c2ea0667",
+        "capacitor-parameters": "5312cc75e41a7cee0082b57a0623d03a6cc8b6265ef35ffd0a147730fb5aa103",
+        "capacitor-probes": "e37eb191b37a43a7a21074191036e7842990c3b77ac0e92fcb457480d879fecf",
+        "transformer-parameters": "c9f2a5c07f1feb21abc17391f3e4509d007088bdeb00d89c3c1e39936dcadd7e"
+      },
       "prose_section_hashes": {}
     },
     "references/components/electrical-sources.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/VoltageSourceAC.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/VoltageSourceDC.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/VoltageSourceControlled.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/CurrentSourceControlled.html"
+        "https://docs.plexim.com/plecs/latest/components-by-category/acvoltagesource/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/dcvoltagesource/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/controlledvoltagesource/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/controlledcurrentsource/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "acvoltagesource-parameters": "5ee9afeb17f4f81752ceab2a645da8c93bfd38731906321f6072558a9e05a45f",
+        "acvoltagesource-probes": "df0f128d465f2e9ca93df3a97e0f156855cc6dcbe0040cdebb31825162cda89e",
+        "dcvoltagesource-parameters": "e4ec89194d143d9a644546dfe9e590e8a8587766e5acdcf0f4d5d9bfa60288f2",
+        "dcvoltagesource-probes": "df0f128d465f2e9ca93df3a97e0f156855cc6dcbe0040cdebb31825162cda89e",
+        "controlledvoltagesource-parameters": "c90f24b2885368ab4206895577635f9a71fa9750f3e8e8db1e2372f13c2e073a",
+        "controlledvoltagesource-probes": "df0f128d465f2e9ca93df3a97e0f156855cc6dcbe0040cdebb31825162cda89e",
+        "controlledcurrentsource-parameters": "c90f24b2885368ab4206895577635f9a71fa9750f3e8e8db1e2372f13c2e073a",
+        "controlledcurrentsource-probes": "96fb4fe512eab8f74e20770839a82303156891e4d64e060020902753ac058dd1"
+      },
       "prose_section_hashes": {}
     },
     "references/components/electrical-switches.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Mosfet.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Igbt.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Diode.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/SwitchIdeal.html"
+        "https://docs.plexim.com/plecs/latest/components-by-category/mosfet/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/igbt/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/diode/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/switch/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "mosfet-parameters": "0676c5f41ea8c4e17c6e9032d69182538176d86078fb73a8aad9415a65fe9cf4",
+        "mosfet-probes": "721238e3e65d53ddc5cebb93d7b835f099beb21ec6949ed95e36b767d06813f2",
+        "igbt-parameters": "019d758501490d7a90e10ff68638586d0408187f127e4d6ab039eefda27f11d8",
+        "igbt-probes": "642f9ffb61bfcb50f8e2ad312de1adfa3715670d9cc448ca6f4af4bea8459a9c",
+        "diode-parameters": "1075309f05d31e43eb90040d608deee675a19cf21e4e4db10e2030a8b0440737",
+        "diode-probes": "828995d2591d6cc131472376549de2810ea66b16a52bf624ebb544153329818e",
+        "switch-parameters": "691dd2a93b8c9ad6796a83711568a129c56dada7301df8854605e49d3c4e15e7",
+        "switch-probes": "03ada57b82312d9dba019f208f4725ea68ce69c2fb3458aacedbd389a4e047dc"
+      },
       "prose_section_hashes": {}
     },
     "references/components/electrical-meters.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Voltmeter.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Electrical/Ammeter.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/System/Scope.html"
+        "https://docs.plexim.com/plecs/latest/components-by-category/voltmeter/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/ammeter/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/scope/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "voltmeter-probes": "56a09dd908e778de0c9a7997e82e44421c6ab3872f530f5369ae7f40a58cfedc",
+        "ammeter-probes": "32acdaf9b547d4f982407c690568e0bdefc6133d25f6a8efc534ee4024374cbb",
+        "scope-scope-setup": "379bdcb703964f6ee521f7aed2c5a00a7ef32e991709a19f654d8ac8a123bf27",
+        "scope-time-axis-parameters": "e87e888bb04248c8e9e60224ee7bf61072f241d13c6d37f429e934fa63f9965f",
+        "scope-individual-plot-parameters": "e456514a06569be8a8550f35589a674d74dd8f9ba36ea83b68d8c4a4aa016276"
+      },
       "prose_section_hashes": {}
     },
     "references/components/magnetic.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/Magnetic/Permeance.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Magnetic/MmfSource.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Magnetic/FluxMeter.html"
+        "https://docs.plexim.com/plecs/latest/components-by-category/magneticpermeance/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/constantmmf/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/fluxratemeter/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "magneticpermeance-parameters": "e5812f51e3f663e35eb7afed390dbbba09e362188e5151621ea85d9962e8fb32",
+        "magneticpermeance-probes": "768f6dcfd44f654c9d3b8627003a0a7d755b774b3b7de02ac94c61e5f59370e8",
+        "constantmmf-parameters": "19007c88b6c702c1854c187a81c6958d8a842901122f24558b291b665548b571",
+        "constantmmf-probes": "469819f171544d20121a745b7a39eb5d2928d9609021985b286b264c9a7a508b",
+        "fluxratemeter-probes": "d2e9889a4f7a6fad724bb2a8f8b0aba9f7b6ba08bba06d4d694db90fb313ab1f"
+      },
       "prose_section_hashes": {}
     },
     "references/components/thermal.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/Thermal/HeatSink.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Thermal/ThermalCapacitor.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Thermal/AmbientTemperature.html"
+        "https://docs.plexim.com/plecs/latest/components-by-category/heatsink/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/thermalcapacitor/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/ambienttemperature/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "heatsink-parameters": "c8ecacd541fd933602ab42bcf45df9dd3aff927ac15eb0ad693d6be4f4779278",
+        "heatsink-probes": "a6d4c311c75124882f4477390f5e481eb521506a8383a3ddc40b8eb234bc523c",
+        "thermalcapacitor-parameters": "2d14827f3fe4ae5122929f4f75a27e00b5bec284110d9d50ae3b9951dcea7376",
+        "thermalcapacitor-probes": "929617104520894e21b3c6a18949d3d3ce939585a319f92e8e0a9cccfcfbf4e5",
+        "ambienttemperature-parameters": "bfe734ec46ee359c958402ff686638f31353267a51c1841b2f94714c30ce5287"
+      },
       "prose_section_hashes": {}
     },
     "references/components/control.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/Control/PIController.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Control/TransferFunction.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/Control/StateMachine.html"
+        "https://docs.plexim.com/plecs/latest/components-by-category/continuouspidcontroller/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/transferfcn/",
+        "https://docs.plexim.com/plecs/latest/statemachines/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "continuouspidcontroller-anti-windup-methods": "c951626e4dbb5645fae04f068916d6b17c544944f1063913626e262614ededcb",
+        "continuouspidcontroller-anti-windup-methods-2": "af699ebb9c56f68e92ecdc2121e0e3e39424b7055d2dbff1b640cdefc6fb1b08",
+        "continuouspidcontroller-basic": "80daee0e15baea536d0aab99a383e1b0a513c56e299d74a37ef28ea8528c0613",
+        "continuouspidcontroller-anti-windup": "2d64e9a4d66d696a77c86a1f54404b15d3b9774ea5a36ea9d6d0ea720a0e34cb",
+        "continuouspidcontroller-probes": "e19f850e68763403ffc978ce0a48ddee9cd3f764d83910ab9b3c815e194ece44",
+        "transferfcn-parameters": "9b5ac84a66d84e6d891a77978d05984fc170c8f7b5652dc7fba099a48b4d6b95",
+        "transferfcn-probes": "eda9d671707ed183da78d0d1b30e34f1e31ec7df5febb405a71d1d3df27bfec4",
+        "statemachines-table-0": "1a19dae24d6c44cb6113b5907dcaee9544c8fc548227d9236d1db9d9e02b9553",
+        "statemachines-table-1": "5b587bb42c82ef3514772e55f1ba7c2b8c750bf6435521ad576cdf60e1cd5c22"
+      },
       "prose_section_hashes": {}
     },
     "references/components/system.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/System/Subsystem.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/System/ConfigurableSubsystem.html",
-        "https://docs.plexim.com/plecs/latest/UserManual/System/Mask.html"
+        "https://docs.plexim.com/plecs/latest/components-by-category/subsystem/",
+        "https://docs.plexim.com/plecs/latest/components-by-category/conf_subsystem/",
+        "https://docs.plexim.com/plecs/latest/using-plecs/masking-subsystems/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "subsystem-execution-settings": "581824359361cb103fc87db60c85b4ce668a5f7468a07389be03d1c2b5570c0c",
+        "conf_subsystem-parameters": "05d3a39060c05f55be166f644d6350b4f40e072504e67c4e4774fde51994bdc0",
+        "masking-subsystems-table-0": "883ffe9e6fed7d6b91bfb222d2a6196288dad67014c0ad19f25a9035a28bdd97",
+        "masking-subsystems-table-1": "6d93887918327b1a6ef2807ae7bc0a41b348f36b192d39852abafcab18f37bf6",
+        "masking-subsystems-table-2": "9b5aea2012004a72a731a167e9a6024bb4a2dee75580945261c2854639dd747c",
+        "masking-subsystems-table-3": "73b6046fa9f4789c04451c6565c455990109f4f0191cce4b91b6b0554210a42b",
+        "masking-subsystems-table-4": "7f8ff97f34d38a1fbb8c63f41ee7758b2523e78a817f6c50a61646646673d533",
+        "masking-subsystems-table-5": "d173d9fd0a044481c775da3aa0504e90f785569cd185e07eaf2e77197cfec731",
+        "masking-subsystems-table-6": "5c7dbe21d7042eb17034459a062f5f305f7051a7de9553e1fcd66f8585587faf",
+        "masking-subsystems-mask-icon-properties": "abd7a7f5e2a5b7a5c13baa466bb4f26e0b50a1bdd6c4af6b4bf6e23b5a0d1d80",
+        "masking-subsystems-mask-help": "1f59ddd316cba68a55b9402a05459b1d43f9344627a10c4f347442a3a831338f",
+        "masking-subsystems-types-and-variables": "e86e2cdca5122d770c92a40bafb6d29f4d24f8ea4e2a87f49f3c3720c90b29fd",
+        "masking-subsystems-control-structures": "2a4d544e49636aae92216b684f76ff45fb54e09deae4c5294e98dd46d6442b3b"
+      },
       "prose_section_hashes": {}
     },
     "references/rpc-api.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/XmlRpcInterface.html"
+        "https://docs.plexim.com/plecs/latest/scripting/"
       ],
-      "table_section_hashes": {},
-      "prose_section_hashes": {}
-    },
-    "references/plecs-xml-grammar.md": {
-      "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/PlecsFileFormat.html"
-      ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "scripting-table-0": "2d74b2835bbb6c21a22e9be8745edace51751d303548ce508861714490e2d9d9",
+        "scripting-table-1": "63ca83e9f357b3788e6f6bd609ed493fe809c794f804ba3b1686bd014d47aea8",
+        "scripting-table-2": "660a0dbb7b21c0d148a500d915486771ecd6644f1b708d8902b3bea80d1a3c5d",
+        "scripting-table-3": "4c0464e9d6130fb67ea3bddf8c191eae0d0db287451fab646bd62e256b36f287",
+        "scripting-scripted-simulation-and-analysis-options": "9ba39044078ac5b4b0a4af2ab71335e43cdc0a8235fa898fd39bf04995cfcfb4",
+        "scripting-scripted-simulation-and-analysis-options-2": "4844c78272c815bb4e0e36f1ff8954e5e44e537b119cbbfceada93a24188cc19"
+      },
       "prose_section_hashes": {}
     },
     "references/solver.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/Simulation/SolverSettings.html"
+        "https://docs.plexim.com/plecs/latest/using-plecs/simulation-parameters/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "simulation-parameters-simulation-time": "e89a8dc082ab39b3013c4e468e8fa5884f9d5a43f8dc0169b6ca57b9bad56dd2",
+        "simulation-parameters-solver": "a964e3831d93845fa090952de89745e1df626825ae621d3829686184e0a2f208",
+        "simulation-parameters-solver-2": "7904a11caaf3b932de715e42ad1f3106ea4f13d8dcf02c5d17b178a2cc8fe73b",
+        "simulation-parameters-variable-step-solver-options": "5be53d4bdd83845edd0132b2f2a7bee978e7eb7351f1f21fd8c47bc146e74047",
+        "simulation-parameters-fixed-step-solver-options": "3392796b768d28f85fa019379f60f8241d00d47f09fe9680a6ccfe4289d7c773",
+        "simulation-parameters-circuit-model-options": "ca7576607686a81900fe4513885278334f8974642a8273f6c976181198e97be5",
+        "simulation-parameters-circuit-model-options-2": "c156f570a4646d11110343be5d54c711c9427952ea25c7de827a9873ced3a8a2",
+        "simulation-parameters-sample-times": "afa9856b74bfcc8c47ff1d62454237ccba3f300a90f6527dddf6c111b449c992",
+        "simulation-parameters-state-space-calculation": "cc8bf0b36fa706552ea502f8309112903838864d4fc4e54ea7b220accb85954f",
+        "simulation-parameters-data-types": "0b1d285fafb55e023c748de068e93f7f900178fa4b04e790c82b8ac84dfe43f4",
+        "simulation-parameters-assertions": "57749cfacb10a5243daae35a3ff2b954f2585fdd55c77c3f11fcef75761dac90",
+        "simulation-parameters-algebraic-loops": "26bf3701ef640764d3a4b46b97a420d8055b0de8111f6797e5ab7f3aa4515a04",
+        "simulation-parameters-diagnostics": "eca1c6068ffc13abc95d7d0c6d5bf3ecf57df3cad46a5d0cdfa2dddb3d59781f",
+        "simulation-parameters-system-state": "64849ef322c3452a27b79a9d7e670ad428805b8d4520fdb90cf34f8e6f5ed285",
+        "simulation-parameters-id1": "0ee18fc9be989eaa8f067f963729ab5bae932c96020c868df14cd9aa0eea5a50",
+        "simulation-parameters-discrete-state-space-options": "538a977cb0d48de4258c1ebfecf837bfe0e1349cc90235193776b454ee7af672",
+        "simulation-parameters-id2": "7c3de7e257578cbe5b9bea0f49a4bb306384f335b7d486bd5c74d2c9234d3fb2",
+        "simulation-parameters-id3": "8f78046d80166b57189ca22a65fba36095d7d16ebc7bf97d115f081300190839",
+        "simulation-parameters-id4": "26bf3701ef640764d3a4b46b97a420d8055b0de8111f6797e5ab7f3aa4515a04",
+        "simulation-parameters-id5": "cc8bf0b36fa706552ea502f8309112903838864d4fc4e54ea7b220accb85954f",
+        "simulation-parameters-simulink-coder": "edd348bdff8e0c49bfe128c4bcadb53f76d906481ed6ef2bb83b03930b232b68"
+      },
       "prose_section_hashes": {}
     },
     "references/codegen.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/CodeGeneration/Overview.html"
+        "https://docs.plexim.com/plecs/latest/codegeneration/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "codegeneration-table-0": "38b689582023381d1d61780f47df889c95c11f002a5f0ece36836bf05548260a",
+        "codegeneration-table-1": "651b8b021990e1a1c104a122d6285a2ec29b88a026a72d355ca0b98dbcaa1d67",
+        "codegeneration-switching-algorithm": "ec5f2e46664a616d6623be4e524eef4a61c99f0339623d89511e65c9b09264df",
+        "codegeneration-codegenswitchtypes": "df092bc72bd0e5dba7d603b567b0e97b3948af83a92848a3b0f84ce00d9cd0b2",
+        "codegeneration-code-generation-with-plecs-standalone": "2feee155fe7c0426d7699344d8bc865e8fdeef5963156e334b80118597ad85ef",
+        "codegeneration-general": "541d9636937cb67f47848a53eae15f560de33d1b93273c16e3ba10b58cccee78",
+        "codegeneration-parameter-inlining": "17266be55e1b23e27b1c2d31986552d67b8eba5fea8224917f87d66ae3ab3b59",
+        "codegeneration-target": "e1a6190475c16821a3479ae6d49e7f5d1b23180b314c85840b4cf3a99fdd4873",
+        "codegeneration-scheduling": "eb0bac52b5920e276fc7a1c51b1f72a77cb12f79f3a407f10d1b48f263513bbe",
+        "codegeneration-simulink-coder-options": "c1ea9769522879e3c9987ae6e56603de19526dd781395b252b45cd45e25b8fd6"
+      },
       "prose_section_hashes": {}
     },
     "references/cscript.md": {
       "source_urls": [
-        "https://docs.plexim.com/plecs/latest/UserManual/CScript.html"
+        "https://docs.plexim.com/plecs/latest/c-scripts/"
       ],
-      "table_section_hashes": {},
+      "table_section_hashes": {
+        "c-scripts-table-0": "e9edf84d99552bcea3fd44b3a7c3232a55925cd0f216d6e4b31bd667231e646c"
+      },
       "prose_section_hashes": {}
     }
   }
