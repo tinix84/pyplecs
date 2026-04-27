@@ -213,6 +213,12 @@
         "c-scripts-table-0": "e9edf84d99552bcea3fd44b3a7c3232a55925cd0f216d6e4b31bd667231e646c"
       },
       "prose_section_hashes": {}
+    },
+    "references/plecs-xml-grammar.md": {
+      "source_urls": [],
+      "table_section_hashes": {},
+      "prose_section_hashes": {},
+      "_note": "No public docs page; hand-authored from data/*.plecs samples in Task 15. sync_tables.py skips entries with empty source_urls."
     }
   }
 }
