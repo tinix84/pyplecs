@@ -44,13 +44,19 @@ def plecs_search(query: str) -> str:
 
 
 def plecs_xml(element: str) -> str:
-    """Look up a `.plecs` XML element in plecs-xml-grammar.md."""
+    """Look up a `.plecs` element in plecs-xml-grammar.md.
+
+    `.plecs` files use a Tcl-ish curly-brace key-value format, not XML.
+    The grammar table documents elements as backtick-wrapped tokens
+    (e.g. ``Component { ... }``, ``Type <atom>``). Match those forms.
+    """
     text = _read_ref("plecs-xml-grammar.md")
-    pattern = re.compile(rf"`<{re.escape(element)}\b.*", re.IGNORECASE)
+    esc = re.escape(element)
+    pattern = re.compile(rf"`{esc}\b[^`]*`", re.IGNORECASE)
     matches = pattern.findall(text)
     if matches:
         return "\n".join(matches[:10])
-    return f"element `<{element}>` not documented; try plecs_url('xml-grammar')"
+    return f"element `{element}` not documented; try plecs_url('xml-grammar')"
 
 
 def plecs_url(topic: str) -> str:
@@ -84,9 +90,25 @@ def pyplecs_rpc_surface() -> list[str]:
 
 
 def plecs_component(name: str) -> dict[str, Any]:
-    """Composed: pyplecs wrapper if present, else search references/components/."""
+    """Composed: pyplecs wrapper if present, else search references/components/.
+
+    Match priority:
+      1. exact match against `<Name>PlecsMdl` (case-insensitive on stem)
+      2. substring match, but only when `name` is at least 3 chars
+         (avoids `name="r"` matching every wrapper containing the letter)
+    """
     wrappers = pyplecs_wrappers()
-    matched_wrapper = next((w for w in wrappers if name.lower() in w.lower()), None)
+    needle = name.lower()
+    exact = next(
+        (w for w in wrappers if w.lower().removesuffix("plecsmdl") == needle),
+        None,
+    )
+    if exact is not None:
+        matched_wrapper: str | None = exact
+    elif len(needle) >= 3:
+        matched_wrapper = next((w for w in wrappers if needle in w.lower()), None)
+    else:
+        matched_wrapper = None
     body = {
         "name": name,
         "pyplecs_wrapper": matched_wrapper,
