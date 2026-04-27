@@ -1,5 +1,13 @@
 # electrical-passive
 
+## Resistor
+
+`Lib/Electrical/Passive Components/Resistor`. Linear ohmic dissipator. Pins: 1=p, 2=n. Sign: i flows p→n.
+
+Wrapped in pyplecs: yes — `pyplecs.plecs_components.ResistorPlecsMdl`.
+
+SPICE map: `R<name> p n {R}`.
+
 <!-- BEGIN VERBATIM TABLE: resistor-parameters -->
 
 | Name | Description |
@@ -21,6 +29,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/resistor/_
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/resistor/_
 
 <!-- END VERBATIM TABLE: resistor-probes -->
+
+### Notes
+- Vector form `[R_1 R_2 ... R_n]` builds n parallel scalar resistors with shared width.
+- Power probe = `v_R * i_R`. Sign matches passive convention.
+
+## Inductor
+
+`Lib/Electrical/Passive Components/Inductor`. Stores magnetic energy. Pins: 1=p, 2=n. Sign: i_L flows p→n.
+
+Wrapped in pyplecs: yes — `pyplecs.plecs_components.InductorPlecsMdl`.
+
+SPICE map: `L<name> p n {L} IC={IL_init}`.
 
 <!-- BEGIN VERBATIM TABLE: inductor-parameters -->
 
@@ -44,6 +64,19 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/inductor/_
 
 <!-- END VERBATIM TABLE: inductor-probes -->
 
+### Notes
+- Initial current `IL_init` requires UIC in the `.tran` directive on SPICE side.
+- Pin order matters for sign of `i_L` probe.
+- Coupled inductors use a matrix `L`. Off-diagonal entries are mutual inductances `M_ij`.
+
+## Capacitor
+
+`Lib/Electrical/Passive Components/Capacitor`. Stores electric energy. Pins: 1=p (marked +), 2=n. Sign: v_C measured + over −.
+
+Wrapped in pyplecs: yes — `pyplecs.plecs_components.CapacitorPlecsMdl`.
+
+SPICE map: `C<name> p n {C} IC={V_init}`.
+
 <!-- BEGIN VERBATIM TABLE: capacitor-parameters -->
 
 | Name | Description |
@@ -66,6 +99,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/capacitor/_
 
 <!-- END VERBATIM TABLE: capacitor-probes -->
 
+### Notes
+- Initial voltage `V_init` requires UIC in `.tran` on SPICE side.
+- Coupled capacitors use a square matrix; matrix must be invertible.
+
+## Transformer
+
+`Lib/Electrical/Passive Components/Transformer`. Multi-winding magnetic coupling with finite magnetizing inductance. Pins: depend on `[w1 w2]`.
+
+Wrapped in pyplecs: yes — `pyplecs.plecs_components.TransformerPlecsMdl`.
+
+SPICE map: two coupled `L` lines plus `K<name> Lp Ls {coupling}`.
+
 <!-- BEGIN VERBATIM TABLE: transformer-parameters -->
 
 | Name | Description |
@@ -79,3 +124,8 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/capacitor/_
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/transformer/_
 
 <!-- END VERBATIM TABLE: transformer-parameters -->
+
+### Notes
+- Magnetizing inductance referred to first winding. Set inf for ideal transformer.
+- Polarity vector controls dot orientation per winding.
+- Initial magnetizing current must be 0 when L_m = inf.
