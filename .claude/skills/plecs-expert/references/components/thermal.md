@@ -1,5 +1,13 @@
 # thermal
 
+## Heat Sink
+
+`Lib/Thermal/Heat Sink`. Frame element. Encloses semiconductors so loss probes can inject heat into a thermal network. Pins: variable thermal terminals (configurable).
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (no SPICE equivalent).
+
 <!-- BEGIN VERBATIM TABLE: heatsink-parameters -->
 
 | Name | Description |
@@ -23,6 +31,19 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/heatsink/_
 
 <!-- END VERBATIM TABLE: heatsink-probes -->
 
+### Notes
+- Heat sink is a graphical frame. Drag around devices to enclose them.
+- Capacitance 0 → must connect external thermal cap or ambient temperature.
+- Width must match enclosed device width when vectorized.
+
+## Thermal Capacitor
+
+`Lib/Thermal/Thermal Capacitor`. Stores heat. Thermal-domain analog of electrical capacitor. Pins: 1=p (marked +), 2=n.
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (no SPICE equivalent).
+
 <!-- BEGIN VERBATIM TABLE: thermalcapacitor-parameters -->
 
 | Name | Description |
@@ -44,6 +65,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/thermalcapa
 
 <!-- END VERBATIM TABLE: thermalcapacitor-probes -->
 
+### Notes
+- Units J/K. Sign convention: + terminal is hotter side.
+- Pair with thermal resistor blocks to build Foster/Cauer networks.
+
+## Ambient Temperature
+
+`Lib/Thermal/Ambient Temperature`. Fixed-temperature thermal source. Pins: 1=thermal terminal, 2=signal in (when external).
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (no SPICE equivalent).
+
 <!-- BEGIN VERBATIM TABLE: ambienttemperature-parameters -->
 
 | Name | Description |
@@ -53,3 +86,7 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/thermalcapa
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/ambienttemperature/_
 
 <!-- END VERBATIM TABLE: ambienttemperature-parameters -->
+
+### Notes
+- Thermal-domain analog of an electrical voltage source.
+- Default: scalar heat sink absorbs all elements of vector inner connection.
