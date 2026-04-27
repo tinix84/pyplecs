@@ -1,5 +1,13 @@
 # magnetic
 
+## Magnetic Permeance
+
+`Lib/Magnetic/Permeance`. Magnetic-domain analog of capacitance. Pins: 1=marked, 2=unmarked. Sign: flux Φ flows marked→unmarked.
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (no SPICE equivalent).
+
 <!-- BEGIN VERBATIM TABLE: magneticpermeance-parameters -->
 
 | Name | Description |
@@ -22,6 +30,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/magneticper
 
 <!-- END VERBATIM TABLE: magneticpermeance-probes -->
 
+### Notes
+- Permeance P = 1/Reluctance. Units Wb/A. Larger P = easier flux flow.
+- Magnetic-domain dual: MMF↔V, flux-rate↔I, permeance↔C.
+
+## Constant MMF
+
+`Lib/Magnetic/Constant MMF`. Ideal magneto-motive-force source. Pins: 1=marked, 2=unmarked.
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (no SPICE equivalent).
+
 <!-- BEGIN VERBATIM TABLE: constantmmf-parameters -->
 
 | Name | Description |
@@ -42,6 +62,18 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/constantmmf
 
 <!-- END VERBATIM TABLE: constantmmf-probes -->
 
+### Notes
+- Parameter labelled `Voltage` but unit is ampere-turns (analogy with electrical V source).
+- Models permanent magnet or DC bias winding.
+
+## Flux Rate Meter
+
+`Lib/Magnetic/Flux Rate Meter`. Outputs dΦ/dt across two magnetic terminals. Pins: 1=p, 2=n, 3=signal out.
+
+Wrapped in pyplecs: no.
+
+SPICE map: n/a (no SPICE equivalent).
+
 <!-- BEGIN VERBATIM TABLE: fluxratemeter-probes -->
 
 | Probe signal | Description |
@@ -51,3 +83,7 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/constantmmf
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/fluxratemeter/_
 
 <!-- END VERBATIM TABLE: fluxratemeter-probes -->
+
+### Notes
+- Output Wb/s = volts per turn. Multiply by N to get winding voltage.
+- Loss-free. Inserts as zero-MMF branch.
