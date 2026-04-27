@@ -1,5 +1,11 @@
 # system
 
+## Subsystem
+
+`Lib/System/Subsystem`. Hierarchical container. Atomic or virtual. Atomic adds sample-time + execution boundary.
+
+Wrapped in pyplecs: no.
+
 <!-- BEGIN VERBATIM TABLE: subsystem-execution-settings -->
 
 | Name | Description |
@@ -15,6 +21,17 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/subsystem/_
 
 <!-- END VERBATIM TABLE: subsystem-execution-settings -->
 
+### Notes
+- Atomic = single execution unit. Virtual = inlined for sorting.
+- Code-gen requires atomic. Disables algebraic-loop minimization.
+- CodeGen sim mode swaps generated C in for the subsystem at run time.
+
+## Configurable Subsystem
+
+`Lib/System/Configurable Subsystem`. Subsystem with multiple internal schematics; one is selected at run time.
+
+Wrapped in pyplecs: no.
+
 <!-- BEGIN VERBATIM TABLE: conf_subsystem-parameters -->
 
 | Name | Description |
@@ -24,6 +41,16 @@ _Source: https://docs.plexim.com/plecs/latest/components-by-category/subsystem/_
 _Source: https://docs.plexim.com/plecs/latest/components-by-category/conf_subsystem/_
 
 <!-- END VERBATIM TABLE: conf_subsystem-parameters -->
+
+### Notes
+- `Configuration` variable holds 1-based index of active schematic.
+- Useful for swap-in test rigs (e.g. ideal vs lossy switch model).
+
+## Masking Subsystems
+
+`Lib/System/Masking`. Wraps a subsystem with a custom dialog, icon, and Lua-based init.
+
+Wrapped in pyplecs: no.
 
 <!-- BEGIN VERBATIM TABLE: masking-subsystems-table-0 -->
 
@@ -189,3 +216,8 @@ _Source: https://docs.plexim.com/plecs/latest/using-plecs/masking-subsystems/_
 _Source: https://docs.plexim.com/plecs/latest/using-plecs/masking-subsystems/_
 
 <!-- END VERBATIM TABLE: masking-subsystems-control-structures -->
+
+### Notes
+- Mask language is Lua. Tables = generic data structure, double-quoted strings, escape backslash.
+- Icon drawing API: `Icon:line`, `Icon:text`, `Icon:patch`, plus `IconLib.<device>` shortcuts.
+- Domain colors are name-based (`"electrical"`, `"thermal"`, etc.) — auto-adapt in dark mode.
