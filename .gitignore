@@ -34,7 +34,14 @@ utils/
 .claude/
 
 docs/articles/diagrams/output/
+docs/articles/output/
 FORCE_PUSH_PLAN.txt
+
+# Local PLECS sample experiments (canonical samples like simple_buck_prb.plecs
+# stay tracked; this rule only affects new untracked .plecs / .plecs.bak / .m files)
+data/*.plecs*
+data/*.m
+data/*.csv
 
 # Build artifacts
 site/
