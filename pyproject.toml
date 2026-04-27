@@ -34,9 +34,11 @@ web = [
     "rich>=10.0.0",
     "tqdm>=4.62.0",
 ]
+mcp = ["mcp>=1.0"]
 dev = [
     "beautifulsoup4>=4.12",
     "httpx>=0.25",
+    "mcp>=1.0",
     "pytest",
     "ruff",
 ]
