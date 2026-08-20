@@ -57,3 +57,17 @@ Central pool (WSL): `\\wsl$\Ubuntu\home\tinix\claude_wsl\agents_pool\` | Domain:
 | 2026-04-25 | Move `articles/` under `docs/articles/` | Ship long-form posts via mkdocs to GitHub Pages instead of bloating repo root. |
 | 2026-04-25 | Unify lint on ruff (drop black/flake8/mypy/isort) | Single tool covers format + lint + isort; one config in `pyproject.toml`. |
 | 2026-04-27 | Add `plecs-expert` skill + `pyplecs-mcp` MCP server | Ground PLECS authoring help, netlist converter, and PlecsServer wrapper in docs.plexim.com via offline caveman-style reference. Closes #23. |
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `tinix84/pyplecs`, via the `gh` CLI. See [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
+
+### Triage labels
+
+The five canonical roles, each label string equal to its name. See [docs/agents/triage-labels.md](docs/agents/triage-labels.md).
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See [docs/agents/domain.md](docs/agents/domain.md).

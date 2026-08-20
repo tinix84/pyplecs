@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
-# Pre-push hook: run ruff and vulture before pushing
+# Pre-push hook: run ruff, and vulture when it is installed.
 
 set -e
 
 echo "[pre-push] Running ruff..."
-python -m ruff check pyplecs/ tests/
+ruff check pyplecs/ tests/
 echo "[pre-push] ruff passed."
 
-echo "[pre-push] Running vulture..."
-python -m vulture pyplecs/ tests/ --min-confidence 90
-echo "[pre-push] vulture passed."
+if command -v vulture >/dev/null 2>&1; then
+    echo "[pre-push] Running vulture..."
+    vulture pyplecs/ tests/ --min-confidence 90
+    echo "[pre-push] vulture passed."
+else
+    echo "[pre-push] SKIPPED: vulture not installed."
+fi
 
 echo "[pre-push] All checks passed."
