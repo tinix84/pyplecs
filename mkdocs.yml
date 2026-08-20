@@ -64,7 +64,10 @@ nav:
     - ADR-0006 Two model flavors: adr/0006-two-model-flavors-no-merge.md
     - ADR-0007 Verbatim tables: adr/0007-verbatim-tables-rewritten-prose.md
     - ADR-0008 uv owns dependencies: adr/0008-pyproject-and-uv-own-dependencies.md
-  - Research: research/README.md
+  - Research:
+    - Index: research/README.md
+    - Offline symbol resolution: research/2026-08-19-offline-symbol-resolution.md
+    - PLECS Reference semantics: research/2026-08-19-plecs-reference-semantics.md
   - Agents:
     - Domain docs: agents/domain.md
     - Issue tracker: agents/issue-tracker.md

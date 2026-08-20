@@ -10,6 +10,23 @@
 
 set -e
 
+# Deleting a branch pushes only zero-sha refs. Linting and testing the local
+# working tree tells us nothing about a deletion, so skip the gate entirely --
+# otherwise removing six merged branches costs six full test runs.
+all_deletions=1
+saw_ref=0
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+    [ -z "$local_sha" ] && continue
+    saw_ref=1
+    case "$local_sha" in
+        *[!0]*) all_deletions=0 ;;
+    esac
+done
+if [ "$saw_ref" = 1 ] && [ "$all_deletions" = 1 ]; then
+    echo "[pre-push] deletion-only push; skipping checks."
+    exit 0
+fi
+
 PYTEST_FILES=(
     tests/test_installer.py
     tests/test_entrypoint.py
