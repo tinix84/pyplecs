@@ -34,8 +34,14 @@ If the concept you need isn't in the glossary yet, that's a signal — either yo
 
 If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
 
-> _Contradicts ADR-0007 (event-sourced orders) — but worth reopening because…_
+> _Contradicts ADR-0001 (Circuit Model is the single interchange seam) — but worth reopening because…_
 
-## Known open question
+## Decision Log vs docs/adr/
 
-This repo currently records architectural decisions in the `## Decision Log` table inside `CLAUDE.md`, while the global documentation-authority convention puts them in `docs/adr/`. Two homes for the same statement type; not yet reconciled. Until it is, check both before assuming a decision is unrecorded.
+Not two homes for the same statement. `docs/adr/` is the **authority** — the
+reasoning, the alternatives, the consequences. The `## Decision Log` table in
+`CLAUDE.md` is an **index**: one row per ADR, so the decision is discoverable
+from the file agents read first. A decision with a Decision Log row but no ADR
+is incomplete; an ADR with no row is invisible.
+
+`docs/adr/README.md` carries the same index plus the template.
