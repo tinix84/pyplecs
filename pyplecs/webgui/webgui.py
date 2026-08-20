@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import List
 
@@ -173,6 +174,12 @@ def run_app(host: str = "127.0.0.1", port: int = 8001):
 
 
 def main():
-    """Entry point for pyplecs-gui command."""
-    app, _ = create_web_app()
-    uvicorn.run(app, host="127.0.0.1", port=8001)
+    """Entry point for pyplecs-gui command.
+
+    PYPLECS_HOST / PYPLECS_PORT override the defaults; they were the only
+    capability the deleted tools/start_webgui.py had over this entry point.
+    """
+    run_app(
+        host=os.environ.get("PYPLECS_HOST", "127.0.0.1"),
+        port=int(os.environ.get("PYPLECS_PORT", "8001")),
+    )

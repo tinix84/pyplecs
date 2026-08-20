@@ -1,10 +1,17 @@
+# PyPLECS configuration template.
+#
+# Copy to config/default.yml (gitignored), or let
+# `pyplecs-setup configure-plecs` do it for you -- it also fills in
+# executable_paths by discovering your PLECS install.
+#
+# Nothing machine-specific belongs in this file: it is tracked, so any
+# absolute path added here ships to every clone.
 app:
   name: PyPLECS
   version: 0.1.0
   debug: false
 plecs:
-  executable_paths:
-  - D:\OneDrive\Documenti\Plexim\PLECS 4.7 (64 bit)\plecs.exe
+  executable_paths: []
   xmlrpc:
     host: localhost
     port: 1080
@@ -138,7 +145,3 @@ production:
   workers: 4
   worker_connections: 1000
   keepalive: 2
-python:
-  env_type: conda
-  env_name: ntbees_env
-  conda_root: C:\ProgramData\anaconda3

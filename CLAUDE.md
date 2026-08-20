@@ -4,11 +4,16 @@
 
 ## Build & Test
 ```bash
-pip install -e ".[dev]"        # ruff + pytest
-ruff check .                   # lint (must be clean)
-pytest                         # full suite (Windows + PLECS on port 1080)
-pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_full.py tests/test_abc_contract.py tests/test_plecs_expert.py  # platform-independent subset
+uv sync --extra dev                    # env + pinned deps (ADR-0008)
+uv run pyplecs-setup configure-plecs   # locate PLECS, write config/default.yml (untracked)
+uv run ruff check .                    # lint (must be clean)
+uv run pytest                          # full suite (Windows + PLECS on port 1080)
+uv run pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_full.py tests/test_abc_contract.py tests/test_plecs_expert.py  # platform-independent subset
 ```
+
+Extras: `web`, `cache`, `gui`, `mcp`, `opt`, `dev`. `pyproject.toml` is the only
+place a dependency is declared — the gate rejects any `requirements*.txt` or
+`setup.py`.
 
 **No GitHub Actions CI.** The git `pre-push` hook at `.githooks/pre-push` (wired via `core.hooksPath`) runs the ADR-0004 structural checks, `ruff check .`, vulture, and the 5 platform-independent test files; PLECS XML-RPC tests run manually on Windows. Claude Code's `PostToolUse` hooks fire *after* a command completes and can never block a push — don't put a gate there.
 
@@ -69,6 +74,7 @@ Central pool (WSL): `\\wsl$\Ubuntu\home\tinix\claude_wsl\agents_pool\` | Domain:
 | 2026-08-20 | PyPLECS is a thin execution engine ([ADR-0005](docs/adr/0005-pyplecs-is-a-thin-execution-engine.md)) | PyPLECS runs the parameter vectors it is given; choosing them adaptively belongs to the caller. Stated without naming any orchestrator, so it holds for all of them. |
 | 2026-08-20 | Two model flavors, no merge ([ADR-0006](docs/adr/0006-two-model-flavors-no-merge.md)) | Vendored contract models are field-level incompatible with `pyplecs/core/models.py`; merging would break every `result.timeseries_data` call site. Name-level ABC conformance only; interop adapter deferred. |
 | 2026-08-20 | Verbatim tables, rewritten prose ([ADR-0007](docs/adr/0007-verbatim-tables-rewritten-prose.md)) | `plecs-expert` mirrors proprietary PLECS docs into a public repo. Factual tables verbatim, all prose original in caveman style, `LICENSE-NOTES.md` as the auditable boundary. |
+| 2026-08-20 | pyproject + uv own environment and dependencies ([ADR-0008](docs/adr/0008-pyproject-and-uv-own-dependencies.md)) | Four disagreeing manifests: pyproject, 7 `requirements*.txt`, a `setup.py` that declared extras as mandatory, and 12 documented install variants. Deleted all but pyproject; `uv.lock` committed; machine-local `config/default.yml` untracked with a tracked example. |
 
 ## Agent skills
 

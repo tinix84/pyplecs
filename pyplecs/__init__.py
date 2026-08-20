@@ -17,6 +17,8 @@ Refactored: August 2025
 """
 
 # Version info
+import sys as _sys
+
 __version__ = "1.0.0"
 __author__ = "Riccardo Tinivella"
 __email__ = "tinix84@gmail.com"
@@ -75,9 +77,18 @@ try:
 except ImportError:
     OptimizationEngine = None
 
-print(f"PyPLECS v{__version__} - Advanced PLECS Simulation Automation")
+# Informational only, and on stderr: a library that writes to stdout at import
+# time corrupts the output of anything that parses it -- start_plecs.bat reads
+# the configured PLECS path from a `uv run python -c ...` call.
+print(
+    f"PyPLECS v{__version__} - Advanced PLECS Simulation Automation",
+    file=_sys.stderr,
+)
 if not _legacy_available:
-    print("Note: Legacy PLECS GUI automation not available (missing pywinauto)")
+    print(
+        "Note: Legacy PLECS GUI automation not available (missing pywinauto)",
+        file=_sys.stderr,
+    )
 
 # Expose main classes and functions
 __all__ = [
