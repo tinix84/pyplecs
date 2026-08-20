@@ -10,28 +10,36 @@ pytest                         # full suite (Windows + PLECS on port 1080)
 pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_full.py tests/test_abc_contract.py tests/test_plecs_expert.py  # platform-independent subset
 ```
 
-**No GitHub Actions CI.** A Claude Code pre-push hook (`.claude/hooks/pre_push_lint.py`) runs `ruff check .` plus the 5 platform-independent test files on `git push`; PLECS XML-RPC tests run manually on Windows.
+**No GitHub Actions CI.** The git `pre-push` hook at `.githooks/pre-push` (wired via `core.hooksPath`) runs the ADR-0004 structural checks, `ruff check .`, vulture, and the 5 platform-independent test files; PLECS XML-RPC tests run manually on Windows. Claude Code's `PostToolUse` hooks fire *after* a command completes and can never block a push — don't put a gate there.
 
 ## Architecture quick reference
-- **Two layers** (full detail in [architecture.md](docs/architecture.md)): `pyplecs/pyplecs.py` is a thin XML-RPC wrapper over PLECS; the orchestration / cache / api / webgui packages are built on top.
+- **Two layers**: `pyplecs/pyplecs.py` is a thin XML-RPC wrapper over PLECS; the orchestration / cache / api / webgui packages are built on top. There is no architecture document — the code is the only description of what exists (ADR-0004).
+- **PyPLECS executes; the caller decides** (ADR-0005). Optimization, surrogate models, adaptive search and component databases are permanently out of scope. `pyplecs/optimizer` is a placeholder for something that will not be built.
+- **Two model flavors** (ADR-0006): `pyplecs.contracts.*` is the upstream pydantic flavor, `pyplecs.*` the local dataclass flavor. Field-level incompatible, deliberately not merged.
 - **Tool-agnostic ABCs at `pyplecs.contracts`** — public façade that prefers an installed PyPI `pycircuitsim_core` (when major-version-compatible) and falls back to the vendored copy at `pyplecs/_contracts/`. **Hard rule:** PyPLECS is standalone — never add `pycircuitsim-core` to `pyproject.toml` dependencies. See `tools/SYNC_PYCIRCUITSIM_CORE.md` for re-sync procedure.
 - **Optional deps degrade to `None`** — `pyplecs/__init__.py` sets `PlecsServer`, `create_api_app`, `create_web_app`, etc. to `None` when their optional packages aren't installed; callers must handle `None`.
 - **PLECS docs reference at `.claude/skills/plecs-expert/`** — single source of truth for the skill, `/plecs` command, and `pyplecs-mcp` MCP server. Refresh procedure in `.claude/skills/plecs-expert/tools/REFRESH.md`.
 
-## Key Documents
-- [PRD](docs/prd.md) — requirements and roadmap
-- [Architecture](docs/architecture.md) — system design, layers, data flow
-- [Auto-Context](docs/auto-context.md) — generated project summary
-- [API](docs/api.md) — REST API reference
-- [Install](docs/install.md) — installation and configuration
-- [Migration](docs/migration.md) — v0.x to v1.0.0 upgrade
-- [Contributing](docs/contributing.md) — development workflow
-- [PLECS Expert Skill](.claude/skills/plecs-expert/SKILL.md) — PLECS docs reference (offline + URL fallback)
+## Where statements live (ADR-0004)
 
-## Specs & Plans
-- Specs: `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
-- Plans: `docs/superpowers/plans/YYYY-MM-DD-<topic>.md`
-- Sprint plans (legacy): `docs/sprints/sprint-*.md`
+| Kind of statement | Owner |
+|---|---|
+| What a word means | [`CONTEXT.md`](CONTEXT.md) |
+| Why we chose X over Y | [`docs/adr/`](docs/adr/README.md) — index also mirrored in the Decision Log below |
+| The long-term outcome | [`docs/story-map.md`](docs/story-map.md) — solution-neutral, status-free |
+| What we found out | [`docs/research/`](docs/research/README.md) |
+| What to build, and its status | GitHub issues, via `gh` |
+| How to install and use it | [`README.md`](README.md) — capped at 150 lines |
+| What the code does | the code |
+| How agents consume this repo | [`docs/agents/`](docs/agents/domain.md) |
+
+`docs/` holds nothing else, and the pre-push hook enforces that.
+
+- [PLECS Expert Skill](.claude/skills/plecs-expert/SKILL.md) — PLECS docs reference (offline + URL fallback), content posture in ADR-0007.
+
+## Plans
+- Plans: `docs/superpowers/plans/YYYY-MM-DD-<topic>.md` — **gitignored and disposable**. Never cited from a tracked doc or an issue.
+- Specs are issues. There is no spec artifact on disk.
 - Default execution model: **sonnet**
 
 ## Skills
@@ -40,9 +48,9 @@ Central pool (WSL): `\\wsl$\Ubuntu\home\tinix\claude_wsl\agents_pool\` | Domain:
 
 ## Task Protocol
 1. **90% Rule**: Ask clarifying questions until task is >= 90% clear
-2. Multi-step tasks -> spec in `docs/superpowers/specs/` -> plan in `docs/superpowers/plans/` -> execute with sonnet (use the superpowers skills)
+2. Multi-step tasks -> spec as a GitHub issue -> plan in `docs/superpowers/plans/` -> execute with sonnet (use the superpowers skills)
 3. Run tests after changes: `ruff check . && pytest`
-4. On commit: update CLAUDE.md, prd.md, architecture.md if behavior changed; new architectural decisions go in the Decision Log below
+4. On commit: a new decision means an ADR in `docs/adr/` **and** a Decision Log row below. Never describe behaviour in a tracked doc.
 
 ## Decision Log
 | Date | Decision | Rationale |
@@ -57,6 +65,10 @@ Central pool (WSL): `\\wsl$\Ubuntu\home\tinix\claude_wsl\agents_pool\` | Domain:
 | 2026-04-25 | Move `articles/` under `docs/articles/` | Ship long-form posts via mkdocs to GitHub Pages instead of bloating repo root. |
 | 2026-04-25 | Unify lint on ruff (drop black/flake8/mypy/isort) | Single tool covers format + lint + isort; one config in `pyproject.toml`. |
 | 2026-04-27 | Add `plecs-expert` skill + `pyplecs-mcp` MCP server | Ground PLECS authoring help, netlist converter, and PlecsServer wrapper in docs.plexim.com via offline caveman-style reference. Closes #23. |
+| 2026-08-20 | Code is the only architecture truth ([ADR-0004](docs/adr/0004-code-is-the-only-architecture-truth.md)) | `docs/architecture.md`, both PRDs and the user-doc set all drifted from the code. `docs/` now holds only ADRs, the story map, research, and agent conventions; README is the one user-facing doc. Supersedes the 2026-02-24 "Architecture details in docs/" and 2026-04-25 "Move `articles/`" rows. |
+| 2026-08-20 | PyPLECS is a thin execution engine ([ADR-0005](docs/adr/0005-pyplecs-is-a-thin-execution-engine.md)) | PyPLECS runs the parameter vectors it is given; choosing them adaptively belongs to the caller. Stated without naming any orchestrator, so it holds for all of them. |
+| 2026-08-20 | Two model flavors, no merge ([ADR-0006](docs/adr/0006-two-model-flavors-no-merge.md)) | Vendored contract models are field-level incompatible with `pyplecs/core/models.py`; merging would break every `result.timeseries_data` call site. Name-level ABC conformance only; interop adapter deferred. |
+| 2026-08-20 | Verbatim tables, rewritten prose ([ADR-0007](docs/adr/0007-verbatim-tables-rewritten-prose.md)) | `plecs-expert` mirrors proprietary PLECS docs into a public repo. Factual tables verbatim, all prose original in caveman style, `LICENSE-NOTES.md` as the auditable boundary. |
 
 ## Agent skills
 

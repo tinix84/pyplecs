@@ -50,3 +50,9 @@ cache/
 
 # IDE artifacts
 .vscode/.ropeproject/
+
+# Local holding pen for removed files — git history is the real archive
+.trash/
+
+# Plans and specs are temporary and disposable (ADR-0004)
+docs/superpowers/
