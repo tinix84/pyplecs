@@ -6,7 +6,7 @@ power electronics simulation.
 PyPLECS drives PLECS over XML-RPC so a converter model can be run hundreds of
 times without being hand-driven: batched and parallel execution, result caching,
 a REST API, and a web dashboard. It executes simulations; it does not decide
-which ones to run ([ADR-0005](docs/adr/0005-pyplecs-is-a-thin-execution-engine.md)).
+which ones to run ([ADR-0005](https://github.com/tinix84/pyplecs/blob/master/docs/adr/0005-pyplecs-is-a-thin-execution-engine.md)).
 
 Requires a licensed PLECS installation listening on XML-RPC port 1080.
 
@@ -79,12 +79,12 @@ layering.
 
 | Question | Answer lives in |
 |---|---|
-| What a term means | [`CONTEXT.md`](CONTEXT.md) |
-| Why we chose X over Y | [`docs/adr/`](docs/adr/) |
-| Where this is going | [`docs/story-map.md`](docs/story-map.md) |
+| What a term means | [`CONTEXT.md`](https://github.com/tinix84/pyplecs/blob/master/CONTEXT.md) |
+| Why we chose X over Y | [`docs/adr/`](https://github.com/tinix84/pyplecs/blob/master/docs/adr/README.md) |
+| Where this is going | [`docs/story-map.md`](https://github.com/tinix84/pyplecs/blob/master/docs/story-map.md) |
 | What is being built, and its status | [GitHub issues](https://github.com/tinix84/pyplecs/issues) |
-| What we found out | [`docs/research/`](docs/research/) |
-| What the code does | the code ([ADR-0004](docs/adr/0004-code-is-the-only-architecture-truth.md)) |
+| What we found out | [`docs/research/`](https://github.com/tinix84/pyplecs/blob/master/docs/research/README.md) |
+| What the code does | the code ([ADR-0004](https://github.com/tinix84/pyplecs/blob/master/docs/adr/0004-code-is-the-only-architecture-truth.md)) |
 
 ## Contributing
 
@@ -108,4 +108,4 @@ pytest -q tests/test_installer.py tests/test_entrypoint.py \
 There is no GitHub Actions CI — a pre-push hook covers lint and the
 platform-independent tests; PLECS-dependent tests are run by hand on Windows.
 
-Licensed under the terms in [LICENSE](LICENSE).
+Licensed under the terms in [LICENSE](https://github.com/tinix84/pyplecs/blob/master/LICENSE).

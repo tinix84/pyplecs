@@ -9,7 +9,7 @@ Four rules. A change that breaks one of them does not belong here.
 
 1. **Solution-neutral.** No component, topology, vendor, format, or protocol.
    A line that names a mechanism is a solution in disguise; the outcome it
-   serves belongs here and the mechanism belongs in [`docs/adr/`](adr).
+   serves belongs here and the mechanism belongs in [`docs/adr/`](adr/README.md).
 2. **No status.** Nothing here is "done", "planned", or "in progress". Status
    lives in the issue tracker and nowhere else.
 3. **Survives the swap test.** Rewrite every ADR to choose the opposite option.
