@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-"""Structural rules that ADR-0004 depends on, checked at push time.
+"""Structural rules that ADR-0004 and ADR-0008 depend on, checked at push time.
 
 A rule nothing checks gets contradicted -- which is how ``docs/`` reached 97
 files before ADR-0004. Invoked by ``.githooks/pre-push``; exits non-zero with
 one line per violation.
 """
+import re
 import sys
 from pathlib import Path
 
 # ADR-0004: docs/ holds decisions, terms, roadmap, research, agent conventions.
 DOCS_ALLOWED_DIRS = {"adr", "agents", "research"}
 DOCS_ALLOWED_FILES = {"index.md", "story-map.md"}
+
+# ADR-0008: pyproject is the sole dependency source.
+FORBIDDEN_DEP_FILES = re.compile(r"^(requirements.*\.txt|setup\.py)$")
 
 README_MAX_LINES = 150
 
@@ -30,6 +34,15 @@ def check_docs_frozen(root: Path) -> list[str]:
     return errors
 
 
+def check_no_dep_files(root: Path) -> list[str]:
+    """No requirements*.txt or setup.py may reappear."""
+    return [
+        f"{entry.name} is forbidden -- dependencies live in pyproject.toml"
+        for entry in sorted(root.iterdir())
+        if entry.is_file() and FORBIDDEN_DEP_FILES.match(entry.name)
+    ]
+
+
 def check_readme_cap(root: Path) -> list[str]:
     """README is the only user-facing doc, and it stays short."""
     readme = root / "README.md"
@@ -43,7 +56,9 @@ def check_readme_cap(root: Path) -> list[str]:
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
-    errors = check_docs_frozen(root) + check_readme_cap(root)
+    errors = (
+        check_docs_frozen(root) + check_no_dep_files(root) + check_readme_cap(root)
+    )
     for e in errors:
         print(f"  - {e}", file=sys.stderr)
     return 1 if errors else 0

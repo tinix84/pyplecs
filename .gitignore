@@ -56,3 +56,11 @@ cache/
 
 # Plans and specs are temporary and disposable (ADR-0004)
 docs/superpowers/
+
+# Machine-local config (ADR-0008). Seeded from config/default.example.yml by
+# `pyplecs-setup configure-plecs`; holds absolute paths for this machine only.
+config/default.yml
+
+# uv-managed environment
+.venv/
+uv.lock.bak

@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # Quality gate on push. Wired via `git config core.hooksPath .githooks`.
 #
-# This is the only gate that can actually block a push — the Claude Code hook
-# is a PostToolUse hook and runs after the push has already happened.
+# This is the only gate that can actually block a push — a Claude Code
+# PostToolUse hook runs after the push has already happened.
+#
+# Tools are invoked through `uv run` when uv is available (ADR-0008), because
+# bare `pytest` is not on PATH unless .venv happens to be activated, and a
+# gate that silently skips its own tests is worse than no gate.
 
 set -e
 
@@ -14,28 +18,34 @@ PYTEST_FILES=(
     tests/test_plecs_expert.py
 )
 
-echo "[pre-push] Checking structural rules (ADR-0004)..."
+if command -v uv >/dev/null 2>&1; then
+    RUN=(uv run --extra dev)
+else
+    RUN=()
+    echo "[pre-push] WARNING: uv not found; falling back to whatever is on PATH."
+fi
+
+run() {
+    if [ ${#RUN[@]} -eq 0 ]; then
+        command -v "$1" >/dev/null 2>&1 || { echo "[pre-push] MISSING: $1"; return 127; }
+    fi
+    "${RUN[@]}" "$@"
+}
+
+echo "[pre-push] Checking structural rules (ADR-0004, ADR-0008)..."
 python "$(dirname "$0")/check_structure.py"
 echo "[pre-push] structural rules passed."
 
 echo "[pre-push] Running ruff..."
-ruff check .
+run ruff check .
 echo "[pre-push] ruff passed."
 
-if command -v vulture >/dev/null 2>&1; then
-    echo "[pre-push] Running vulture..."
-    vulture pyplecs/ tests/ --min-confidence 90
-    echo "[pre-push] vulture passed."
-else
-    echo "[pre-push] SKIPPED: vulture not installed."
-fi
+echo "[pre-push] Running vulture..."
+run vulture pyplecs/ tests/ --min-confidence 90
+echo "[pre-push] vulture passed."
 
-if command -v pytest >/dev/null 2>&1; then
-    echo "[pre-push] Running platform-independent tests..."
-    pytest -q "${PYTEST_FILES[@]}"
-    echo "[pre-push] tests passed."
-else
-    echo "[pre-push] SKIPPED: pytest not installed."
-fi
+echo "[pre-push] Running platform-independent tests..."
+run pytest -q "${PYTEST_FILES[@]}"
+echo "[pre-push] tests passed."
 
 echo "[pre-push] All checks passed."

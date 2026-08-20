@@ -16,6 +16,7 @@ does not carry status (the issue tracker does that).
 | [0005](0005-pyplecs-is-a-thin-execution-engine.md) | PyPLECS is a thin execution engine | Accepted |
 | [0006](0006-two-model-flavors-no-merge.md) | Two model flavors, no merge | Accepted |
 | [0007](0007-verbatim-tables-rewritten-prose.md) | Verbatim tables, rewritten prose | Accepted |
+| [0008](0008-pyproject-and-uv-own-dependencies.md) | pyproject and uv own environment and dependencies | Accepted |
 
 ## Writing one
 

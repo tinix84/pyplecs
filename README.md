@@ -12,23 +12,22 @@ Requires a licensed PLECS installation listening on XML-RPC port 1080.
 
 ## Install
 
-```bash
-pip install -e ".[dev]"
-```
-
-Optional extras, combinable: `web` (REST API + dashboard), `cache` (Parquet,
-HDF5, Redis backends), `gui` (Windows desktop automation), `mcp` (MCP server),
-`opt`, `dev`.
+Needs [uv](https://docs.astral.sh/uv/getting-started/installation/); it
+provisions a matching Python itself, so nothing else is a prerequisite.
 
 ```bash
-pip install -e ".[web,cache]"
+uv sync --extra web                     # environment + pinned dependencies
+uv run pyplecs-setup configure-plecs    # find PLECS, write config/default.yml
 ```
 
-Then point PyPLECS at your PLECS executable:
+Extras, combinable: `web` (REST API + dashboard), `cache` (HDF5, diskcache and
+Redis backends — Parquet is built in), `gui` (Windows desktop automation),
+`mcp` (MCP server), `opt`, `dev`. `pyproject.toml` is the only place a
+dependency is declared ([ADR-0008](https://github.com/tinix84/pyplecs/blob/master/docs/adr/0008-pyproject-and-uv-own-dependencies.md)).
 
-```bash
-pyplecs-setup
-```
+`config/default.yml` is untracked machine-local state, seeded from the tracked
+`config/default.example.yml`. On Windows, `setup_env.bat` runs both commands
+above and `start_plecs.bat` launches PLECS plus the API.
 
 Optional dependencies degrade to `None` rather than failing at import — if
 `pyplecs.PlecsServer` or `pyplecs.create_web_app` is `None`, the matching extra
@@ -52,7 +51,7 @@ Console entry points:
 
 | Command | Does |
 |---|---|
-| `pyplecs-setup` | Locate PLECS, write local config |
+| `pyplecs-setup configure-plecs` | Locate PLECS, write local config |
 | `pyplecs-api` | Start the REST API |
 | `pyplecs-gui` | Start the web dashboard |
 | `pyplecs-mcp` | Start the MCP server (stdio) |
@@ -93,14 +92,14 @@ commit in [Conventional Commits](https://www.conventionalcommits.org/) form,
 open a PR. Never push to `master` directly.
 
 ```bash
-ruff check .    # must be clean
-pytest          # full suite: needs Windows + PLECS on port 1080
+uv run ruff check .    # must be clean
+uv run pytest   # full suite: needs Windows + PLECS on port 1080
 ```
 
 Platform-independent subset, which is also what the pre-push gate runs:
 
 ```bash
-pytest -q tests/test_installer.py tests/test_entrypoint.py \
+uv run pytest -q tests/test_installer.py tests/test_entrypoint.py \
           tests/test_install_full.py tests/test_abc_contract.py \
           tests/test_plecs_expert.py
 ```

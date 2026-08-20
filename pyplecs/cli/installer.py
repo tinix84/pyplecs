@@ -146,9 +146,134 @@ def write_default_config(target: str | Path = None) -> str:
     """
     target_path = Path(target or Path.cwd() / "config" / "default.yml")
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(target_path, "w", encoding="utf-8") as f:
-        f.write(DEFAULT_CONFIG)
+    example = target_path.parent / "default.example.yml"
+    if example.exists():
+        # The example is tracked and complete; the generated config is not.
+        shutil.copyfile(example, target_path)
+    else:
+        with open(target_path, "w", encoding="utf-8") as f:
+            f.write(DEFAULT_CONFIG)
     return str(target_path)
+
+
+def _plecs_search_dirs() -> List[Path]:
+    """Directories that may hold a ``Plexim/PLECS <version>/`` install.
+
+    Derived from the environment rather than hardcoded, so discovery works on
+    any machine: Program Files on every fixed drive, plus the user profile and
+    any OneDrive root, including the localized "Documents" folder names PLECS
+    installs into.
+    """
+    roots: List[Path] = []
+    for drive in "CDEF":
+        roots.append(Path(f"{drive}:/Program Files"))
+        roots.append(Path(f"{drive}:/Program Files (x86)"))
+
+    import os
+
+    for var in ("USERPROFILE", "HOME", "OneDrive", "OneDriveCommercial", "OneDriveConsumer"):
+        value = os.environ.get(var)
+        if not value:
+            continue
+        base = Path(value)
+        roots.append(base)
+        # PLECS is commonly installed under the user's documents folder, whose
+        # name is localized (Documents / Documenti / Dokumente / ...).
+        for name in ("Documents", "Documenti", "Dokumente", "Documentos"):
+            roots.append(base / name)
+
+    return [r / "Plexim" for r in roots]
+
+
+def find_plecs_candidates() -> List[str]:
+    """Search common installation directories for a PLECS executable."""
+    candidates: List[str] = []
+    for base in _plecs_search_dirs():
+        try:
+            if not base.is_dir():
+                continue
+            entries = sorted(base.iterdir(), reverse=True)
+        except OSError:
+            continue
+        for entry in entries:
+            exe = entry / "plecs.exe"
+            if exe.exists() and str(exe) not in candidates:
+                candidates.append(str(exe))
+    return candidates
+
+
+def read_plecs_path(config_path: str | Path = None) -> str | None:
+    """Return the first PLECS executable path in config that exists on disk."""
+    path = Path(config_path or Path.cwd() / "config" / "default.yml")
+    if not path.exists():
+        return None
+    import yaml
+
+    cfg = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    for candidate in cfg.get("plecs", {}).get("executable_paths", []) or []:
+        if Path(candidate).exists():
+            return candidate
+    return None
+
+
+def configure_plecs_path(
+    config_path: str | Path = None, chosen: str | None = None
+) -> int:
+    """Interactively resolve the PLECS executable path and save it to config.
+
+    Machine-local state: the config file this writes is gitignored, seeded from
+    ``config/default.example.yml``. Pass ``chosen`` to skip the prompt.
+    """
+    import yaml
+
+    path = Path(config_path or Path.cwd() / "config" / "default.yml")
+    if not path.exists():
+        write_default_config(path)
+        print(f"Created {path}")
+
+    cfg = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    exe_paths = cfg.get("plecs", {}).get("executable_paths") or []
+    current = exe_paths[0] if exe_paths else ""
+    candidates = find_plecs_candidates()
+
+    if chosen is None:
+        if current:
+            state = "valid" if Path(current).exists() else "NOT FOUND"
+            print(f"  Current path ({state}): {current}")
+        if candidates:
+            print("  Auto-discovered installations:")
+            for i, c in enumerate(candidates, 1):
+                marker = "  <-- current" if c == current else ""
+                print(f"    [{i}] {c}{marker}")
+
+        default = current if (current and Path(current).exists()) else ""
+        if not default and candidates:
+            default = candidates[0]
+        prompt = (
+            f"  PLECS executable path [{default}]: "
+            if default
+            else "  PLECS executable path: "
+        )
+        chosen = input(prompt).strip() or default
+
+    if chosen and chosen.isdigit() and candidates:
+        idx = int(chosen) - 1
+        if 0 <= idx < len(candidates):
+            chosen = candidates[idx]
+
+    if not chosen:
+        print("[ERROR] No path provided.")
+        return 1
+    if not Path(chosen).exists():
+        print(f"[ERROR] File not found: {chosen}")
+        return 1
+
+    cfg.setdefault("plecs", {})["executable_paths"] = [str(Path(chosen))]
+    path.write_text(
+        yaml.dump(cfg, default_flow_style=False, sort_keys=False), encoding="utf-8"
+    )
+    print(f"  [OK] PLECS path saved to {path}: {chosen}")
+    return 0
 
 
 def check_python_packages(packages: List[str]) -> Dict[str, bool]:
@@ -254,6 +379,12 @@ def main(argv: List[str] | None = None) -> int:
     sub.add_parser(
         "create-config", help="Create a default config in ./config/default.yml"
     )
+    sub_plecs = sub.add_parser(
+        "configure-plecs", help="Locate the PLECS executable and save it to config"
+    )
+    sub_plecs.add_argument(
+        "--path", type=str, default=None, help="Use this path instead of prompting"
+    )
     sub.add_parser("check-windows", help="Run a conservative set of checks for Windows")
     sub.add_parser("check-macos", help="Run a conservative set of checks for macOS")
     sub.add_parser("check-all", help="Run all checks appropriate for this platform")
@@ -283,6 +414,9 @@ def main(argv: List[str] | None = None) -> int:
         path = write_default_config()
         print(f"Wrote default config to: {path}")
         return 0
+
+    if args.cmd == "configure-plecs":
+        return configure_plecs_path(chosen=getattr(args, "path", None))
 
     if args.cmd == "check-windows":
         res = check_windows_installation()

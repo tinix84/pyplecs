@@ -63,6 +63,7 @@ nav:
     - ADR-0005 Thin execution engine: adr/0005-pyplecs-is-a-thin-execution-engine.md
     - ADR-0006 Two model flavors: adr/0006-two-model-flavors-no-merge.md
     - ADR-0007 Verbatim tables: adr/0007-verbatim-tables-rewritten-prose.md
+    - ADR-0008 uv owns dependencies: adr/0008-pyproject-and-uv-own-dependencies.md
   - Research: research/README.md
   - Agents:
     - Domain docs: agents/domain.md
