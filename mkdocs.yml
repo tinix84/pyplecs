@@ -41,6 +41,8 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ['.']
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
@@ -51,17 +53,18 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - PRD: prd.md
-  - Architecture: architecture.md
-  - API Reference: api.md
-  - Installation: install.md
-  - Web GUI: webgui.md
-  - Migration: migration.md
-  - Changelog: changelog.md
-  - Contributing: contributing.md
-  - Articles:
-    - Overview: articles/README.md
-    - LinkedIn Articles: articles/linkedin/README.md
-    - LinkedIn Posts: articles/linkedin-posts/README.md
-    - Substack Articles: articles/substack/README.md
-  - Auto-Context: auto-context.md
+  - Story Map: story-map.md
+  - Decisions:
+    - Index: adr/README.md
+    - ADR-0001 Circuit Model seam: adr/0001-circuit-model-is-the-single-interchange-seam.md
+    - ADR-0002 Cache Record identity: adr/0002-cache-record-identity-is-owned-by-the-topology-key-map.md
+    - ADR-0003 Promotable contracts: adr/0003-only-contracts-are-promotable-to-pycircuitsim-core.md
+    - ADR-0004 Code is the architecture: adr/0004-code-is-the-only-architecture-truth.md
+    - ADR-0005 Thin execution engine: adr/0005-pyplecs-is-a-thin-execution-engine.md
+    - ADR-0006 Two model flavors: adr/0006-two-model-flavors-no-merge.md
+    - ADR-0007 Verbatim tables: adr/0007-verbatim-tables-rewritten-prose.md
+  - Research: research/README.md
+  - Agents:
+    - Domain docs: agents/domain.md
+    - Issue tracker: agents/issue-tracker.md
+    - Triage labels: agents/triage-labels.md
