@@ -12,8 +12,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from ..cache import SimulationCache
-from ..config import ConfigManager, get_config
+from ..config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -56,12 +55,8 @@ class WebSocketManager:
             self.disconnect(conn)
 
 
-def create_web_app(
-    config: ConfigManager | None = None, cache: SimulationCache | None = None
-):
+def create_web_app():
     """Create and configure the web application."""
-    resolved_config = config or get_config()
-    simulation_cache = cache or SimulationCache(resolved_config.cache)
     app = FastAPI(
         title="PyPLECS Web GUI",
         description="Web interface for PLECS simulation monitoring and control",
@@ -123,15 +118,37 @@ def create_web_app(
     async def get_cache_stats():
         """Get cache statistics."""
         try:
-            return simulation_cache.get_cache_stats()
+            config = get_config()
+            cache_dir = config.cache.directory
+
+            import os
+
+            total_entries = 0
+            total_size = 0
+
+            if os.path.exists(cache_dir):
+                for root, _, files in os.walk(cache_dir):
+                    total_entries += len(files)
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        try:
+                            total_size += os.path.getsize(file_path)
+                        except OSError:
+                            continue
+
+            return {
+                "total_entries": total_entries,
+                "total_size_bytes": total_size,
+                "total_size_mb": round(total_size / (1024 * 1024), 2),
+                "cache_directory": cache_dir,
+            }
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/api/cache/clear")
     async def clear_cache():
         """Clear cache."""
-        simulation_cache.clear_cache()
-        return {"message": "Cache cleared successfully"}
+        return {"message": "Cache clear not implemented yet"}
 
     # WebSocket endpoint
     @app.websocket("/ws")
@@ -149,18 +166,11 @@ def create_web_app(
     return app, templates
 
 
-def run_app(
-    host: str | None = None,
-    port: int | None = None,
-    config: ConfigManager | None = None,
-):
+def run_app(host: str = "127.0.0.1", port: int = 8001):
     """Run the web application."""
-    resolved_config = config or get_config()
-    resolved_host = host or resolved_config.webgui.host
-    resolved_port = port or resolved_config.webgui.port
-    app, _ = create_web_app(resolved_config)
-    logger.info(f"Starting PyPLECS Web GUI on http://{resolved_host}:{resolved_port}")
-    uvicorn.run(app, host=resolved_host, port=resolved_port)
+    app, _ = create_web_app()
+    logger.info(f"Starting PyPLECS Web GUI on http://{host}:{port}")
+    uvicorn.run(app, host=host, port=port)
 
 
 def main():
@@ -169,9 +179,7 @@ def main():
     PYPLECS_HOST / PYPLECS_PORT override the defaults; they were the only
     capability the deleted tools/start_webgui.py had over this entry point.
     """
-    config = get_config()
     run_app(
-        host=os.environ.get("PYPLECS_HOST", config.webgui.host),
-        port=int(os.environ.get("PYPLECS_PORT", str(config.webgui.port))),
-        config=config,
+        host=os.environ.get("PYPLECS_HOST", "127.0.0.1"),
+        port=int(os.environ.get("PYPLECS_PORT", "8001")),
     )

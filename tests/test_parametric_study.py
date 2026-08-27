@@ -36,12 +36,13 @@ class RecordingPlecsAdapter:
         ]
 
 
-def _config(tmp_path, *, batch_size=8):
+def _config(tmp_path, *, batch_size=8, queue_size=100):
     config = ConfigManager(search_paths=[])
     config.update("cache.directory", str(tmp_path / "cache"))
     config.update("orchestration.retry_attempts", 1)
     config.update("orchestration.retry_delay", 0)
     config.update("orchestration.max_concurrent_simulations", batch_size)
+    config.update("orchestration.queue_size", queue_size)
     return config
 
 
@@ -170,5 +171,49 @@ async def test_study_reuses_only_constituent_task_cache_records(tmp_path):
         assert [point.result.cached for point in second.points] == [True, True]
         assert [point.result.cached for point in third.points] == [True, False]
         assert len(first.aggregate) == len(second.aggregate) == len(third.aggregate) == 2
+    finally:
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_study_larger_than_queue_capacity_accepts_every_point(tmp_path):
+    adapter = RecordingPlecsAdapter()
+    orchestrator = SimulationOrchestrator(
+        adapter,
+        batch_size=1,
+        config=_config(tmp_path, batch_size=1, queue_size=1),
+    )
+    study = ParametricStudy(orchestrator)
+    try:
+        outcome = await study.run(
+            _model(tmp_path),
+            _vectors(
+                ("one", {"value": 1}),
+                ("two", {"value": 2}),
+                ("three", {"value": 3}),
+            ),
+            use_cache=False,
+        )
+
+        assert outcome.status == ParametricStudyStatus.COMPLETED
+        assert [point.name for point in outcome.points] == ["one", "two", "three"]
+        assert orchestrator.get_orchestrator_stats()["total_submitted"] == 3
+    finally:
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_cache_hit_uses_current_point_metadata(tmp_path):
+    adapter = RecordingPlecsAdapter()
+    orchestrator = SimulationOrchestrator(adapter, config=_config(tmp_path))
+    study = ParametricStudy(orchestrator)
+    try:
+        await study.run(_model(tmp_path), _vectors(("original", {"value": 1})))
+        renamed = await study.run(
+            _model(tmp_path), _vectors(("renamed", {"value": 1}))
+        )
+
+        assert renamed.points[0].result.cached is True
+        assert renamed.points[0].result.metadata["parametric_point"] == "renamed"
     finally:
         await orchestrator.stop()

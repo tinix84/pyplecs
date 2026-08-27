@@ -334,9 +334,14 @@ class TasCompiler:
     ) -> tuple[list[Component], dict[str, str]]:
         components: list[Component] = []
         types: dict[str, str] = {}
-        for index, record in enumerate(sorted(records, key=lambda item: str(item.get("name", "")))):
+        indexed_records = sorted(
+            enumerate(records), key=lambda item: str(item[1].get("name", ""))
+        )
+        for source_index, record in indexed_records:
             name = self._nonempty(record.get("name"), "$.topology.stages[0].circuit.components")
-            location = f"$.topology.stages[0].circuit.components[{index}].data"
+            location = (
+                f"$.topology.stages[0].circuit.components[{source_index}].data"
+            )
             data = self._resolve_mapping(record.get("data"), location)
             component_type = self._component_type(data, location)
             if component_type is None:
@@ -484,11 +489,14 @@ class TasCompiler:
         assigned_pins: dict[Pin, str] = {}
         pin_occurrences: dict[Pin, int] = {}
         port_occurrences = {port_name: 0 for port_name in port_names}
-        for index, connection in enumerate(sorted(connections, key=lambda item: str(item.get("name", "")))):
+        indexed_connections = sorted(
+            enumerate(connections), key=lambda item: str(item[1].get("name", ""))
+        )
+        for source_index, connection in indexed_connections:
             local_name = self._nonempty(connection.get("name"), "$.topology.stages[0].circuit.connections")
             endpoints = self._object_list(
                 connection.get("endpoints"),
-                f"$.topology.stages[0].circuit.connections[{index}].endpoints",
+                f"$.topology.stages[0].circuit.connections[{source_index}].endpoints",
             )
             exposed = [
                 external_names[(stage_name, endpoint["port"])]
@@ -498,13 +506,16 @@ class TasCompiler:
             if len(set(exposed)) > 1:
                 self._error(
                     "TAS_CONTRADICTORY_EXTERNAL_NET",
-                    f"$.topology.stages[0].circuit.connections[{index}]",
+                    f"$.topology.stages[0].circuit.connections[{source_index}]",
                     "One CIAS connection cannot expose multiple external TAS nets",
                 )
             net_name = exposed[0] if exposed else f"{stage_name}.{local_name}"
             pins: list[Pin] = []
             for endpoint_index, endpoint in enumerate(endpoints):
-                location = f"$.topology.stages[0].circuit.connections[{index}].endpoints[{endpoint_index}]"
+                location = (
+                    f"$.topology.stages[0].circuit.connections[{source_index}]"
+                    f".endpoints[{endpoint_index}]"
+                )
                 if set(endpoint) >= {"component", "pin"}:
                     component_name = endpoint.get("component")
                     component_type = component_types.get(component_name)
@@ -659,14 +670,21 @@ class TasCompiler:
     ) -> dict[str, Any]:
         stimuli = self._object_list(simulation.get("stimulus"), "$.simulation.stimulus")
         supported = [
-            stimulus
-            for stimulus in stimuli
+            (index, stimulus)
+            for index, stimulus in enumerate(stimuli)
             if stimulus.get("stage") == stage_name
             and component_types.get(stimulus.get("component")) == "Mosfet"
             and stimulus.get("signal") == "gate"
             and isinstance(stimulus.get("waveform"), Mapping)
             and stimulus["waveform"].get("type") == "pwm"
         ]
+        supported_indexes = {index for index, _ in supported}
+        for index in sorted(set(range(len(stimuli))) - supported_indexes):
+            self._error(
+                "TAS_UNSUPPORTED_STIMULUS",
+                f"$.simulation.stimulus[{index}]",
+                "Stimulus is outside the single PWM gate drive supported by Milestone 1",
+            )
         if len(supported) != 1:
             self._error(
                 "TAS_MISSING_PWM_STIMULUS",
@@ -674,14 +692,17 @@ class TasCompiler:
                 "Milestone 1 requires exactly one PWM gate stimulus for the buck MOSFET",
             )
             return {"component": "", "frequency": 0.0, "dutyCycle": 0.0}
-        stimulus = supported[0]
+        stimulus_index, stimulus = supported[0]
         waveform = stimulus["waveform"]
-        frequency = self._positive_number(waveform.get("frequency"), "$.simulation.stimulus[0].waveform.frequency")
+        frequency = self._positive_number(
+            waveform.get("frequency"),
+            f"$.simulation.stimulus[{stimulus_index}].waveform.frequency",
+        )
         duty = waveform.get("dutyCycle")
         if isinstance(duty, bool) or not isinstance(duty, (int, float)) or not 0 <= duty <= 1:
             self._error(
                 "TAS_INVALID_PWM",
-                "$.simulation.stimulus[0].waveform.dutyCycle",
+                f"$.simulation.stimulus[{stimulus_index}].waveform.dutyCycle",
                 "PWM dutyCycle must be between 0 and 1",
             )
             duty = 0.0

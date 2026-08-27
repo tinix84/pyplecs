@@ -8,7 +8,6 @@ import pyplecs.api as api_module
 import pyplecs.cache as cache_module
 import pyplecs.logging as logging_module
 import pyplecs.orchestration as orchestration_module
-import pyplecs.webgui.webgui as webgui_module
 from pyplecs.cache import SimulationCache
 from pyplecs.config import DEFAULT_CONFIG_DATA, ConfigManager
 from pyplecs.logging import StructuredLogger
@@ -116,7 +115,6 @@ def test_runtime_composition_accepts_resolved_config_without_global_access(tmp_p
     monkeypatch.setattr(orchestration_module, "get_config", unexpected_global_access)
     monkeypatch.setattr(logging_module, "get_config", unexpected_global_access)
     monkeypatch.setattr(api_module, "get_config", unexpected_global_access)
-    monkeypatch.setattr(webgui_module, "get_config", unexpected_global_access)
 
     root_logger = logging.getLogger()
     original_handlers = root_logger.handlers[:]
@@ -126,7 +124,6 @@ def test_runtime_composition_accepts_resolved_config_without_global_access(tmp_p
         orchestrator = SimulationOrchestrator(plecs_server=object(), config=config, cache=cache)
         structured_logger = StructuredLogger(config.logging_config)
         api_app = api_module.create_api_app(config)
-        web_app, _ = webgui_module.create_web_app(config, cache)
     finally:
         root_logger.handlers[:] = original_handlers
         root_logger.setLevel(original_level)
@@ -134,4 +131,3 @@ def test_runtime_composition_accepts_resolved_config_without_global_access(tmp_p
     assert orchestrator.config is config
     assert structured_logger.config is config.logging_config
     assert api_app.state.config is config
-    assert web_app.title == "PyPLECS Web GUI"

@@ -115,9 +115,8 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
             batch_size or self.config.orchestration.max_concurrent_simulations
         )
 
-        self._task_queue: PriorityQueue[_SimulationTask] = PriorityQueue(
-            maxsize=self.config.orchestration.queue_size
-        )
+        self._task_queue: PriorityQueue[_SimulationTask] = PriorityQueue()
+        self._queue_capacity = self.config.orchestration.queue_size
         self._tasks: Dict[str, _SimulationTask] = {}
         self._accepted_task_ids: set[str] = set()
         self._state_changed = asyncio.Event()
@@ -172,31 +171,67 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
     ) -> str:
         """Accept one Simulation Task only when PLECS is available."""
         self._require_available_plecs()
-        if self._task_queue.full():
+        if self._task_queue.qsize() >= self._queue_capacity:
             raise RuntimeError("Simulation Task queue is full")
+        return (
+            await self._accept_simulations(
+                (request,), priority=priority, use_cache=use_cache
+            )
+        )[0]
 
-        task = _SimulationTask(
-            request=request,
-            priority=priority,
-            use_cache=use_cache,
-            max_retries=self.config.orchestration.retry_attempts,
+    async def submit_simulations(
+        self,
+        requests: Sequence[SimulationRequest],
+        priority: TaskPriority = TaskPriority.NORMAL,
+        use_cache: bool = True,
+    ) -> tuple[str, ...]:
+        """Accept a request sequence atomically without partial queue failure."""
+        self._require_available_plecs()
+        return await self._accept_simulations(
+            requests, priority=priority, use_cache=use_cache
         )
-        self._tasks[task.id] = task
-        self._accepted_task_ids.add(task.id)
+
+    async def _accept_simulations(
+        self,
+        requests: Sequence[SimulationRequest],
+        *,
+        priority: TaskPriority,
+        use_cache: bool,
+    ) -> tuple[str, ...]:
+        tasks = tuple(
+            _SimulationTask(
+                request=request,
+                priority=priority,
+                use_cache=use_cache,
+                max_retries=self.config.orchestration.retry_attempts,
+            )
+            for request in requests
+        )
+        cached_results = tuple(self._read_cache(task) for task in tasks)
+
+        for task in tasks:
+            self._tasks[task.id] = task
+            self._accepted_task_ids.add(task.id)
         self._notify_state_change()
 
-        cached_result = self._read_cache(task)
-        if cached_result is not None:
-            self._complete_success(task, self._cached_simulation_result(task, cached_result))
-            return task.id
+        queued_tasks = [
+            task
+            for task, cached_result in zip(tasks, cached_results)
+            if cached_result is None
+        ]
 
-        self._task_queue.put_nowait(task)
-        self._notify_state_change()
-        logger.info("Simulation Task %s queued with priority %s", task.id, priority.name)
+        for task, cached_result in zip(tasks, cached_results):
+            if cached_result is not None:
+                self._complete_success(
+                    task, self._cached_simulation_result(task, cached_result)
+                )
+                continue
+            self._enqueue_task(task, enforce_capacity=False)
 
-        if not self.is_running:
+        if queued_tasks and not self.is_running:
             await self.start()
-        return task.id
+
+        return tuple(task.id for task in tasks)
 
     async def get_task_status(
         self, task_id: str
@@ -369,6 +404,17 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
                 batch.append(task)
         return batch
 
+    def _enqueue_task(
+        self, task: _SimulationTask, *, enforce_capacity: bool = True
+    ) -> None:
+        if enforce_capacity and self._task_queue.qsize() >= self._queue_capacity:
+            raise Full
+        self._task_queue.put_nowait(task)
+        self._notify_state_change()
+        logger.info(
+            "Simulation Task %s queued with priority %s", task.id, task.priority.name
+        )
+
     def _track_batch(self, batch_task: asyncio.Task[None]) -> None:
         self._batch_tasks.add(batch_task)
 
@@ -486,7 +532,7 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
                 await asyncio.sleep(self.config.orchestration.retry_delay)
             if task.status == SimulationStatus.QUEUED:
                 try:
-                    self._task_queue.put_nowait(task)
+                    self._enqueue_task(task)
                 except Full:
                     retry_error = f"{error_message}; retry queue is full"
                     result = SimulationResult(
@@ -505,8 +551,6 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
                         retry_error,
                         "on_task_failed",
                     )
-                else:
-                    self._notify_state_change()
             return
 
         result = SimulationResult(
@@ -576,7 +620,11 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
             task_id=task.id,
             success=True,
             timeseries_data=cached_result["timeseries"],
-            metadata=cached_result["metadata"],
+            metadata={
+                **cached_result["metadata"],
+                **task.request.metadata,
+                "model_file": task.request.model_file,
+            },
             cached=True,
         )
 

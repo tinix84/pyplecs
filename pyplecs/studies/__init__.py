@@ -120,13 +120,9 @@ class ParametricStudy:
             for vector in vectors
         )
 
-        task_ids = []
-        for request in requests:
-            task_ids.append(
-                await self._orchestrator.submit_simulation(
-                    request, priority=priority, use_cache=use_cache
-                )
-            )
+        task_ids = await self._orchestrator.submit_simulations(
+            requests, priority=priority, use_cache=use_cache
+        )
 
         points_list = []
         for vector, task_id in zip(vectors, task_ids):

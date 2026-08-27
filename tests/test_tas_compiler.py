@@ -317,3 +317,75 @@ def test_future_domain_and_unknown_root_content_are_preserved_with_diagnostics(t
     assert ("TAS_FUTURE_DOMAIN_PRESERVED", "$.topology.stages[0].circuit.components[2].data.magnetic") in diagnostics
     assert ("TAS_UNKNOWN_ROOT_CONTENT_PRESERVED", "$.thermalNetwork") in diagnostics
     assert compilation.source["thermalNetwork"] == source["thermalNetwork"]
+
+
+def test_unconsumed_stimulus_prevents_execution(tmp_path):
+    source = _document()
+    source["simulation"]["stimulus"].append(
+        {
+            "stage": "power_stage",
+            "component": "Q1",
+            "signal": "drain",
+            "waveform": {"type": "constant", "value": 1},
+        }
+    )
+
+    with pytest.raises(TasCompilationError) as caught:
+        TasCompiler(tmp_path).compile(source)
+
+    diagnostic = next(
+        item for item in caught.value.diagnostics if item.code == "TAS_UNSUPPORTED_STIMULUS"
+    )
+    assert diagnostic.location == "$.simulation.stimulus[1]"
+    assert list(tmp_path.glob("*.plecs")) == []
+
+
+def test_component_diagnostic_location_uses_source_array_index(tmp_path):
+    source = _document()
+    components = source["topology"]["stages"][0]["circuit"]["components"]
+    components.reverse()
+    source_index = next(
+        index for index, component in enumerate(components) if component["name"] == "Q1"
+    )
+    components[source_index]["data"] = {}
+
+    with pytest.raises(TasCompilationError) as caught:
+        TasCompiler(tmp_path).compile(source)
+
+    diagnostic = next(
+        item for item in caught.value.diagnostics if item.code == "TAS_UNSUPPORTED_COMPONENT"
+    )
+    assert diagnostic.location == (
+        f"$.topology.stages[0].circuit.components[{source_index}].data"
+    )
+
+
+def test_connection_diagnostic_location_uses_source_array_index(tmp_path):
+    source = _document()
+    connections = source["topology"]["stages"][0]["circuit"]["connections"]
+    connections.reverse()
+    sorted_source_indexes = sorted(
+        range(len(connections)), key=lambda index: connections[index]["name"]
+    )
+    source_index = next(
+        index
+        for sorted_index, index in enumerate(sorted_source_indexes)
+        if index != sorted_index
+    )
+    endpoint_index = next(
+        index
+        for index, endpoint in enumerate(connections[source_index]["endpoints"])
+        if "component" in endpoint
+    )
+    connections[source_index]["endpoints"][endpoint_index]["pin"] = "unknown"
+
+    with pytest.raises(TasCompilationError) as caught:
+        TasCompiler(tmp_path).compile(source)
+
+    diagnostic = next(
+        item for item in caught.value.diagnostics if item.code == "TAS_UNKNOWN_PIN"
+    )
+    assert diagnostic.location == (
+        f"$.topology.stages[0].circuit.connections[{source_index}]"
+        f".endpoints[{endpoint_index}].pin"
+    )
