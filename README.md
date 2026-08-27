@@ -49,14 +49,10 @@ with PlecsServer("model.plecs") as server:
 
 ### Portable TAS execution
 
-PyPLECS can consume the supported electrical projection of a decoded
-[TAS v2](https://github.com/Power-Supply-Manufacturers-Association/TAS)
-document without installing TAS, CIAS, PEAS, or a component database. The
-Band 1 projection is deliberately narrow: one self-contained non-isolated
-buck switching stage, optional virtual control, inline R/C/single-winding L/
-MOSFET/diode data, PWM stimulus, transient analysis, and resistive Operating
-Point loads. Thermal and magnetic-domain simulation are future work; preserved
-unsupported data is diagnosed rather than claimed as consumed.
+PyPLECS consumes a supported electrical projection of decoded [TAS v2](https://github.com/Power-Supply-Manufacturers-Association/TAS)
+without TAS repositories or databases: one inline non-isolated buck stage,
+R/C/single-winding L/MOSFET/diode data, PWM, transient analysis, and resistive
+loads. Thermal and magnetic-domain data is preserved and diagnosed for future work.
 
 ```python
 from pyplecs import SimulationOrchestrator, TasExecutionService
