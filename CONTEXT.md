@@ -40,6 +40,10 @@ _Avoid_: Job, queue item
 A simulator-agnostic interchange structure for a complete power-converter design. It carries design requirements and Operating Points, a topology assembled from circuit stages and components, optional simulation intent and model constraints, and optional computed outputs. Each tool consumes the domains it supports; TAS remains broader than any one simulator.
 _Avoid_: TAS request, topology format, TAS file, spec JSON
 
+**TAS Electrical Projection**:
+The explicitly bounded electrical view of TAS that PyPLECS can consume without redefining or discarding the broader source structure. It is one tool's capability boundary, not a smaller TAS format.
+_Avoid_: TAS support, TAS converter, partial TAS
+
 **Weighted OP Table**:
 A set of operating points, each a parameter vector carrying the fraction of time a mission profile spends there. It is the input shape of a Parametric Study driven by a mission profile.
 _Avoid_: Histogram, OP list, binned profile
