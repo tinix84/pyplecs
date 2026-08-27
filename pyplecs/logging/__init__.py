@@ -11,15 +11,15 @@ import structlog
 
 from pyplecs.contracts import StructuredLoggerBase
 
-from ..config import get_config
+from ..config import LoggingConfig, get_config
 from ..core.models import LogEntry
 
 
 class StructuredLogger(StructuredLoggerBase):
     """Centralized structured logging for PyPLECS."""
 
-    def __init__(self):
-        self.config = get_config()
+    def __init__(self, config: Optional[LoggingConfig] = None):
+        self.config = config or get_config().logging_config
         self._setup_logging()
 
         # Create structured logger
@@ -48,49 +48,49 @@ class StructuredLogger(StructuredLoggerBase):
 
         # Setup standard logging
         root_logger = logging.getLogger()
-        root_logger.setLevel(getattr(logging, self.config.logging_config.level))
+        root_logger.setLevel(getattr(logging, self.config.level))
 
         # Clear existing handlers
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
 
         # Console handler
-        if self.config.logging_config.console_enabled:
+        if self.config.console_enabled:
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(
-                getattr(logging, self.config.logging_config.console_level)
+                getattr(logging, self.config.console_level)
             )
-            console_formatter = logging.Formatter(self.config.logging_config.format)
+            console_formatter = logging.Formatter(self.config.format)
             console_handler.setFormatter(console_formatter)
             root_logger.addHandler(console_handler)
 
         # File handler
-        if self.config.logging_config.file_enabled:
-            log_file = Path(self.config.logging_config.file_path)
+        if self.config.file_enabled:
+            log_file = Path(self.config.file_path)
             log_file.parent.mkdir(parents=True, exist_ok=True)
 
             file_handler = logging.handlers.RotatingFileHandler(
                 filename=log_file,
-                maxBytes=self._parse_size(self.config.logging_config.file_max_size),
-                backupCount=self.config.logging_config.file_backup_count,
+                maxBytes=self._parse_size(self.config.file_max_size),
+                backupCount=self.config.file_backup_count,
             )
-            file_handler.setLevel(getattr(logging, self.config.logging_config.level))
-            file_formatter = logging.Formatter(self.config.logging_config.format)
+            file_handler.setLevel(getattr(logging, self.config.level))
+            file_formatter = logging.Formatter(self.config.format)
             file_handler.setFormatter(file_formatter)
             root_logger.addHandler(file_handler)
 
         # Structured logging handler
-        if self.config.logging_config.structured_enabled:
-            structured_file = Path(self.config.logging_config.structured_path)
+        if self.config.structured_enabled:
+            structured_file = Path(self.config.structured_path)
             structured_file.parent.mkdir(parents=True, exist_ok=True)
 
             structured_handler = logging.handlers.RotatingFileHandler(
                 filename=structured_file,
-                maxBytes=self._parse_size(self.config.logging_config.file_max_size),
-                backupCount=self.config.logging_config.file_backup_count,
+                maxBytes=self._parse_size(self.config.file_max_size),
+                backupCount=self.config.file_backup_count,
             )
             structured_handler.setLevel(
-                getattr(logging, self.config.logging_config.level)
+                getattr(logging, self.config.level)
             )
 
             # Custom formatter for structured logs
@@ -101,7 +101,7 @@ class StructuredLogger(StructuredLoggerBase):
             structured_logger = logging.getLogger("pyplecs.structured")
             structured_logger.addHandler(structured_handler)
             structured_logger.setLevel(
-                getattr(logging, self.config.logging_config.level)
+                getattr(logging, self.config.level)
             )
 
     def _parse_size(self, size_str: str) -> int:
@@ -355,8 +355,8 @@ def get_logger() -> StructuredLogger:
     return _structured_logger
 
 
-def init_logging() -> StructuredLogger:
+def init_logging(config: Optional[LoggingConfig] = None) -> StructuredLogger:
     """Initialize the global structured logger."""
     global _structured_logger
-    _structured_logger = StructuredLogger()
+    _structured_logger = StructuredLogger(config)
     return _structured_logger

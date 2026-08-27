@@ -10,6 +10,7 @@ import time
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from ..normalization import normalize_plecs_result
 from ..pyplecs import PlecsServer
 
 logger = logging.getLogger(__name__)
@@ -53,44 +54,33 @@ async def run_simulation_sync(request: SyncSimulationRequest):
 
     elapsed = time.perf_counter() - t_start
 
-    # Parse PLECS result: {'Time': [...], 'Values': [[...], ...]}
-    try:
-        time_vec = _to_list(raw.get("Time", []))
-        raw_values = raw.get("Values", [])
-
-        signals: dict[str, list[float]] = {}
-        signal_map = request.signal_map or {}
-
-        for col_idx, col_data in enumerate(raw_values):
-            name = signal_map.get(col_idx, f"col_{col_idx}")
-            signals[name] = _to_list(col_data)
-
-    except Exception as e:
-        logger.error("Failed to parse PLECS result: %s", e)
+    result = normalize_plecs_result(
+        raw,
+        task_id="sync",
+        signal_names=request.signal_map,
+        metadata={"model_file": request.model_file},
+        execution_time=elapsed,
+    )
+    if not result.success:
+        logger.error("Failed to normalize PLECS result: %s", result.error_message)
         return SyncSimulationResponse(
             success=False,
             time=[],
             signals={},
-            error_message=f"Result parsing error: {e}",
+            metadata=result.metadata,
+            error_message=result.error_message,
         )
 
+    timeseries = result.timeseries_data
+    time_vec = timeseries["Time"].tolist() if "Time" in timeseries else []
+    signals = {
+        column: timeseries[column].tolist()
+        for column in timeseries.columns
+        if column != "Time"
+    }
     return SyncSimulationResponse(
         success=True,
         time=time_vec,
         signals=signals,
-        metadata={
-            "execution_time": round(elapsed, 4),
-            "n_points": len(time_vec),
-            "n_signals": len(signals),
-            "model_file": request.model_file,
-        },
+        metadata={**result.metadata, "execution_time": round(elapsed, 4)},
     )
-
-
-def _to_list(obj) -> list[float]:
-    """Convert array-like or nested xmlrpc result to plain list of floats."""
-    if hasattr(obj, "tolist"):
-        return obj.tolist()
-    if isinstance(obj, (list, tuple)):
-        return [float(v) for v in obj]
-    return list(obj)

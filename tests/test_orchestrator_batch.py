@@ -1,234 +1,297 @@
-"""Tests for batch orchestration with PLECS native parallel API."""
-
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock
+import asyncio
+import threading
+from dataclasses import FrozenInstanceError
 
 import pytest
 
-from pyplecs.core.models import SimulationRequest
-from pyplecs.orchestration import BatchSimulationExecutor, SimulationOrchestrator, TaskPriority
+from pyplecs.cache import SimulationCache
+from pyplecs.config import ConfigManager
+from pyplecs.core.models import SimulationRequest, SimulationStatus
+from pyplecs.orchestration import (
+    PlecsUnavailableError,
+    SimulationOrchestrator,
+    TaskPriority,
+)
 
 
-@pytest.fixture
-def temp_model_file():
-    """Create a temporary .plecs file for testing."""
-    with tempfile.NamedTemporaryFile(suffix=".plecs", delete=False, mode='w') as f:
-        f.write("<?xml version='1.0'?><PlexilModel></PlexilModel>")
-        temp_path = f.name
-    yield temp_path
-    # Cleanup
-    Path(temp_path).unlink(missing_ok=True)
+class InMemoryPlecsAdapter:
+    def __init__(self, outcomes=None, *, available=True):
+        self.available = available
+        self.outcomes = list(outcomes or [])
+        self.calls = []
 
+    def is_available(self):
+        return self.available
 
-@pytest.fixture
-def mock_plecs_server():
-    """Create a mock PLECS server for testing."""
-    server = MagicMock()
-    server.simulate_batch = MagicMock(return_value=[
-        {"time": [0, 1], "voltage": [0, 5]},
-        {"time": [0, 1], "voltage": [0, 10]},
-        {"time": [0, 1], "voltage": [0, 15]}
-    ])
-    return server
-
-
-@pytest.fixture
-def batch_executor(mock_plecs_server):
-    """Create a batch executor with mock server."""
-    return BatchSimulationExecutor(mock_plecs_server, batch_size=4)
-
-
-class TestBatchSimulationExecutor:
-    """Test suite for BatchSimulationExecutor."""
-
-    def test_executor_initialization(self, mock_plecs_server):
-        """Test executor initializes with correct batch size."""
-        executor = BatchSimulationExecutor(mock_plecs_server, batch_size=8)
-
-        assert executor.server == mock_plecs_server
-        assert executor.batch_size == 8
-        assert executor.stats['batches_executed'] == 0
-
-    def test_execute_batch_groups_tasks(self, batch_executor, mock_plecs_server, temp_model_file):
-        """Test batch executor groups tasks and submits to PLECS."""
-        from pyplecs.orchestration import SimulationTask
-
-        # Create test tasks
-        tasks = [
-            SimulationTask(
-                request=SimulationRequest(
-                    model_file=temp_model_file,
-                    parameters={"Vi": float(i)}
-                )
-            )
-            for i in range(3)
+    def simulate_batch(self, parameter_list):
+        copied_parameters = [dict(parameters) for parameters in parameter_list]
+        self.calls.append(copied_parameters)
+        if self.outcomes:
+            outcome = self.outcomes.pop(0)
+            if isinstance(outcome, Exception):
+                raise outcome
+            if callable(outcome):
+                return outcome(copied_parameters)
+            return outcome
+        return [
+            {
+                "Time": [0.0, 1.0],
+                "Values": [[parameters.get("Vi", 0.0), parameters.get("Vi", 0.0)]],
+            }
+            for parameters in copied_parameters
         ]
 
-        # Execute batch
-        results = batch_executor.execute_batch(tasks)
 
-        # Verify PLECS simulate_batch was called once with all parameters
-        mock_plecs_server.simulate_batch.assert_called_once()
-        call_args = mock_plecs_server.simulate_batch.call_args[0][0]
-        assert len(call_args) == 3
-        assert call_args[0] == {"Vi": 0.0}
-        assert call_args[1] == {"Vi": 1.0}
-        assert call_args[2] == {"Vi": 2.0}
+class BlockingPlecsAdapter(InMemoryPlecsAdapter):
+    def __init__(self):
+        super().__init__()
+        self.started = threading.Event()
+        self.release = threading.Event()
 
-        # Verify results returned
-        assert len(results) == 3
+    def simulate_batch(self, parameter_list):
+        self.started.set()
+        if not self.release.wait(timeout=5):
+            raise TimeoutError("test adapter was not released")
+        return super().simulate_batch(parameter_list)
 
-    def test_execute_empty_batch(self, batch_executor):
-        """Test executing empty batch returns empty list."""
-        results = batch_executor.execute_batch([])
-        assert results == []
 
-    def test_batch_statistics_updated(self, batch_executor, temp_model_file):
-        """Test batch execution updates statistics."""
-        from pyplecs.orchestration import SimulationTask
+class BlockingFailingPlecsAdapter(InMemoryPlecsAdapter):
+    def __init__(self):
+        super().__init__()
+        self.started = threading.Event()
+        self.release = threading.Event()
 
-        tasks = [
-            SimulationTask(
-                request=SimulationRequest(
-                    model_file=temp_model_file,
-                    parameters={"Vi": 12.0}
-                )
-            )
+    def simulate_batch(self, parameter_list):
+        self.started.set()
+        if not self.release.wait(timeout=5):
+            raise TimeoutError("test adapter was not released")
+        raise RuntimeError("transient")
+
+
+def _config(tmp_path, *, retries=1, batch_size=4):
+    config = ConfigManager(search_paths=[])
+    config.update("cache.directory", str(tmp_path / "cache"))
+    config.update("orchestration.retry_attempts", retries)
+    config.update("orchestration.retry_delay", 0)
+    config.update("orchestration.max_concurrent_simulations", batch_size)
+    return config
+
+
+def _request(tmp_path, vi=24.0):
+    model = tmp_path / "model.plecs"
+    model.touch(exist_ok=True)
+    return SimulationRequest(
+        model_file=str(model), parameters={"Vi": vi}, output_variables=["Vo"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_submission_requires_an_available_plecs_adapter(tmp_path):
+    config = _config(tmp_path)
+    missing = SimulationOrchestrator(config=config)
+    unavailable = SimulationOrchestrator(
+        InMemoryPlecsAdapter(available=False), config=config
+    )
+
+    with pytest.raises(PlecsUnavailableError, match="no PLECS adapter"):
+        await missing.submit_simulation(_request(tmp_path))
+    with pytest.raises(PlecsUnavailableError, match="unavailable"):
+        await unavailable.submit_simulation(_request(tmp_path))
+
+    assert missing.get_orchestrator_stats()["total_submitted"] == 0
+    assert unavailable.get_orchestrator_stats()["total_submitted"] == 0
+
+
+@pytest.mark.asyncio
+async def test_priority_is_owned_by_the_orchestrator_interface(tmp_path):
+    adapter = InMemoryPlecsAdapter()
+    orchestrator = SimulationOrchestrator(
+        adapter, batch_size=3, config=_config(tmp_path, batch_size=3)
+    )
+    try:
+        await asyncio.gather(
+            orchestrator.submit_simulation(
+                _request(tmp_path, 1.0), priority=TaskPriority.LOW, use_cache=False
+            ),
+            orchestrator.submit_simulation(
+                _request(tmp_path, 2.0), priority=TaskPriority.CRITICAL, use_cache=False
+            ),
+            orchestrator.submit_simulation(
+                _request(tmp_path, 3.0), priority=TaskPriority.NORMAL, use_cache=False
+            ),
+        )
+
+        assert await orchestrator.wait_for_all_tasks(timeout=2)
+        assert [parameters["Vi"] for parameters in adapter.calls[0]] == [2.0, 3.0, 1.0]
+    finally:
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_cache_hit_and_execution_share_terminal_completion(tmp_path):
+    config = _config(tmp_path, batch_size=1)
+    adapter = InMemoryPlecsAdapter()
+    orchestrator = SimulationOrchestrator(adapter, batch_size=1, config=config)
+    completions = []
+    orchestrator.add_callback("on_task_completed", completions.append)
+    try:
+        first_id = await orchestrator.submit_simulation(_request(tmp_path, 24.0))
+        first = await orchestrator.wait_for_completion(first_id, timeout=2)
+        second_id = await orchestrator.submit_simulation(_request(tmp_path, 24.0))
+        second = await orchestrator.wait_for_completion(second_id, timeout=2)
+
+        assert first.status == SimulationStatus.COMPLETED
+        assert first.result.cached is False
+        assert second.status == SimulationStatus.COMPLETED
+        assert second.result.cached is True
+        assert len(adapter.calls) == 1
+        assert [snapshot.status for snapshot in completions] == [
+            SimulationStatus.COMPLETED,
+            SimulationStatus.COMPLETED,
         ]
-
-        batch_executor.execute_batch(tasks)
-
-        # Verify stats updated
-        assert batch_executor.stats['batches_executed'] == 1
-        assert batch_executor.stats['total_simulations'] == 1
-        assert batch_executor.stats['total_runtime'] > 0
-
-
-class TestSimulationOrchestratorBatch:
-    """Test suite for batch orchestration."""
-
-    @pytest.mark.asyncio
-    async def test_orchestrator_batches_tasks(self, mock_plecs_server):
-        """Verify orchestrator groups tasks into batches."""
-        orchestrator = SimulationOrchestrator(
-            plecs_server=mock_plecs_server,
-            batch_size=4
-        )
-
-        # Submit 10 tasks
-        task_ids = []
-        for i in range(10):
-            task_id = await orchestrator.submit_simulation(
-                SimulationRequest(
-                    model_file="test.plecs",
-                    parameters={"Vi": float(i)}
-                ),
-                use_cache=False  # Disable cache for this test
-            )
-            task_ids.append(task_id)
-
-        # Wait for all tasks to complete
-        await orchestrator.wait_for_all_tasks(timeout=10)
-
-        # Should execute in batches (e.g., 4+4+2 for batch_size=4)
-        # Verify all tasks completed
-        assert len(task_ids) == 10
-        for task_id in task_ids:
-            task = await orchestrator.get_task_status(task_id)
-            assert task is not None
-
-    @pytest.mark.asyncio
-    async def test_cache_avoids_redundant_simulations(self, mock_plecs_server):
-        """Verify cache prevents re-simulation of identical parameters."""
-        orchestrator = SimulationOrchestrator(plecs_server=mock_plecs_server)
-
-        # Enable cache
-        orchestrator.cache.config.cache.enabled = True
-
-        request = SimulationRequest(
-            model_file="test.plecs",
-            parameters={"Vi": 12.0}
-        )
-
-        # First execution - cache miss
-        task_id1 = await orchestrator.submit_simulation(request, use_cache=True)
-        task1 = await orchestrator.wait_for_completion(task_id1, timeout=5)
-
-        # Note: In real scenario, cached would be False on first run
-        # For this test, we'd need a full integration test with actual cache
-
-        # Second execution - should check cache
-        task_id2 = await orchestrator.submit_simulation(request, use_cache=True)
-        task2 = await orchestrator.wait_for_completion(task_id2, timeout=5)
-
-        # Both tasks should complete
-        assert task1 is not None
-        assert task2 is not None
-
-    @pytest.mark.asyncio
-    async def test_priority_queue_ordering(self, mock_plecs_server):
-        """Test tasks are processed by priority."""
-        orchestrator = SimulationOrchestrator(plecs_server=mock_plecs_server)
-
-        # Submit tasks with different priorities
-        low_task = await orchestrator.submit_simulation(
-            SimulationRequest(model_file="test.plecs", parameters={"Vi": 1.0}),
-            priority=TaskPriority.LOW,
-            use_cache=False
-        )
-
-        critical_task = await orchestrator.submit_simulation(
-            SimulationRequest(model_file="test.plecs", parameters={"Vi": 2.0}),
-            priority=TaskPriority.CRITICAL,
-            use_cache=False
-        )
-
-        normal_task = await orchestrator.submit_simulation(
-            SimulationRequest(model_file="test.plecs", parameters={"Vi": 3.0}),
-            priority=TaskPriority.NORMAL,
-            use_cache=False
-        )
-
-        # Wait for completion
-        await orchestrator.wait_for_all_tasks(timeout=10)
-
-        # All should complete
-        assert await orchestrator.get_task_status(low_task) is not None
-        assert await orchestrator.get_task_status(critical_task) is not None
-        assert await orchestrator.get_task_status(normal_task) is not None
-
-    @pytest.mark.asyncio
-    async def test_orchestrator_statistics(self, mock_plecs_server):
-        """Test orchestrator tracks statistics correctly."""
-        orchestrator = SimulationOrchestrator(plecs_server=mock_plecs_server)
-
-        # Submit some tasks
-        for i in range(5):
-            await orchestrator.submit_simulation(
-                SimulationRequest(
-                    model_file="test.plecs",
-                    parameters={"Vi": float(i)}
-                ),
-                use_cache=False
-            )
-
-        # Wait for completion
-        await orchestrator.wait_for_all_tasks(timeout=10)
-
-        # Get stats
         stats = orchestrator.get_orchestrator_stats()
-
-        # Verify stats structure
-        assert 'total_submitted' in stats
-        assert 'total_completed' in stats
-        assert 'executor' in stats
-        assert 'cache_stats' in stats
-
-        # Verify executor stats
-        assert 'batch_size' in stats['executor']
-        assert stats['executor']['batch_size'] == 4  # default
+        assert stats["total_submitted"] == 2
+        assert stats["total_completed"] == 2
+        assert stats["total_cached_hits"] == 1
+    finally:
+        await orchestrator.stop()
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+@pytest.mark.asyncio
+async def test_failed_attempt_is_retried_then_completed(tmp_path):
+    adapter = InMemoryPlecsAdapter(outcomes=[RuntimeError("transient")])
+    orchestrator = SimulationOrchestrator(
+        adapter, batch_size=1, config=_config(tmp_path, retries=2, batch_size=1)
+    )
+    try:
+        task_id = await orchestrator.submit_simulation(
+            _request(tmp_path), use_cache=False
+        )
+
+        task = await orchestrator.wait_for_completion(task_id, timeout=2)
+
+        assert task.status == SimulationStatus.COMPLETED
+        assert task.retry_count == 1
+        assert len(adapter.calls) == 2
+    finally:
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_retry_racing_with_a_full_queue_still_reaches_terminal_truth(tmp_path):
+    config = _config(tmp_path, retries=2, batch_size=1)
+    config.update("orchestration.queue_size", 1)
+    adapter = BlockingFailingPlecsAdapter()
+    orchestrator = SimulationOrchestrator(adapter, batch_size=1, config=config)
+    try:
+        first_id = await orchestrator.submit_simulation(
+            _request(tmp_path, 1.0), use_cache=False
+        )
+        assert await asyncio.to_thread(adapter.started.wait, 1)
+        await orchestrator.submit_simulation(_request(tmp_path, 2.0), use_cache=False)
+
+        adapter.release.set()
+        first = await orchestrator.wait_for_completion(first_id, timeout=2)
+
+        assert first.status == SimulationStatus.FAILED
+        assert "retry queue is full" in first.error
+    finally:
+        adapter.release.set()
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_running_task_can_be_cancelled_to_a_terminal_outcome(tmp_path):
+    adapter = BlockingPlecsAdapter()
+    orchestrator = SimulationOrchestrator(
+        adapter, batch_size=1, config=_config(tmp_path, batch_size=1)
+    )
+    try:
+        task_id = await orchestrator.submit_simulation(
+            _request(tmp_path), use_cache=False
+        )
+        assert await asyncio.to_thread(adapter.started.wait, 1)
+
+        assert await orchestrator.cancel_task(task_id) is True
+        task = await orchestrator.wait_for_completion(task_id, timeout=1)
+
+        assert task.status == SimulationStatus.CANCELLED
+        assert task.result.success is False
+        assert "cancelled" in task.result.error_message
+        assert await orchestrator.cancel_task(task_id) is False
+    finally:
+        adapter.release.set()
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_batch_failure_gives_every_task_a_failed_terminal_outcome(tmp_path):
+    adapter = InMemoryPlecsAdapter(outcomes=[RuntimeError("PLECS crashed")])
+    orchestrator = SimulationOrchestrator(
+        adapter, batch_size=2, config=_config(tmp_path, retries=1, batch_size=2)
+    )
+    try:
+        task_ids = await asyncio.gather(
+            orchestrator.submit_simulation(_request(tmp_path, 1), use_cache=False),
+            orchestrator.submit_simulation(_request(tmp_path, 2), use_cache=False),
+        )
+
+        assert await orchestrator.wait_for_all_tasks(timeout=2)
+        tasks = [await orchestrator.get_task_status(task_id) for task_id in task_ids]
+        assert [task.status for task in tasks] == [
+            SimulationStatus.FAILED,
+            SimulationStatus.FAILED,
+        ]
+        assert all("PLECS crashed" in task.error for task in tasks)
+        assert orchestrator.get_orchestrator_stats()["total_failed"] == 2
+    finally:
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_all_complete_requires_terminal_truth_not_queue_emptiness(tmp_path):
+    adapter = BlockingPlecsAdapter()
+    orchestrator = SimulationOrchestrator(
+        adapter, batch_size=1, config=_config(tmp_path, batch_size=1)
+    )
+    try:
+        await orchestrator.submit_simulation(_request(tmp_path), use_cache=False)
+        assert await asyncio.to_thread(adapter.started.wait, 1)
+        assert orchestrator.get_orchestrator_stats()["queue_size"] == 0
+        assert orchestrator.get_orchestrator_stats()["executor"]["is_processing"] is True
+
+        assert await orchestrator.wait_for_all_tasks(timeout=0.05) is False
+        adapter.release.set()
+        assert await orchestrator.wait_for_all_tasks(timeout=2) is True
+        await asyncio.sleep(0)
+        assert orchestrator.get_orchestrator_stats()["executor"]["is_processing"] is False
+    finally:
+        adapter.release.set()
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_queries_do_not_expose_task_collections_or_cache_internals(tmp_path):
+    config = _config(tmp_path)
+    cache = SimulationCache(config.cache)
+    orchestrator = SimulationOrchestrator(
+        InMemoryPlecsAdapter(), config=config, cache=cache
+    )
+    try:
+        task_id = await orchestrator.submit_simulation(_request(tmp_path), use_cache=False)
+        assert await orchestrator.wait_for_all_tasks(timeout=2)
+
+        snapshot = await orchestrator.get_task_status(task_id)
+        listed = orchestrator.list_tasks()
+
+        assert listed == [snapshot]
+        with pytest.raises(FrozenInstanceError):
+            snapshot.status = SimulationStatus.FAILED
+        assert not hasattr(orchestrator, "active_tasks")
+        assert not hasattr(orchestrator, "completed_tasks")
+        assert not hasattr(orchestrator, "cache")
+        assert orchestrator.get_cache_stats() == cache.get_cache_stats()
+        orchestrator.clear_cache()
+        assert orchestrator.get_cache_stats()["total_entries"] == 0
+    finally:
+        await orchestrator.stop()

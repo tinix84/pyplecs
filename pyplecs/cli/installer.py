@@ -19,26 +19,9 @@ import sys
 from pathlib import Path
 from typing import Dict, List
 
-DEFAULT_CONFIG = """# Minimal PyPLECS generated config
-app:
-  name: "PyPLECS"
-  version: "0.1.0"
+import yaml
 
-plecs:
-  executable_paths: []
-
-webgui:
-  enabled: true
-  host: "0.0.0.0"
-  port: 8080
-
-paths:
-  results: "./results"
-  cache: "./cache"
-  logs: "./logs"
-  static: "./static"
-  templates: "./templates"
-"""
+from ..config import DEFAULT_CONFIG_DATA
 
 COMMON_PIP_PACKAGES = ["fastapi", "uvicorn", "jinja2", "pandas", "pyyaml"]
 
@@ -140,19 +123,16 @@ def install_system_packages(
 
 
 def write_default_config(target: str | Path = None) -> str:
-    """Write a minimal default config to target path and return the path.
+    """Write the canonical default config to target path and return the path.
 
     Default location: ./config/default.yml
     """
     target_path = Path(target or Path.cwd() / "config" / "default.yml")
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    example = target_path.parent / "default.example.yml"
-    if example.exists():
-        # The example is tracked and complete; the generated config is not.
-        shutil.copyfile(example, target_path)
-    else:
-        with open(target_path, "w", encoding="utf-8") as f:
-            f.write(DEFAULT_CONFIG)
+    target_path.write_text(
+        yaml.safe_dump(DEFAULT_CONFIG_DATA, default_flow_style=False, sort_keys=False),
+        encoding="utf-8",
+    )
     return str(target_path)
 
 

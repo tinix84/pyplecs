@@ -47,6 +47,40 @@ with PlecsServer("model.plecs") as server:
     results = server.simulate_batch([{"Vi": 12.0}, {"Vi": 24.0}, {"Vi": 48.0}])
 ```
 
+### Portable TAS execution
+
+PyPLECS can consume the supported electrical projection of a decoded
+[TAS v2](https://github.com/Power-Supply-Manufacturers-Association/TAS)
+document without installing TAS, CIAS, PEAS, or a component database. The
+Band 1 projection is deliberately narrow: one self-contained non-isolated
+buck switching stage, optional virtual control, inline R/C/single-winding L/
+MOSFET/diode data, PWM stimulus, transient analysis, and resistive Operating
+Point loads. Thermal and magnetic-domain simulation are future work; preserved
+unsupported data is diagnosed rather than claimed as consumed.
+
+```python
+from pyplecs import SimulationOrchestrator, TasExecutionService
+
+async def run_tas(tas_document, plecs_adapter):
+    # Compile once, expand named TAS Operating Points into ordinary Simulation
+    # Tasks, and return one ordered terminal envelope.
+    orchestrator = SimulationOrchestrator(plecs_adapter)
+    try:
+        return await TasExecutionService(orchestrator).execute(tas_document)
+    finally:
+        await orchestrator.stop()
+```
+
+The web extra exposes the same service under the configured API prefix:
+
+- `POST /tas/studies/sync` waits for the terminal envelope.
+- `POST /tas/studies` returns a process-local study ID.
+- `GET /tas/studies/{study_id}` returns public Operating-Point progress or the
+  terminal envelope.
+
+URI-valued circuits or components require a caller-supplied resolver in the
+Python API. REST intake performs no implicit filesystem or network resolution.
+
 Console entry points:
 
 | Command | Does |
@@ -65,6 +99,9 @@ pyplecs/
 ├── _contracts/         vendored copy of the ABCs, verbatim
 ├── core/               local request/result models
 ├── orchestration/      priority queue, batch execution
+├── studies/            finite Parametric Study expansion and reduction
+├── tas/                standalone TAS electrical projection and service
+├── converter/          Circuit Model plus deterministic emitters
 ├── cache/              simulation result caching
 ├── api/                REST endpoints
 ├── webgui/             dashboard
@@ -102,6 +139,13 @@ Platform-independent subset, which is also what the pre-push gate runs:
 uv run pytest -q tests/test_installer.py tests/test_entrypoint.py \
           tests/test_install_full.py tests/test_abc_contract.py \
           tests/test_plecs_expert.py
+```
+
+The Band 1 live TAS smoke is opt-in and skips clearly when PLECS XML-RPC is not
+available:
+
+```bash
+PYPLECS_RUN_LIVE_TAS=1 uv run pytest -q tests/test_tas_live.py
 ```
 
 There is no GitHub Actions CI — a pre-push hook covers lint and the

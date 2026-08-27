@@ -1,148 +1,36 @@
-"""Simulation caching system with hash-based storage."""
+"""Simulation caching with whole-record lifecycle semantics."""
 
 import hashlib
+import io
 import json
 import os
-import pickle
+import shutil
 import time
-from abc import ABC, abstractmethod
+import uuid
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import yaml
 
 from pyplecs.contracts import SimulationCacheBase
 
-from ..config import get_config
-
-
-class CacheBackend(ABC):
-    """Abstract base class for cache backends."""
-
-    @abstractmethod
-    def get(self, key: str) -> Optional[Any]:
-        """Get value from cache."""
-        pass
-
-    @abstractmethod
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
-        """Set value in cache."""
-        pass
-
-    @abstractmethod
-    def delete(self, key: str) -> bool:
-        """Delete key from cache."""
-        pass
-
-    @abstractmethod
-    def exists(self, key: str) -> bool:
-        """Check if key exists in cache."""
-        pass
-
-    @abstractmethod
-    def clear(self) -> None:
-        """Clear all cache entries."""
-        pass
-
-
-class FileCacheBackend(CacheBackend):
-    """File-based cache backend using the filesystem."""
-
-    def __init__(self, cache_dir: str):
-        self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.metadata_dir = self.cache_dir / "metadata"
-        self.metadata_dir.mkdir(exist_ok=True)
-
-    def _get_file_path(self, key: str) -> Path:
-        """Get file path for cache key."""
-        return self.cache_dir / f"{key}.cache"
-
-    def _get_metadata_path(self, key: str) -> Path:
-        """Get metadata file path for cache key."""
-        return self.metadata_dir / f"{key}.meta"
-
-    def get(self, key: str) -> Optional[Any]:
-        """Get value from file cache."""
-        file_path = self._get_file_path(key)
-        metadata_path = self._get_metadata_path(key)
-
-        if not file_path.exists() or not metadata_path.exists():
-            return None
-
-        # Check TTL
-        try:
-            with open(metadata_path, "r") as f:
-                metadata = json.load(f)
-
-            if metadata.get("ttl") and time.time() > metadata["expires_at"]:
-                self.delete(key)
-                return None
-        except (json.JSONDecodeError, KeyError):
-            return None
-
-        # Load cached data
-        try:
-            with open(file_path, "rb") as f:
-                return pickle.load(f)
-        except Exception:
-            return None
-
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
-        """Set value in file cache."""
-        file_path = self._get_file_path(key)
-        metadata_path = self._get_metadata_path(key)
-
-        # Save data
-        with open(file_path, "wb") as f:
-            pickle.dump(value, f)
-
-        # Save metadata
-        metadata = {
-            "created_at": time.time(),
-            "ttl": ttl,
-            "expires_at": time.time() + ttl if ttl else None,
-        }
-
-        with open(metadata_path, "w") as f:
-            json.dump(metadata, f)
-
-    def delete(self, key: str) -> bool:
-        """Delete key from file cache."""
-        file_path = self._get_file_path(key)
-        metadata_path = self._get_metadata_path(key)
-
-        deleted = False
-        if file_path.exists():
-            file_path.unlink()
-            deleted = True
-
-        if metadata_path.exists():
-            metadata_path.unlink()
-            deleted = True
-
-        return deleted
-
-    def exists(self, key: str) -> bool:
-        """Check if key exists in file cache."""
-        return self._get_file_path(key).exists()
-
-    def clear(self) -> None:
-        """Clear all cache entries."""
-        for file_path in self.cache_dir.glob("*.cache"):
-            file_path.unlink()
-        for file_path in self.metadata_dir.glob("*.meta"):
-            file_path.unlink()
+from ..config import CacheConfig, get_config
 
 
 class SimulationHash:
     """Generate hash for simulation parameters and models."""
 
-    def __init__(self, algorithm: str = "sha256"):
+    def __init__(
+        self,
+        algorithm: str = "sha256",
+        *,
+        config: Optional[CacheConfig] = None,
+    ):
         self.algorithm = algorithm
-        self.config = get_config()
+        self.config = config or get_config().cache
 
     def compute_hash(
         self,
@@ -150,252 +38,198 @@ class SimulationHash:
         parameters: Dict[str, Any],
         include_file_content: bool = True,
     ) -> str:
-        """Compute hash for simulation configuration.
-
-        Args:
-            model_file: Path to PLECS model file
-            parameters: Simulation parameters
-            include_file_content: Whether to include file content in hash
-
-        Returns:
-            Hexadecimal hash string
-        """
+        """Compute the existing model-and-parameter cache identity."""
         hasher = hashlib.new(self.algorithm)
-
-        # Hash model file path
         hasher.update(str(model_file).encode())
 
-        # Hash file content if requested
         if include_file_content and os.path.exists(model_file):
-            with open(model_file, "rb") as f:
-                hasher.update(f.read())
+            with open(model_file, "rb") as file:
+                hasher.update(file.read())
 
-        # Hash parameters (excluding configured fields)
         filtered_params = self._filter_parameters(parameters)
-        param_str = json.dumps(filtered_params, sort_keys=True)
-        hasher.update(param_str.encode())
-
+        hasher.update(json.dumps(filtered_params, sort_keys=True).encode())
         return hasher.hexdigest()
 
     def _filter_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
-        """Filter out parameters that should not affect the hash."""
-        exclude_fields = self.config.cache.exclude_fields
-        return {k: v for k, v in parameters.items() if k not in exclude_fields}
+        exclude_fields = self.config.exclude_fields
+        return {key: value for key, value in parameters.items() if key not in exclude_fields}
 
 
 class SimulationResultStore:
-    """Store and retrieve simulation results in optimized formats."""
+    """Internal storage-format adapter for one Cache Record directory."""
 
-    def __init__(self, storage_dir: str):
-        self.storage_dir = Path(storage_dir)
-        self.storage_dir.mkdir(parents=True, exist_ok=True)
-        self.config = get_config()
+    _TIMESERIES_FILENAMES = {
+        "parquet": "timeseries.parquet",
+        "hdf5": "timeseries.h5",
+        "csv": "timeseries.csv",
+    }
+    _METADATA_FILENAMES = {
+        "json": "metadata.json",
+        "yaml": "metadata.yml",
+    }
+
+    def __init__(self, config: CacheConfig):
+        self.config = config
 
     def store_results(
         self,
-        simulation_hash: str,
+        record_dir: Path,
         timeseries_data: pd.DataFrame,
         metadata: Dict[str, Any],
-    ) -> None:
-        """Store simulation results.
+    ) -> tuple[str, str]:
+        timeseries_format = self.config.timeseries_format.lower()
+        metadata_format = self.config.metadata_format.lower()
 
-        Args:
-            simulation_hash: Unique hash for this simulation
-            timeseries_data: Time series simulation data
-            metadata: Simulation metadata and parameters
-        """
-        # Store timeseries data
-        ts_format = self.config.cache.timeseries_format.lower()
+        try:
+            timeseries_filename = self._TIMESERIES_FILENAMES[timeseries_format]
+        except KeyError as error:
+            raise ValueError(
+                f"Unsupported timeseries format: {timeseries_format}"
+            ) from error
+        try:
+            metadata_filename = self._METADATA_FILENAMES[metadata_format]
+        except KeyError as error:
+            raise ValueError(f"Unsupported metadata format: {metadata_format}") from error
 
-        if ts_format == "parquet":
-            self._store_parquet(simulation_hash, timeseries_data)
-        elif ts_format == "hdf5":
-            self._store_hdf5(simulation_hash, timeseries_data)
-        elif ts_format == "csv":
-            self._store_csv(simulation_hash, timeseries_data)
+        timeseries_path = record_dir / timeseries_filename
+        metadata_path = record_dir / metadata_filename
+
+        if timeseries_format == "parquet":
+            self._store_parquet(timeseries_path, timeseries_data)
+        elif timeseries_format == "hdf5":
+            self._store_hdf5(timeseries_path, timeseries_data)
         else:
-            raise ValueError(f"Unsupported timeseries format: {ts_format}")
+            self._store_csv(timeseries_path, timeseries_data)
 
-        # Store metadata
-        metadata_format = self.config.cache.metadata_format.lower()
         if metadata_format == "json":
-            self._store_json_metadata(simulation_hash, metadata)
-        elif metadata_format == "yaml":
-            self._store_yaml_metadata(simulation_hash, metadata)
+            metadata_path.write_text(
+                json.dumps(metadata, indent=2, default=str), encoding="utf-8"
+            )
         else:
-            raise ValueError(f"Unsupported metadata format: {metadata_format}")
+            metadata_path.write_text(
+                yaml.safe_dump(metadata, default_flow_style=False), encoding="utf-8"
+            )
 
-    def load_results(self, simulation_hash: str) -> Optional[Dict[str, Any]]:
-        """Load simulation results.
+        return timeseries_filename, metadata_filename
 
-        Args:
-            simulation_hash: Unique hash for this simulation
+    def load_results(
+        self,
+        record_dir: Path,
+        timeseries_format: str,
+        metadata_format: str,
+    ) -> Dict[str, Any]:
+        try:
+            timeseries_filename = self._TIMESERIES_FILENAMES[timeseries_format]
+            metadata_filename = self._METADATA_FILENAMES[metadata_format]
+        except KeyError as error:
+            raise ValueError(f"Cache Record declares unsupported format: {error.args[0]}") from error
 
-        Returns:
-            Dictionary with 'timeseries' and 'metadata' keys, or None if not found
-        """
-        # Load timeseries data
-        ts_format = self.config.cache.timeseries_format.lower()
+        timeseries_path = record_dir / timeseries_filename
+        metadata_path = record_dir / metadata_filename
+        if not timeseries_path.is_file() or not metadata_path.is_file():
+            raise ValueError("Cache Record is incomplete")
 
-        if ts_format == "parquet":
-            timeseries = self._load_parquet(simulation_hash)
-        elif ts_format == "hdf5":
-            timeseries = self._load_hdf5(simulation_hash)
-        elif ts_format == "csv":
-            timeseries = self._load_csv(simulation_hash)
+        if timeseries_format == "parquet":
+            timeseries = self._load_parquet(timeseries_path)
+        elif timeseries_format == "hdf5":
+            timeseries = self._load_hdf5(timeseries_path)
         else:
-            return None
+            timeseries = pd.read_csv(timeseries_path)
 
-        if timeseries is None:
-            return None
-
-        # Load metadata
-        metadata_format = self.config.cache.metadata_format.lower()
         if metadata_format == "json":
-            metadata = self._load_json_metadata(simulation_hash)
-        elif metadata_format == "yaml":
-            metadata = self._load_yaml_metadata(simulation_hash)
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         else:
-            metadata = {}
+            metadata = yaml.safe_load(metadata_path.read_text(encoding="utf-8"))
 
-        return {"timeseries": timeseries, "metadata": metadata or {}}
+        if not isinstance(metadata, dict):
+            raise ValueError("Cache Record metadata must be a mapping")
+        return {"timeseries": timeseries, "metadata": metadata}
 
-    def _store_parquet(self, simulation_hash: str, data: pd.DataFrame) -> None:
-        """Store data in Parquet format."""
-        file_path = self.storage_dir / f"{simulation_hash}.parquet"
-        compression = self.config.cache.compression
-
+    def _store_parquet(self, path: Path, data: pd.DataFrame) -> None:
         table = pa.Table.from_pandas(data)
-        pq.write_table(table, file_path, compression=compression)
+        pq.write_table(table, path, compression=self.config.compression)
 
-    def _load_parquet(self, simulation_hash: str) -> Optional[pd.DataFrame]:
-        """Load data from Parquet format."""
-        file_path = self.storage_dir / f"{simulation_hash}.parquet"
-        if not file_path.exists():
-            return None
+    @staticmethod
+    def _load_parquet(path: Path) -> pd.DataFrame:
+        return pq.read_table(path).to_pandas()
 
+    @staticmethod
+    def _store_hdf5(path: Path, data: pd.DataFrame) -> None:
         try:
-            table = pq.read_table(file_path)
-            return table.to_pandas()
-        except Exception:
-            return None
+            import h5py
+        except ImportError as error:
+            raise RuntimeError(
+                "HDF5 cache storage requires the 'cache' optional dependencies"
+            ) from error
 
-    def _store_hdf5(self, simulation_hash: str, data: pd.DataFrame) -> None:
-        """Store data in HDF5 format."""
-        file_path = self.storage_dir / f"{simulation_hash}.h5"
-        data.to_hdf(file_path, key="timeseries", mode="w", complevel=9)
+        payload = data.to_json(orient="table").encode("utf-8")
+        with h5py.File(path, "w") as file:
+            file.create_dataset("timeseries", data=payload)
 
-    def _load_hdf5(self, simulation_hash: str) -> Optional[pd.DataFrame]:
-        """Load data from HDF5 format."""
-        file_path = self.storage_dir / f"{simulation_hash}.h5"
-        if not file_path.exists():
-            return None
-
+    @staticmethod
+    def _load_hdf5(path: Path) -> pd.DataFrame:
         try:
-            return pd.read_hdf(file_path, key="timeseries")
-        except Exception:
-            return None
+            import h5py
+        except ImportError as error:
+            raise RuntimeError(
+                "HDF5 cache storage requires the 'cache' optional dependencies"
+            ) from error
 
-    def _store_csv(self, simulation_hash: str, data: pd.DataFrame) -> None:
-        """Store data in CSV format."""
-        file_path = self.storage_dir / f"{simulation_hash}.csv"
-        data.to_csv(file_path, index=False)
+        with h5py.File(path, "r") as file:
+            payload = bytes(file["timeseries"][()]).decode("utf-8")
+        return pd.read_json(io.StringIO(payload), orient="table")
 
-    def _load_csv(self, simulation_hash: str) -> Optional[pd.DataFrame]:
-        """Load data from CSV format."""
-        file_path = self.storage_dir / f"{simulation_hash}.csv"
-        if not file_path.exists():
-            return None
-
-        try:
-            return pd.read_csv(file_path)
-        except Exception:
-            return None
-
-    def _store_json_metadata(
-        self, simulation_hash: str, metadata: Dict[str, Any]
-    ) -> None:
-        """Store metadata in JSON format."""
-        file_path = self.storage_dir / f"{simulation_hash}_metadata.json"
-        with open(file_path, "w") as f:
-            json.dump(metadata, f, indent=2, default=str)
-
-    def _load_json_metadata(self, simulation_hash: str) -> Optional[Dict[str, Any]]:
-        """Load metadata from JSON format."""
-        file_path = self.storage_dir / f"{simulation_hash}_metadata.json"
-        if not file_path.exists():
-            return None
-
-        try:
-            with open(file_path, "r") as f:
-                return json.load(f)
-        except Exception:
-            return None
-
-    def _store_yaml_metadata(
-        self, simulation_hash: str, metadata: Dict[str, Any]
-    ) -> None:
-        """Store metadata in YAML format."""
-        import yaml
-
-        file_path = self.storage_dir / f"{simulation_hash}_metadata.yml"
-        with open(file_path, "w") as f:
-            yaml.dump(metadata, f, default_flow_style=False)
-
-    def _load_yaml_metadata(self, simulation_hash: str) -> Optional[Dict[str, Any]]:
-        """Load metadata from YAML format."""
-        import yaml
-
-        file_path = self.storage_dir / f"{simulation_hash}_metadata.yml"
-        if not file_path.exists():
-            return None
-
-        try:
-            with open(file_path, "r") as f:
-                return yaml.safe_load(f)
-        except Exception:
-            return None
+    @staticmethod
+    def _store_csv(path: Path, data: pd.DataFrame) -> None:
+        data.to_csv(path, index=False)
 
 
 class SimulationCache(SimulationCacheBase):
-    """High-level simulation caching interface."""
+    """Own Cache Record persistence, expiration, invalidation, and statistics."""
 
-    def __init__(self):
-        self.config = get_config()
-        self.hasher = SimulationHash(self.config.cache.hash_algorithm)
+    _MANIFEST_FILENAME = "record.json"
 
-        # Initialize cache backend
-        if self.config.cache.type == "file":
-            self.backend = FileCacheBackend(self.config.cache.directory)
-        else:
-            raise ValueError(f"Unsupported cache type: {self.config.cache.type}")
+    def __init__(
+        self,
+        config: Optional[CacheConfig] = None,
+        *,
+        clock: Callable[[], float] = time.time,
+    ):
+        self.config = config or get_config().cache
+        if self.config.type != "file":
+            raise ValueError(f"Unsupported cache type: {self.config.type}")
 
-        # Initialize result store
-        self.result_store = SimulationResultStore(
-            os.path.join(self.config.cache.directory, "results")
+        self.hasher = SimulationHash(
+            self.config.hash_algorithm,
+            config=self.config,
         )
+        self._clock = clock
+        self._cache_dir = Path(self.config.directory)
+        self._records_dir = self._cache_dir / "records"
+        self._records_dir.mkdir(parents=True, exist_ok=True)
+        self._result_store = SimulationResultStore(self.config)
 
     def get_cached_result(
         self, model_file: str, parameters: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
-        """Get cached simulation result if available.
-
-        Args:
-            model_file: Path to PLECS model file
-            parameters: Simulation parameters
-
-        Returns:
-            Cached result or None if not found
-        """
-        if not self.config.cache.enabled:
+        if not self.config.enabled:
             return None
 
-        simulation_hash = self.hasher.compute_hash(
-            model_file, parameters, self.config.cache.include_files
-        )
+        simulation_hash = self._compute_hash(model_file, parameters)
+        record_dir = self._record_dir(simulation_hash)
+        manifest = self._read_live_manifest(record_dir)
+        if manifest is None:
+            return None
 
-        # Check if result exists in store
-        return self.result_store.load_results(simulation_hash)
+        try:
+            return self._result_store.load_results(
+                record_dir,
+                manifest["timeseries_format"],
+                manifest["metadata_format"],
+            )
+        except (OSError, ValueError, RuntimeError, json.JSONDecodeError, yaml.YAMLError):
+            self._delete_record(record_dir)
+            return None
 
     def cache_result(
         self,
@@ -404,77 +238,107 @@ class SimulationCache(SimulationCacheBase):
         timeseries_data: pd.DataFrame,
         metadata: Dict[str, Any],
     ) -> str:
-        """Cache simulation result.
-
-        Args:
-            model_file: Path to PLECS model file
-            parameters: Simulation parameters
-            timeseries_data: Time series simulation data
-            metadata: Simulation metadata
-
-        Returns:
-            Simulation hash for this cached result
-        """
-        if not self.config.cache.enabled:
+        if not self.config.enabled:
             return ""
 
-        simulation_hash = self.hasher.compute_hash(
-            model_file, parameters, self.config.cache.include_files
-        )
+        simulation_hash = self._compute_hash(model_file, parameters)
+        record_dir = self._record_dir(simulation_hash)
+        temporary_dir = self._records_dir / f".{simulation_hash}.{uuid.uuid4().hex}.tmp"
+        temporary_dir.mkdir()
 
-        # Store in result store
-        self.result_store.store_results(simulation_hash, timeseries_data, metadata)
+        try:
+            timeseries_filename, metadata_filename = self._result_store.store_results(
+                temporary_dir, timeseries_data, metadata
+            )
+            created_at = self._clock()
+            expires_at = (
+                created_at + self.config.ttl if self.config.ttl and self.config.ttl > 0 else None
+            )
+            manifest = {
+                "simulation_hash": simulation_hash,
+                "model_file": model_file,
+                "parameters": parameters,
+                "created_at": created_at,
+                "expires_at": expires_at,
+                "timeseries_format": self.config.timeseries_format.lower(),
+                "timeseries_file": timeseries_filename,
+                "metadata_format": self.config.metadata_format.lower(),
+                "metadata_file": metadata_filename,
+            }
+            (temporary_dir / self._MANIFEST_FILENAME).write_text(
+                json.dumps(manifest, indent=2, default=str), encoding="utf-8"
+            )
 
-        # Store hash in cache backend for quick lookup
-        cache_entry = {
-            "model_file": model_file,
-            "parameters": parameters,
-            "simulation_hash": simulation_hash,
-            "cached_at": time.time(),
-        }
-
-        self.backend.set(simulation_hash, cache_entry, self.config.cache.ttl)
+            self._delete_record(record_dir)
+            temporary_dir.replace(record_dir)
+        finally:
+            if temporary_dir.exists():
+                shutil.rmtree(temporary_dir)
 
         return simulation_hash
 
     def invalidate_cache(self, model_file: str, parameters: Dict[str, Any]) -> bool:
-        """Invalidate cached result for specific model and parameters.
-
-        Args:
-            model_file: Path to PLECS model file
-            parameters: Simulation parameters
-
-        Returns:
-            True if cache entry was found and deleted
-        """
-        simulation_hash = self.hasher.compute_hash(
-            model_file, parameters, self.config.cache.include_files
-        )
-
-        return self.backend.delete(simulation_hash)
+        return self._delete_record(self._record_dir(self._compute_hash(model_file, parameters)))
 
     def clear_cache(self) -> None:
-        """Clear all cached results."""
-        self.backend.clear()
-
-        # Also clear result store
-        for file_path in self.result_store.storage_dir.glob("*"):
-            if file_path.is_file():
-                file_path.unlink()
+        if self._records_dir.exists():
+            shutil.rmtree(self._records_dir)
+        self._records_dir.mkdir(parents=True, exist_ok=True)
 
     def get_cache_stats(self) -> Dict[str, Any]:
-        """Get cache usage statistics."""
-        cache_dir = Path(self.config.cache.directory)
+        live_record_dirs = []
+        for record_dir in self._records_dir.iterdir():
+            if not record_dir.is_dir() or record_dir.name.startswith("."):
+                continue
+            if self._read_live_manifest(record_dir) is not None:
+                live_record_dirs.append(record_dir)
 
-        if not cache_dir.exists():
-            return {"total_entries": 0, "total_size_bytes": 0}
-
-        total_entries = len(list(cache_dir.glob("*.cache")))
-        total_size = sum(f.stat().st_size for f in cache_dir.rglob("*") if f.is_file())
-
+        total_size = sum(
+            path.stat().st_size
+            for record_dir in live_record_dirs
+            for path in record_dir.rglob("*")
+            if path.is_file()
+        )
         return {
-            "total_entries": total_entries,
+            "total_entries": len(live_record_dirs),
             "total_size_bytes": total_size,
             "total_size_mb": round(total_size / (1024 * 1024), 2),
-            "cache_directory": str(cache_dir),
+            "cache_directory": str(self._cache_dir),
         }
+
+    def _compute_hash(self, model_file: str, parameters: Dict[str, Any]) -> str:
+        return self.hasher.compute_hash(
+            model_file, parameters, self.config.include_files
+        )
+
+    def _record_dir(self, simulation_hash: str) -> Path:
+        return self._records_dir / simulation_hash
+
+    def _read_live_manifest(self, record_dir: Path) -> Optional[Dict[str, Any]]:
+        manifest_path = record_dir / self._MANIFEST_FILENAME
+        if not manifest_path.is_file():
+            self._delete_record(record_dir)
+            return None
+
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            expires_at = manifest.get("expires_at")
+            if expires_at is not None and self._clock() >= expires_at:
+                self._delete_record(record_dir)
+                return None
+            if manifest.get("simulation_hash") != record_dir.name:
+                raise ValueError("Cache Record identity does not match its directory")
+            return manifest
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            self._delete_record(record_dir)
+            return None
+
+    @staticmethod
+    def _delete_record(record_dir: Path) -> bool:
+        if not record_dir.exists():
+            return False
+        if record_dir.is_dir():
+            shutil.rmtree(record_dir)
+        else:
+            record_dir.unlink()
+        return True

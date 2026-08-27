@@ -1,16 +1,18 @@
 """REST API for PyPLECS simulation management."""
 
 import logging
+from pathlib import Path
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ..config import get_config
+from ..config import ConfigManager, get_config
 from ..core.models import SimulationRequest, SimulationStatus
 from ..orchestration import SimulationOrchestrator, TaskPriority
 from .simulation_sync import router as sync_router
+from .tas import create_tas_router
 
 logger = logging.getLogger(__name__)
 
@@ -64,17 +66,18 @@ def get_orchestrator() -> SimulationOrchestrator:
     return orchestrator
 
 
-def create_api_app() -> FastAPI:
+def create_api_app(config: Optional[ConfigManager] = None) -> FastAPI:
     """Create and configure the FastAPI application."""
-    config = get_config()
+    resolved_config = config or get_config()
 
     app = FastAPI(
         title="PyPLECS API",
         description="REST API for PLECS simulation management",
         version="1.0.0",
-        docs_url="/docs" if config.api.docs_enabled else None,
-        redoc_url="/redoc" if config.api.docs_enabled else None,
+        docs_url="/docs" if resolved_config.api.docs_enabled else None,
+        redoc_url="/redoc" if resolved_config.api.docs_enabled else None,
     )
+    app.state.config = resolved_config
 
     # CORS middleware
     app.add_middleware(
@@ -88,21 +91,36 @@ def create_api_app() -> FastAPI:
     return app
 
 
-def _get_app():
+def _get_app(config: Optional[ConfigManager] = None):
     """Lazy app creation for uvicorn."""
-    _app = create_api_app()
-    _app.include_router(sync_router, prefix="/api/v1")
+    resolved_config = config or get_config()
+    _app = create_api_app(resolved_config)
+    _app.include_router(sync_router, prefix=resolved_config.api.prefix)
+    _app.include_router(
+        create_tas_router(
+            get_orchestrator,
+            artifact_directory=Path(resolved_config.cache.directory) / "tas-models",
+        ),
+        prefix=resolved_config.api.prefix,
+    )
     return _app
 
 
-def _register_routes(app):
+def _register_routes(
+    app,
+    config: Optional[ConfigManager] = None,
+    orchestrator_instance: Optional[SimulationOrchestrator] = None,
+):
     """Register all routes on the app instance."""
+    resolved_config = config or getattr(app.state, "config", None) or get_config()
 
     @app.on_event("startup")
     async def startup_event():
         """Initialize the orchestrator on startup."""
         global orchestrator
-        orchestrator = SimulationOrchestrator()
+        orchestrator = orchestrator_instance or SimulationOrchestrator(
+            config=resolved_config
+        )
         await orchestrator.start()
 
     @app.on_event("shutdown")
@@ -234,17 +252,13 @@ def _register_routes(app):
         orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
     ):
         """List simulations with optional status filter."""
-        all_tasks = []
-        all_tasks.extend(orchestrator.active_tasks.values())
-        all_tasks.extend(orchestrator.completed_tasks.values())
+        status_filter = None
         if status:
             try:
                 status_filter = SimulationStatus(status.lower())
-                all_tasks = [t for t in all_tasks if t.status == status_filter]
             except ValueError:
                 raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
-        all_tasks.sort(key=lambda t: t.created_at, reverse=True)
-        all_tasks = all_tasks[:limit]
+        all_tasks = orchestrator.list_tasks(status=status_filter, limit=limit)
         results = []
         for task in all_tasks:
             results.append(
@@ -255,7 +269,7 @@ def _register_routes(app):
                     "started_at": task.started_at,
                     "completed_at": task.completed_at,
                     "error": task.error,
-                    "model_file": task.request.model_file if task.request else None,
+                    "model_file": task.model_file,
                 }
             )
         return {"simulations": results, "total": len(results)}
@@ -270,7 +284,7 @@ def _register_routes(app):
     @app.post("/cache/clear")
     async def clear_cache(orchestrator: SimulationOrchestrator = Depends(get_orchestrator)):
         """Clear the simulation cache."""
-        orchestrator.cache.clear_cache()
+        orchestrator.clear_cache()
         return {"message": "Cache cleared successfully"}
 
     @app.get("/cache/stats")
@@ -278,7 +292,7 @@ def _register_routes(app):
         orchestrator: SimulationOrchestrator = Depends(get_orchestrator),
     ):
         """Get cache statistics."""
-        return orchestrator.cache.get_cache_stats()
+        return orchestrator.get_cache_stats()
 
     @app.get("/health")
     async def health_check():
@@ -290,9 +304,9 @@ def main():
     """Entry point for pyplecs-api command."""
     import uvicorn
 
-    app = _get_app()
-    _register_routes(app)
     config = get_config()
+    app = _get_app(config)
+    _register_routes(app, config)
     uvicorn.run(app, host=config.api.host, port=config.api.port)
 
 

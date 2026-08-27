@@ -1,0 +1,220 @@
+{
+  "inputs": {
+    "designRequirements": {
+      "efficiency": 0.92,
+      "inputType": "dc",
+      "inputVoltage": {"minimum": 10.0, "nominal": 12.0, "maximum": 14.0},
+      "switchingFrequency": {"nominal": 400000.0},
+      "outputs": [
+        {
+          "name": "5V",
+          "voltage": {"nominal": 5.0, "minimum": 4.9, "maximum": 5.1},
+          "regulation": "voltage"
+        }
+      ]
+    },
+    "operatingPoints": [
+      {
+        "name": "nominal",
+        "inputVoltage": 12.0,
+        "ambientTemperature": 25.0,
+        "outputs": [{"name": "5V", "current": 2.0}]
+      },
+      {
+        "name": "high_line",
+        "inputVoltage": 14.0,
+        "ambientTemperature": 60.0,
+        "outputs": [{"name": "5V", "power": 5.0, "loadType": "resistive"}]
+      }
+    ]
+  },
+  "topology": {
+    "stages": [
+      {
+        "name": "power_stage",
+        "role": "switchingCell",
+        "circuit": {
+          "name": "buck-cell",
+          "ports": [
+            {"name": "in"},
+            {"name": "out"},
+            {"name": "gnd"},
+            {"name": "gate"}
+          ],
+          "components": [
+            {
+              "name": "Q1",
+              "data": {
+                "inputs": {"designRequirements": {"deviceType": "mosfet", "ratedDrainSourceVoltage": 40}},
+                "mosfet": {
+                  "manufacturerInfo": {
+                    "name": "Inline",
+                    "datasheetInfo": {
+                      "electrical": {"onResistance": 0.004}
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "D1",
+              "data": {
+                "inputs": {"designRequirements": {"deviceType": "diode", "ratedReverseVoltage": 40}},
+                "diode": {
+                  "manufacturerInfo": {
+                    "name": "Inline",
+                    "datasheetInfo": {
+                      "electrical": {"forwardVoltage": 0.45},
+                      "modelParams": {"rs": 0.01}
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "L1",
+              "data": {
+                "inputs": {
+                  "designRequirements": {
+                    "magnetizingInductance": {"nominal": 0.000022},
+                    "turnsRatios": []
+                  }
+                },
+                "magnetic": {
+                  "coil": {"functionalDescription": [{"name": "Primary", "numberTurns": 1}]}
+                }
+              }
+            },
+            {
+              "name": "C_in",
+              "data": {
+                "inputs": {"designRequirements": {"capacitance": {"nominal": 0.00001}}},
+                "capacitor": {
+                  "manufacturerInfo": {
+                    "name": "Inline",
+                    "datasheetInfo": {"electrical": {"capacitance": {"nominal": 0.00001}}}
+                  }
+                }
+              }
+            },
+            {
+              "name": "C_out",
+              "data": {
+                "inputs": {"designRequirements": {"capacitance": {"nominal": 0.0001}}},
+                "capacitor": {
+                  "manufacturerInfo": {
+                    "name": "Inline",
+                    "datasheetInfo": {"electrical": {"capacitance": {"nominal": 0.0001}}}
+                  }
+                }
+              }
+            },
+            {
+              "name": "R_bleed",
+              "data": {
+                "inputs": {"designRequirements": {"deviceType": "resistor", "resistance": {"nominal": 1000.0}}},
+                "resistor": {
+                  "manufacturerInfo": {
+                    "name": "Inline",
+                    "datasheetInfo": {"electrical": {"resistance": {"nominal": 1000.0}}}
+                  }
+                }
+              }
+            }
+          ],
+          "connections": [
+            {
+              "name": "vin",
+              "endpoints": [
+                {"component": "Q1", "pin": "D"},
+                {"component": "C_in", "pin": "1"},
+                {"port": "in"}
+              ]
+            },
+            {
+              "name": "sw_node",
+              "endpoints": [
+                {"component": "Q1", "pin": "S"},
+                {"component": "D1", "pin": "K"},
+                {"component": "L1", "pin": "1"}
+              ]
+            },
+            {
+              "name": "vout",
+              "endpoints": [
+                {"component": "L1", "pin": "2"},
+                {"component": "C_out", "pin": "1"},
+                {"component": "R_bleed", "pin": "1"},
+                {"port": "out"}
+              ]
+            },
+            {
+              "name": "return",
+              "endpoints": [
+                {"component": "D1", "pin": "A"},
+                {"component": "C_in", "pin": "2"},
+                {"component": "C_out", "pin": "2"},
+                {"component": "R_bleed", "pin": "2"},
+                {"port": "gnd"}
+              ]
+            },
+            {
+              "name": "gate",
+              "endpoints": [
+                {"component": "Q1", "pin": "G"},
+                {"port": "gate"}
+              ]
+            }
+          ]
+        },
+        "inputPort": {"port": "in", "type": "dcBus"},
+        "outputPort": {"port": "out", "type": "dcOutput"}
+      },
+      {
+        "name": "controller",
+        "role": "control",
+        "controlImplementation": "virtual",
+        "senses": [{"net": "Vout", "signal": "voltage"}],
+        "drives": [{"stage": "power_stage", "component": "Q1", "signal": "gate"}]
+      }
+    ],
+    "interStageConnections": [
+      {
+        "name": "Vin",
+        "kind": "externalPort",
+        "direction": "input",
+        "endpoints": [{"stage": "power_stage", "port": "in"}]
+      },
+      {
+        "name": "GND",
+        "kind": "externalPort",
+        "direction": "input",
+        "endpoints": [{"stage": "power_stage", "port": "gnd"}]
+      },
+      {
+        "name": "Vout",
+        "kind": "externalPort",
+        "direction": "output",
+        "endpoints": [{"stage": "power_stage", "port": "out"}]
+      }
+    ]
+  },
+  "simulation": {
+    "analyses": [{"type": "transient", "stopTime": 0.0005, "maximumTimeStep": 0.00000002}],
+    "overrides": [
+      {
+        "stage": "power_stage",
+        "component": "Q1",
+        "parameters": [{"name": "Ron", "value": 0.002}]
+      }
+    ],
+    "stimulus": [
+      {
+        "stage": "power_stage",
+        "component": "Q1",
+        "signal": "gate",
+        "waveform": {"type": "pwm", "frequency": 500000.0, "dutyCycle": 0.42}
+      }
+    ]
+  }
+}
