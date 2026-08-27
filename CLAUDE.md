@@ -20,6 +20,7 @@ place a dependency is declared — the gate rejects any `requirements*.txt` or
 ## Architecture quick reference
 - **Two layers**: `pyplecs/pyplecs.py` is a thin XML-RPC wrapper over PLECS; the orchestration / cache / api / webgui packages are built on top. There is no architecture document — the code is the only description of what exists (ADR-0004).
 - **PyPLECS executes; the caller decides** (ADR-0005). Optimization, surrogate models, adaptive search and component databases are permanently out of scope. `pyplecs/optimizer` is a placeholder for something that will not be built.
+- **TAS remains broader than PyPLECS** (ADR-0009). PyPLECS consumes a standalone electrical projection through Circuit Model, preserves the complete source, and diagnoses domains it does not yet consume.
 - **Two model flavors** (ADR-0006): `pyplecs.contracts.*` is the upstream pydantic flavor, `pyplecs.*` the local dataclass flavor. Field-level incompatible, deliberately not merged.
 - **Tool-agnostic ABCs at `pyplecs.contracts`** — public façade that prefers an installed PyPI `pycircuitsim_core` (when major-version-compatible) and falls back to the vendored copy at `pyplecs/_contracts/`. **Hard rule:** PyPLECS is standalone — never add `pycircuitsim-core` to `pyproject.toml` dependencies. See `tools/SYNC_PYCIRCUITSIM_CORE.md` for re-sync procedure.
 - **Optional deps degrade to `None`** — `pyplecs/__init__.py` sets `PlecsServer`, `create_api_app`, `create_web_app`, etc. to `None` when their optional packages aren't installed; callers must handle `None`.
@@ -75,6 +76,7 @@ Central pool (WSL): `\\wsl$\Ubuntu\home\tinix\claude_wsl\agents_pool\` | Domain:
 | 2026-08-20 | Two model flavors, no merge ([ADR-0006](docs/adr/0006-two-model-flavors-no-merge.md)) | Vendored contract models are field-level incompatible with `pyplecs/core/models.py`; merging would break every `result.timeseries_data` call site. Name-level ABC conformance only; interop adapter deferred. |
 | 2026-08-20 | Verbatim tables, rewritten prose ([ADR-0007](docs/adr/0007-verbatim-tables-rewritten-prose.md)) | `plecs-expert` mirrors proprietary PLECS docs into a public repo. Factual tables verbatim, all prose original in caveman style, `LICENSE-NOTES.md` as the auditable boundary. |
 | 2026-08-20 | pyproject + uv own environment and dependencies ([ADR-0008](docs/adr/0008-pyproject-and-uv-own-dependencies.md)) | Four disagreeing manifests: pyproject, 7 `requirements*.txt`, a `setup.py` that declared extras as mandatory, and 12 documented install variants. Deleted all but pyproject; `uv.lock` committed; machine-local `config/default.yml` untracked with a tracked example. |
+| 2026-08-27 | TAS remains broader than the PyPLECS electrical projection ([ADR-0009](docs/adr/0009-tas-is-broader-than-pyplecs-electrical-projection.md)) | TAS is the simulator-agnostic complete design structure; PyPLECS stays portable by consuming only an explicit electrical projection through Circuit Model while preserving and diagnosing unsupported domains. |
 
 ## Agent skills
 

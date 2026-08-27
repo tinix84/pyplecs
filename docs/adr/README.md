@@ -17,6 +17,7 @@ does not carry status (the issue tracker does that).
 | [0006](0006-two-model-flavors-no-merge.md) | Two model flavors, no merge | Accepted |
 | [0007](0007-verbatim-tables-rewritten-prose.md) | Verbatim tables, rewritten prose | Accepted |
 | [0008](0008-pyproject-and-uv-own-dependencies.md) | pyproject and uv own environment and dependencies | Accepted |
+| [0009](0009-tas-is-broader-than-pyplecs-electrical-projection.md) | TAS remains broader than the PyPLECS electrical projection | Accepted |
 
 ## Writing one
 

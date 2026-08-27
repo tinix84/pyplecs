@@ -47,7 +47,27 @@ from .core import (
     SimulationResult,
     SimulationStatus,
 )
+from .normalization import normalize_plecs_result
 from .orchestration import SimulationOrchestrator, TaskPriority
+from .studies import (
+    CollectResultsReducer,
+    ExplicitParameterVectorStrategy,
+    ParameterVector,
+    ParametricPointOutcome,
+    ParametricStudy,
+    ParametricStudyOutcome,
+    ParametricStudyStatus,
+)
+from .tas import (
+    DiagnosticSeverity,
+    TasCapture,
+    TasCompilation,
+    TasCompilationError,
+    TasCompiler,
+    TasDiagnostic,
+    TasExecutionEnvelope,
+    TasExecutionService,
+)
 
 # Optional logging (requires structlog)
 try:
@@ -104,6 +124,7 @@ __all__ = [
     "SimulationRequest",
     "SimulationResult",
     "SimulationStatus",
+    "normalize_plecs_result",
     "ComponentParameter",
     # 'ModelVariant',  # Removed in v1.0.0
     "OptimizationRequest",
@@ -112,6 +133,23 @@ __all__ = [
     "SimulationOrchestrator",
     "TaskPriority",
     "SimulationCache",
+    # Parametric Study
+    "CollectResultsReducer",
+    "ExplicitParameterVectorStrategy",
+    "ParameterVector",
+    "ParametricPointOutcome",
+    "ParametricStudy",
+    "ParametricStudyOutcome",
+    "ParametricStudyStatus",
+    # TAS electrical projection
+    "DiagnosticSeverity",
+    "TasCapture",
+    "TasCompilation",
+    "TasCompilationError",
+    "TasCompiler",
+    "TasDiagnostic",
+    "TasExecutionEnvelope",
+    "TasExecutionService",
     # Logging
     "get_logger",
     "init_logging",
