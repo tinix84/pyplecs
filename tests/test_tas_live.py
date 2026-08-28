@@ -1,7 +1,6 @@
-"""Opt-in live PLECS proof for the Band 1 TAS answer."""
+"""Opt-in live PLECS proof for the Band 1 TAS answer (``uv run pytest -m live_plecs``)."""
 
 import json
-import os
 from pathlib import Path
 
 import numpy as np
@@ -16,14 +15,11 @@ from pyplecs.tas import TasCompiler, TasExecutionService
 FIXTURE = Path(__file__).parent / "fixtures" / "tas_buck_inline.json"
 
 
-pytestmark = pytest.mark.skipif(
-    os.environ.get("PYPLECS_RUN_LIVE_TAS") != "1",
-    reason="set PYPLECS_RUN_LIVE_TAS=1 to run the live licensed-PLECS smoke test",
-)
+pytestmark = pytest.mark.live_plecs
 
 
 @pytest.mark.asyncio
-async def test_live_tas_answer_arrives_for_every_operating_point(tmp_path):
+async def test_live_tas_answer_arrives_for_every_operating_point(tmp_path, live_plecs):
     source = json.loads(FIXTURE.read_text(encoding="utf-8"))
     model = TasCompiler(tmp_path / "models").compile(source).artifact_path
     try:
@@ -33,6 +29,7 @@ async def test_live_tas_answer_arrives_for_every_operating_point(tmp_path):
 
     config = ConfigManager(search_paths=[])
     config.update("cache.directory", str(tmp_path / "cache"))
+    config.update("plecs.version", "live")
     config.update("orchestration.retry_attempts", 1)
     orchestrator = SimulationOrchestrator(plecs, config=config)
     service = TasExecutionService(orchestrator, artifact_directory=tmp_path / "models")

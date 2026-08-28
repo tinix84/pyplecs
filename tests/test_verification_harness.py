@@ -1,0 +1,140 @@
+"""The verification layer proven without PLECS: selection, skip, isolation, manifest, oracle, comparator."""
+
+import re
+import subprocess
+import sys
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from pyplecs.core.models import SimulationResult
+
+from .verification.manifest import (
+    CANONICAL_BUCK,
+    REPO_ROOT,
+    isolated_config,
+    load_manifest,
+    require_live_plecs,
+)
+from .verification.oracle import (
+    OracleError,
+    analytic_invariants,
+    check_preconditions,
+    compare_metrics,
+    steady_state_metrics,
+)
+
+LIVE_TEST_FILES = ("tests/test_live_canonical_buck.py", "tests/test_tas_live.py")
+
+
+def test_canonical_buck_manifest_matches_the_tracked_model():
+    manifest = load_manifest(CANONICAL_BUCK)
+    assert manifest.model_file.is_file()
+    probe_block = manifest.model_file.read_text(encoding="utf-8").split('Name          "all_prb"')[1].split("Component {")[0]
+    probed = re.findall(r'"([^"]+)"', "".join(re.findall(r"Signals\s+\{([^}]*)\}", probe_block)))
+    assert len(probed) == len(manifest.signals) == 13
+    assert set(manifest.required_signals) <= set(manifest.signals)
+    assert set(manifest.units) == set(manifest.signals)
+    assert manifest.switching_frequency == 100e3 and manifest.periods == 5
+    assert manifest.derived() == pytest.approx({"duty_ratio": 0.5, "load_resistance": 3.0, "inductor_ripple": 6.0})
+    declared = {name for pair in manifest.signal_map["components"].values() for name in pair.values()}
+    declared |= {name for pair in manifest.signal_map["ports"].values() for name in pair.values()}
+    assert declared <= set(manifest.signals)
+
+
+def test_live_tests_are_deselected_by_default_and_selected_by_marker():
+    collect = [sys.executable, "-m", "pytest", "--collect-only", "-q", *LIVE_TEST_FILES]
+    default = subprocess.run(collect, cwd=REPO_ROOT, capture_output=True, text=True)
+    assert "deselected" in default.stdout and "::test_" not in default.stdout, default.stdout
+    opted_in = subprocess.run([*collect, "-m", "live_plecs"], cwd=REPO_ROOT, capture_output=True, text=True)
+    assert opted_in.stdout.count("::test_") >= 2, opted_in.stdout
+
+
+def test_unreachable_plecs_skips_with_the_endpoint_in_the_reason():
+    launched = []
+    with pytest.raises(pytest.skip.Exception, match=r"unavailable at plecs-host:1234"):
+        require_live_plecs("plecs-host", 1234, lambda *args: launched.append(args) or False)
+    assert launched == [("plecs-host", 1234, 3.0)]
+
+
+def test_isolated_config_never_reads_the_machine_config(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "default.yml").write_text("plecs:\n  version: 'machine-local'\n", encoding="utf-8")
+    config = isolated_config(tmp_path, load_manifest(CANONICAL_BUCK))
+    assert config.config_path is None
+    assert config.plecs.version == "4.7.7" and config.plecs.auto_launch is False
+    assert config.cache.directory == str(tmp_path / "cache")
+    assert (config.plecs.xmlrpc_host, config.plecs.xmlrpc_port) == ("localhost", 1080)
+
+
+# --- the oracle itself, on synthetic waveforms -----------------------------------------------
+
+
+def _synthetic_buck(manifest, *, span=1e-3, points=2001, ripple=6.0, growth=0.0, drop=(), time=None):
+    """A settled buck at the manifest's Operating Point: triangular i_L, flat v_C, everything mapped."""
+    p, d = manifest.parameters, manifest.derived()
+    t = np.linspace(0.0, span, points) if time is None else np.asarray(time, dtype=float)
+    phase = (t * p["fs"]) % 1.0
+    tri = np.where(phase < d["duty_ratio"], phase / d["duty_ratio"], (1 - phase) / (1 - d["duty_ratio"])) - 0.5
+    v_out = 0.98 * d["duty_ratio"] * p["Vi"]
+    i_out = v_out / d["load_resistance"]
+    i_l = i_out + ripple * tri * (1.0 + growth * t / span)
+    gate = (phase < d["duty_ratio"]).astype(float)
+    frame = {
+        "Time": t,
+        "v_in": np.full_like(t, p["Vi"]), "i_in": i_l * gate,
+        "v_S": p["Vi"] * (1 - gate), "i_S": i_l * gate, "gate_S": gate,
+        "v_D": -p["Vi"] * gate, "i_D": i_l * (1 - gate),
+        "i_L": i_l, "v_L": np.where(gate > 0, p["Vi"] - v_out, -v_out),
+        "v_C": np.full_like(t, v_out), "i_C": i_l - i_out,
+        "v_R": np.full_like(t, v_out), "i_R": np.full_like(t, i_out),
+    }
+    for name in drop:
+        frame.pop(name)
+    return SimulationResult(task_id="synthetic", success=True, timeseries_data=pd.DataFrame(frame))
+
+
+def test_oracle_passes_a_settled_synthetic_buck_and_its_metrics_match_themselves():
+    manifest = load_manifest(CANONICAL_BUCK)
+    result = _synthetic_buck(manifest)
+    window = check_preconditions(result, manifest)
+    metrics = steady_state_metrics(result, manifest, window)
+    assert all(check["passed"] for check in analytic_invariants(metrics, manifest)), analytic_invariants(metrics, manifest)
+    assert metrics["i_L"]["peak_to_peak"] == pytest.approx(6.0, rel=0.02)
+    assert all(row["passed"] for row in compare_metrics(metrics, metrics, manifest))
+
+
+@pytest.mark.parametrize(
+    "kwargs, cause",
+    [
+        ({"drop": ("v_C",)}, "required signals missing"),
+        ({"time": np.r_[np.linspace(0, 5e-4, 1000), np.linspace(5e-4, 1e-3, 1001)]}, "strictly increasing"),
+        ({"span": 2e-5, "points": 41}, "window cannot be cut"),
+        ({"growth": 20.0}, "has not converged"),
+    ],
+)
+def test_oracle_fails_closed_with_a_named_cause(kwargs, cause):
+    manifest = load_manifest(CANONICAL_BUCK)
+    with pytest.raises(OracleError, match=cause):
+        check_preconditions(_synthetic_buck(manifest, **kwargs), manifest)
+
+
+def test_oracle_rejects_a_failed_simulation_result():
+    manifest = load_manifest(CANONICAL_BUCK)
+    with pytest.raises(OracleError, match="failure"):
+        check_preconditions(SimulationResult(task_id="x", success=False, error_message="boom"), manifest)
+
+
+def test_metric_comparison_uses_symmetric_error_and_per_unit_floors():
+    manifest = load_manifest(CANONICAL_BUCK)
+    reference = {"i_L": {"mean": 4.0, "peak_to_peak": 6.0}, "v_in": {"peak_to_peak": 0.0}, "i_C": {"mean": 0.0}}
+    actual = {"i_L": {"mean": 4.1, "peak_to_peak": 6.5}, "v_in": {"peak_to_peak": 0.04}, "i_C": {"mean": 0.009}}
+    rows = {(r["signal"], r["metric"]): r for r in compare_metrics(actual, reference, manifest)}
+    assert rows[("i_L", "mean")]["error"] == pytest.approx(0.1 / 4.1) and rows[("i_L", "mean")]["passed"] is False
+    assert rows[("i_L", "peak_to_peak")]["passed"] is True  # 7.7 % < 10 %
+    assert rows[("v_in", "peak_to_peak")]["passed"] is True  # both below the 50 mV floor
+    assert rows[("i_C", "mean")]["passed"] is True  # both below the 10 mA floor
+    missing = compare_metrics({}, reference, manifest)
+    assert all(row["passed"] is False and row["reason"] == "signal missing" for row in missing)
