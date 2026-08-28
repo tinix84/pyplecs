@@ -4,8 +4,14 @@ import time
 import unittest
 from pathlib import Path
 
-from context import pyplecs
-from pywinauto.application import Application
+import pytest
+
+pytest.importorskip("pywinauto", reason="legacy PLECS GUI automation smoke needs the gui extra")
+from pywinauto.application import Application  # noqa: E402
+
+import pyplecs  # noqa: E402
+
+pytestmark = pytest.mark.live_plecs  # drives the PLECS GUI
 
 
 class BasicTestSuite(unittest.TestCase):

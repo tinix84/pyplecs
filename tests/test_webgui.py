@@ -9,7 +9,9 @@ import asyncio
 import sys
 from pathlib import Path
 
-import aiohttp
+import pytest
+
+aiohttp = pytest.importorskip("aiohttp", reason="legacy manual web GUI smoke needs aiohttp and a server on :8001")
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent
