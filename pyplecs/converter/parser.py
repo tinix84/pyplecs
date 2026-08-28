@@ -94,6 +94,9 @@ def _parse_block(lines: list[str], start: int, *, expect_close: bool) -> tuple[d
         if stripped.startswith('"'):
             if last_key is None:
                 raise PlecsParseError(f"String continuation has no preceding field at line {line_number}")
+            if _is_brace_list(data[last_key]):
+                _append_brace_list_continuation(data, last_key, stripped, line_number)
+                continue
             continuation = _decode_quoted(stripped, line_number)
             _append_continuation(data, last_key, continuation, line_number)
             continue
@@ -110,9 +113,15 @@ def _parse_block(lines: list[str], start: int, *, expect_close: bool) -> tuple[d
     return data, index
 
 
+class _BraceList(str):
+    """Raw text of a brace list such as ``Signals {"a", "b"}``; only its quoted chunks wrap."""
+
+
 def _parse_value(raw_value: str, line_number: int) -> Any:
     if raw_value.startswith('"'):
         return _decode_quoted(raw_value, line_number)
+    if raw_value.startswith("{"):
+        return _BraceList(raw_value)
     if raw_value.startswith("["):
         if not raw_value.endswith("]"):
             raise PlecsParseError(f"Unterminated array at line {line_number}")
@@ -179,6 +188,22 @@ def _append_continuation(data: dict[str, Any], key: str, continuation: str, line
         data[key] += continuation
     else:
         raise PlecsParseError(f"Invalid string continuation at line {line_number}")
+
+
+def _is_brace_list(value: Any) -> bool:
+    if isinstance(value, list):
+        value = value[-1] if value else None
+    return isinstance(value, _BraceList) and value.endswith('"')
+
+
+def _append_brace_list_continuation(data: dict[str, Any], key: str, line: str, line_number: int) -> None:
+    if len(line) < 2 or line.count('"') % 2:
+        raise PlecsParseError(f"Invalid brace list continuation at line {line_number}")
+    value = data[key]
+    if isinstance(value, list):
+        value[-1] = _BraceList(value[-1][:-1] + line[1:])
+    else:
+        data[key] = _BraceList(value[:-1] + line[1:])
 
 
 def _blocks(value: Any) -> list[dict[str, Any]]:

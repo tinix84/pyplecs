@@ -220,3 +220,27 @@ def test_circuit_model_rejects_pins_for_unknown_components():
 def test_circuit_model_requires_one_based_pin_numbers():
     with pytest.raises(ValueError, match="one-based"):
         Pin("R1", 0)
+
+
+def test_parse_plecs_text_keeps_brace_list_values_across_continuation_lines():
+    text = (
+        "Plecs {\n"
+        "  Schematic {\n"
+        "    Component {\n"
+        "      Type          Scope\n"
+        '      Name          "Scope"\n'
+        "      Axis {\n"
+        '        Signals       {"Load Current", "Inductor Current", "Average Inductor C"\n'
+        '"urrent"}\n'
+        "        SignalTypes   [ ]\n"
+        "      }\n"
+        "    }\n"
+        "  }\n"
+        "}\n"
+    )
+
+    document = parse_plecs_text(text)
+
+    axis = document["Plecs"]["Schematic"]["Component"]["Axis"]
+    assert axis["Signals"] == '{"Load Current", "Inductor Current", "Average Inductor Current"}'
+    assert axis["SignalTypes"] == ()
