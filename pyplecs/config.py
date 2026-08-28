@@ -15,6 +15,7 @@ DEFAULT_CONFIG_DATA: Dict[str, Any] = {
     "app": {"name": "PyPLECS", "version": "0.1.0", "debug": False},
     "plecs": {
         "executable_paths": [],
+        "version": "",
         "xmlrpc": {"host": "localhost", "port": 1080, "timeout": 30},
         "priority": "HIGH_PRIORITY_CLASS",
         "auto_launch": True,
@@ -127,6 +128,7 @@ class PlecsConfig:
     executable_paths: list[str] = field(
         default_factory=lambda: list(DEFAULT_CONFIG_DATA["plecs"]["executable_paths"])
     )
+    version: str = DEFAULT_CONFIG_DATA["plecs"]["version"]
     xmlrpc_host: str = DEFAULT_CONFIG_DATA["plecs"]["xmlrpc"]["host"]
     xmlrpc_port: int = DEFAULT_CONFIG_DATA["plecs"]["xmlrpc"]["port"]
     xmlrpc_timeout: int = DEFAULT_CONFIG_DATA["plecs"]["xmlrpc"]["timeout"]
@@ -305,6 +307,7 @@ class ConfigManager(ConfigManagerBase):
     def _decode(self, data: Dict[str, Any]) -> tuple[Any, ...]:
         plecs = PlecsConfig(
             executable_paths=list(_read(data, "plecs.executable_paths", list)),
+            version=_read(data, "plecs.version", str),
             xmlrpc_host=_read(data, "plecs.xmlrpc.host", str),
             xmlrpc_port=_read(data, "plecs.xmlrpc.port", int),
             xmlrpc_timeout=_read(data, "plecs.xmlrpc.timeout", int),

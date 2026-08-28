@@ -12,6 +12,7 @@ app:
   debug: false
 plecs:
   executable_paths: []
+  version: ""   # PLECS version keyed into every Cache Record; detected from the executable when empty
   xmlrpc:
     host: localhost
     port: 1080

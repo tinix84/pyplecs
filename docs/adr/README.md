@@ -18,6 +18,7 @@ does not carry status (the issue tracker does that).
 | [0007](0007-verbatim-tables-rewritten-prose.md) | Verbatim tables, rewritten prose | Accepted |
 | [0008](0008-pyproject-and-uv-own-dependencies.md) | pyproject and uv own environment and dependencies | Accepted |
 | [0009](0009-tas-is-broader-than-pyplecs-electrical-projection.md) | TAS remains broader than the PyPLECS electrical projection | Accepted |
+| [0010](0010-cache-record-identity-is-a-composite-topology-key.md) | Cache Record identity is a composite topology key that never claims equality it cannot prove | Accepted |
 
 ## Writing one
 

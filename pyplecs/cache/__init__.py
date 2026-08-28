@@ -1,8 +1,9 @@
-"""Simulation caching with whole-record lifecycle semantics."""
+"""Simulation caching with whole-record lifecycle semantics and composite identity."""
 
 import hashlib
 import io
 import json
+import logging
 import os
 import shutil
 import time
@@ -18,10 +19,14 @@ import yaml
 from pyplecs.contracts import SimulationCacheBase
 
 from ..config import CacheConfig, get_config
+from .identity import CacheKey, ModelIdentity, PlecsEnvironment, identify
+from .topology import TopologyDocument
+
+logger = logging.getLogger(__name__)
 
 
 class SimulationHash:
-    """Generate hash for simulation parameters and models."""
+    """Legacy path-and-bytes identity, kept for callers that still address it."""
 
     def __init__(
         self,
@@ -38,7 +43,7 @@ class SimulationHash:
         parameters: Dict[str, Any],
         include_file_content: bool = True,
     ) -> str:
-        """Compute the existing model-and-parameter cache identity."""
+        """Compute the legacy model-and-parameter cache identity."""
         hasher = hashlib.new(self.algorithm)
         hasher.update(str(model_file).encode())
 
@@ -185,29 +190,91 @@ class SimulationResultStore:
 
 
 class SimulationCache(SimulationCacheBase):
-    """Own Cache Record persistence, expiration, invalidation, and statistics."""
+    """Own Cache Record identity, persistence, expiration, invalidation, and statistics.
 
+    Layout (``LAYOUT_VERSION`` makes earlier generations unreachable rather than
+    misread)::
+
+        <directory>/v2/topologies/<topology_id>.json   canonical document, shared
+        <directory>/v2/records/<topology_id>/<record_id>/record.json + payload
+    """
+
+    LAYOUT_VERSION = "v2"
     _MANIFEST_FILENAME = "record.json"
 
     def __init__(
         self,
         config: Optional[CacheConfig] = None,
         *,
+        environment: Optional[PlecsEnvironment] = None,
         clock: Callable[[], float] = time.time,
     ):
         self.config = config or get_config().cache
         if self.config.type != "file":
             raise ValueError(f"Unsupported cache type: {self.config.type}")
 
-        self.hasher = SimulationHash(
-            self.config.hash_algorithm,
-            config=self.config,
-        )
+        self._environment = environment
         self._clock = clock
         self._cache_dir = Path(self.config.directory)
-        self._records_dir = self._cache_dir / "records"
+        self._layout_dir = self._cache_dir / self.LAYOUT_VERSION
+        self._records_dir = self._layout_dir / "records"
+        self._topologies_dir = self._layout_dir / "topologies"
         self._records_dir.mkdir(parents=True, exist_ok=True)
+        self._topologies_dir.mkdir(parents=True, exist_ok=True)
         self._result_store = SimulationResultStore(self.config)
+        self._warned_unknown_environment = False
+
+    # -- identity -----------------------------------------------------------
+
+    @property
+    def environment(self) -> PlecsEnvironment:
+        if self._environment is None:
+            self._environment = PlecsEnvironment.detect(get_config().plecs)
+        return self._environment
+
+    def identify(self, model_file: str, parameters: Dict[str, Any]) -> Optional[ModelIdentity]:
+        """Compute the composite identity, or ``None`` when the environment is unknown."""
+        identity = identify(
+            model_file, parameters, self.environment, tuple(self.config.exclude_fields)
+        )
+        if identity is None and not self._warned_unknown_environment:
+            self._warned_unknown_environment = True
+            logger.warning(
+                "PLECS environment identity is unknown (set plecs.version or "
+                "plecs.executable_paths); simulation caching is disabled"
+            )
+        return identity
+
+    def cache_key(self, model_file: str, parameters: Dict[str, Any]) -> Optional[CacheKey]:
+        identity = self.identify(model_file, parameters)
+        return identity.key if identity is not None else None
+
+    def topology_document(self, model_file: str) -> Optional[TopologyDocument]:
+        """The canonical topology document of a model, or ``None`` if it degraded to bytes."""
+        identity = identify(model_file, {}, PlecsEnvironment("probe"))
+        return identity.topology if identity is not None else None
+
+    def explain_miss(self, model_file: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """Say why a lookup would miss: which of the four ids has no live record."""
+        identity = self.identify(model_file, parameters)
+        if identity is None:
+            return {"hit": False, "reason": "environment unknown", "differences": ["environment"]}
+        key = identity.key
+        candidates = [
+            CacheKey(**{name: manifest["key"][name] for name in CacheKey.__dataclass_fields__})
+            for manifest in self._live_manifests(self._records_dir / key.topology_id)
+        ]
+        if not candidates:
+            return {"hit": False, "key": key.to_dict(), "differences": ["topology"], "candidates": 0}
+        closest = min((key.differences(candidate) for candidate in candidates), key=len)
+        return {
+            "hit": not closest,
+            "key": key.to_dict(),
+            "differences": closest,
+            "candidates": len(candidates),
+        }
+
+    # -- SimulationCacheBase ---------------------------------------------------
 
     def get_cached_result(
         self, model_file: str, parameters: Dict[str, Any]
@@ -215,8 +282,10 @@ class SimulationCache(SimulationCacheBase):
         if not self.config.enabled:
             return None
 
-        simulation_hash = self._compute_hash(model_file, parameters)
-        record_dir = self._record_dir(simulation_hash)
+        identity = self.identify(model_file, parameters)
+        if identity is None:
+            return None
+        record_dir = self._record_dir(identity.key)
         manifest = self._read_live_manifest(record_dir)
         if manifest is None:
             return None
@@ -241,9 +310,13 @@ class SimulationCache(SimulationCacheBase):
         if not self.config.enabled:
             return ""
 
-        simulation_hash = self._compute_hash(model_file, parameters)
-        record_dir = self._record_dir(simulation_hash)
-        temporary_dir = self._records_dir / f".{simulation_hash}.{uuid.uuid4().hex}.tmp"
+        identity = self.identify(model_file, parameters)
+        if identity is None:
+            return ""
+        key = identity.key
+        record_dir = self._record_dir(key)
+        record_dir.parent.mkdir(parents=True, exist_ok=True)
+        temporary_dir = self._records_dir / f".{key.record_id}.{uuid.uuid4().hex}.tmp"
         temporary_dir.mkdir()
 
         try:
@@ -255,7 +328,8 @@ class SimulationCache(SimulationCacheBase):
                 created_at + self.config.ttl if self.config.ttl and self.config.ttl > 0 else None
             )
             manifest = {
-                "simulation_hash": simulation_hash,
+                "simulation_hash": key.record_id,
+                **identity.to_dict(),
                 "model_file": model_file,
                 "parameters": parameters,
                 "created_at": created_at,
@@ -269,29 +343,37 @@ class SimulationCache(SimulationCacheBase):
                 json.dumps(manifest, indent=2, default=str), encoding="utf-8"
             )
 
+            if identity.topology is not None:
+                self._store_topology(identity.topology)
             self._delete_record(record_dir)
             temporary_dir.replace(record_dir)
         finally:
             if temporary_dir.exists():
                 shutil.rmtree(temporary_dir)
 
-        return simulation_hash
+        return key.record_id
 
     def invalidate_cache(self, model_file: str, parameters: Dict[str, Any]) -> bool:
-        return self._delete_record(self._record_dir(self._compute_hash(model_file, parameters)))
+        key = self.cache_key(model_file, parameters)
+        if key is None:
+            return False
+        return self._delete_record(self._record_dir(key))
 
     def clear_cache(self) -> None:
-        if self._records_dir.exists():
-            shutil.rmtree(self._records_dir)
+        for stale in (self._layout_dir, self._cache_dir / "records"):
+            if stale.exists():
+                shutil.rmtree(stale)
         self._records_dir.mkdir(parents=True, exist_ok=True)
+        self._topologies_dir.mkdir(parents=True, exist_ok=True)
 
     def get_cache_stats(self) -> Dict[str, Any]:
         live_record_dirs = []
-        for record_dir in self._records_dir.iterdir():
-            if not record_dir.is_dir() or record_dir.name.startswith("."):
+        for topology_dir in self._records_dir.iterdir():
+            if not topology_dir.is_dir() or topology_dir.name.startswith("."):
                 continue
-            if self._read_live_manifest(record_dir) is not None:
-                live_record_dirs.append(record_dir)
+            for record_dir in topology_dir.iterdir():
+                if record_dir.is_dir() and self._read_live_manifest(record_dir) is not None:
+                    live_record_dirs.append(record_dir)
 
         total_size = sum(
             path.stat().st_size
@@ -301,18 +383,33 @@ class SimulationCache(SimulationCacheBase):
         )
         return {
             "total_entries": len(live_record_dirs),
+            "total_topologies": len({record_dir.parent.name for record_dir in live_record_dirs}),
             "total_size_bytes": total_size,
             "total_size_mb": round(total_size / (1024 * 1024), 2),
             "cache_directory": str(self._cache_dir),
+            "environment": self.environment.to_dict(),
         }
 
-    def _compute_hash(self, model_file: str, parameters: Dict[str, Any]) -> str:
-        return self.hasher.compute_hash(
-            model_file, parameters, self.config.include_files
-        )
+    # -- internals -----------------------------------------------------------
 
-    def _record_dir(self, simulation_hash: str) -> Path:
-        return self._records_dir / simulation_hash
+    def _record_dir(self, key: CacheKey) -> Path:
+        return self._records_dir / key.topology_id / key.record_id
+
+    def _store_topology(self, topology: TopologyDocument) -> None:
+        path = self._topologies_dir / f"{topology.topology_id}.json"
+        if not path.exists():
+            path.write_text(topology.to_json(), encoding="utf-8")
+
+    def _live_manifests(self, topology_dir: Path) -> list[Dict[str, Any]]:
+        if not topology_dir.is_dir():
+            return []
+        manifests = []
+        for record_dir in topology_dir.iterdir():
+            if record_dir.is_dir():
+                manifest = self._read_live_manifest(record_dir)
+                if manifest is not None:
+                    manifests.append(manifest)
+        return manifests
 
     def _read_live_manifest(self, record_dir: Path) -> Optional[Dict[str, Any]]:
         manifest_path = record_dir / self._MANIFEST_FILENAME
@@ -342,3 +439,14 @@ class SimulationCache(SimulationCacheBase):
         else:
             record_dir.unlink()
         return True
+
+
+__all__ = [
+    "CacheKey",
+    "ModelIdentity",
+    "PlecsEnvironment",
+    "SimulationCache",
+    "SimulationHash",
+    "SimulationResultStore",
+    "TopologyDocument",
+]

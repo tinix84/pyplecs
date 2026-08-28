@@ -45,7 +45,7 @@ data/*.csv
 
 # Build artifacts
 site/
-cache/
+/cache/
 *.egg-info/
 
 # IDE artifacts
