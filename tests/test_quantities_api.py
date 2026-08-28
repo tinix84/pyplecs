@@ -1,3 +1,5 @@
+import threading
+
 import httpx
 import pytest
 
@@ -114,4 +116,34 @@ async def test_rest_and_mcp_map_the_same_errors(tmp_path):
 
         assert "/api/v1/simulations/{task_id}/quantities" in app.openapi()["paths"]
     finally:
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_non_completed_task_is_a_400_naming_the_status(tmp_path):
+    release = threading.Event()
+
+    class Blocking(Adapter):
+        def simulate_batch(self, parameter_list):
+            release.wait(timeout=5)
+            return super().simulate_batch(parameter_list)
+
+    config = _config(tmp_path)
+    orchestrator = SimulationOrchestrator(Blocking(), config=config)
+    app = _get_app(config)
+    app.dependency_overrides[get_orchestrator] = lambda: orchestrator
+    catalogue = build_simulation_catalogue(orchestrator)
+    model = tmp_path / "buck.plecs"
+    model.touch()
+    try:
+        task_id = await orchestrator.submit_simulation(
+            SimulationRequest(model_file=str(model), parameters={"Vi": 1.0}, output_variables=["v_S", "i_S"])
+        )
+        response = await _post(app, f"/api/v1/simulations/{task_id}/quantities", {"signal_map": SIGNAL_MAP})
+        tool = await catalogue.dispatch_async("simulation_quantities", {"task_id": task_id})
+
+        assert response.status_code == 400 and "Current status:" in response.json()["detail"]
+        assert not tool.success and "not completed" in tool.error
+    finally:
+        release.set()
         await orchestrator.stop()

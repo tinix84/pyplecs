@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from ..config import ConfigManager
 from ..core.models import SimulationRequest
@@ -12,9 +12,9 @@ from ..core.models import SimulationRequest
 class LivePlecsAdapter:
     """Run Simulation Requests on the configured PLECS, one model session per model file.
 
-    The orchestrator's default seam sends only parameter vectors; this adapter
-    takes whole requests (``simulate_requests``) so one orchestrator can serve
-    many models. Nothing touches PLECS at construction time.
+    Implements ``PlecsRequestPort``: the orchestrator hands it whole requests so
+    one orchestrator can serve many models. Nothing touches PLECS at
+    construction time.
     """
 
     def __init__(
@@ -36,9 +36,6 @@ class LivePlecsAdapter:
 
             probe = _is_plecs_xmlrpc_alive
         return bool(probe(self._plecs.xmlrpc_host, self._plecs.xmlrpc_port, float(self._plecs.xmlrpc_timeout)))
-
-    def simulate_batch(self, parameter_list: Sequence[Dict[str, Any]]) -> Sequence[Any]:
-        raise RuntimeError("LivePlecsAdapter routes by model file; it needs whole Simulation Requests")
 
     def simulate_requests(self, requests: Sequence[SimulationRequest]) -> list[Any]:
         """One PLECS model session per distinct model file; results in request order."""

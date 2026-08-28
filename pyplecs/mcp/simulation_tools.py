@@ -15,7 +15,7 @@ from pyplecs.contracts import TaskPriority
 from ..converter import parse_plecs
 from ..core.models import SimulationRequest, SimulationResult, SimulationStatus
 from ..orchestration import TERMINAL_STATUSES, SimulationOrchestrator, SimulationTaskSnapshot
-from ..quantities import design_quantities_payload
+from ..quantities import TIME_COLUMN, design_quantities_payload
 from .plecs_tools import ToolCatalogue, ToolDefinition
 
 MAX_WAIT_SECONDS = 600.0
@@ -45,8 +45,8 @@ def result_payload(result: SimulationResult) -> dict[str, Any]:
     time: list[float] = []
     signals: dict[str, list[float]] = {}
     if frame is not None:
-        time = frame["Time"].tolist() if "Time" in frame.columns else []
-        signals = {column: frame[column].tolist() for column in frame.columns if column != "Time"}
+        time = frame[TIME_COLUMN].tolist() if TIME_COLUMN in frame.columns else []
+        signals = {column: frame[column].tolist() for column in frame.columns if column != TIME_COLUMN}
     return {
         "task_id": result.task_id,
         "success": result.success,
@@ -128,19 +128,18 @@ def build_simulation_catalogue(orchestrator: SimulationOrchestrator) -> ToolCata
             "invalidated": orchestrator.invalidate_cache_record(model_file, dict(parameters or {})),
         }
 
-    def models_list(directory: str = ".", recursive: bool = False) -> dict[str, Any]:
+    def models_list(directory: str = ".") -> dict[str, Any]:
         root = Path(directory)
         if not root.is_dir():
             raise ValueError(f"directory does not exist: {directory}")
-        paths = sorted(root.rglob("*.plecs") if recursive else root.glob("*.plecs"))
         models = []
-        for path in paths:
+        for path in sorted(root.glob("*.plecs")):
             entry: dict[str, Any] = {"model_file": str(path)}
             try:
                 circuit = parse_plecs(path)
                 entry.update({"name": circuit.name, "parameters": dict(circuit.raw_params)})
-            except (OSError, ValueError) as error:
-                entry["error"] = str(error)
+            except Exception as error:  # one unreadable model must not hide the others
+                entry["error"] = f"{type(error).__name__}: {error}"
             models.append(entry)
         return {"directory": str(root), "models": models, "total": len(models)}
 
@@ -288,12 +287,7 @@ def build_simulation_catalogue(orchestrator: SimulationOrchestrator) -> ToolCata
                     "List .plecs models under a directory with the parameters their initialization "
                     "commands declare, read offline through the Circuit Model parser."
                 ),
-                input_schema=_schema(
-                    {
-                        "directory": {"type": "string", "minLength": 1},
-                        "recursive": {"type": "boolean"},
-                    }
-                ),
+                input_schema=_schema({"directory": {"type": "string", "minLength": 1}}),
                 handler=models_list,
             ),
             ToolDefinition(

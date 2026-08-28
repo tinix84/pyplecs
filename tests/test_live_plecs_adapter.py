@@ -3,7 +3,7 @@ import pytest
 from pyplecs.config import ConfigManager
 from pyplecs.core.models import SimulationRequest
 from pyplecs.mcp.simulation_server import build_orchestrator
-from pyplecs.orchestration import PlecsUnavailableError, SimulationOrchestrator
+from pyplecs.orchestration import PlecsRequestPort, PlecsUnavailableError, SimulationOrchestrator
 from pyplecs.orchestration.live import LivePlecsAdapter
 
 
@@ -50,14 +50,13 @@ def test_requests_are_grouped_by_model_file_and_answered_in_request_order(tmp_pa
         SimulationRequest(model_file=buck, parameters={"Vi": 3.0}),
     ]
 
+    assert isinstance(adapter, PlecsRequestPort)
     results = adapter.simulate_requests(requests)
 
     assert [raw["Values"][0][0] for raw in results] == [1.0, 2.0, 3.0]
     assert [session["model_file"] for session in FakePlecsServer.sessions] == [buck, boost]
     assert all(session["closed"] and session["port"] == "1081" and session["auto_launch"] is False
                for session in FakePlecsServer.sessions)
-    with pytest.raises(RuntimeError, match="whole Simulation Requests"):
-        adapter.simulate_batch([{"Vi": 1.0}])
 
 
 def test_availability_is_the_configured_endpoint_probe(tmp_path):

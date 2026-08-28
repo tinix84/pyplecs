@@ -38,11 +38,18 @@ class PlecsSimulationPort(Protocol):
         """Return whether this adapter can execute a Simulation Task now."""
 
     def simulate_batch(self, parameter_list: Sequence[Dict[str, Any]]) -> Sequence[Any]:
-        """Execute one batch and return one Raw PLECS Result per parameter vector.
+        """Execute one batch and return one Raw PLECS Result per parameter vector."""
 
-        An adapter that also offers ``simulate_requests(requests)`` receives the
-        whole Simulation Requests instead, so it can route by model file.
-        """
+
+@runtime_checkable
+class PlecsRequestPort(Protocol):
+    """The PLECS seam for adapters that route whole Simulation Requests (e.g. by model file)."""
+
+    def is_available(self) -> bool:
+        """Return whether this adapter can execute a Simulation Task now."""
+
+    def simulate_requests(self, requests: Sequence[SimulationRequest]) -> Sequence[Any]:
+        """Execute one batch of Simulation Requests and return one Raw PLECS Result each."""
 
 
 class _CallablePlecsAdapter:
@@ -106,7 +113,7 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
 
     def __init__(
         self,
-        plecs_server: Optional[PlecsSimulationPort] = None,
+        plecs_server: Optional[PlecsSimulationPort | PlecsRequestPort] = None,
         batch_size: Optional[int] = None,
         *,
         config: Optional[ConfigManager] = None,
@@ -116,7 +123,7 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
         self._cache = cache or SimulationCache(
             self.config.cache, environment=PlecsEnvironment.detect(self.config.plecs)
         )
-        self._plecs: Optional[PlecsSimulationPort] = plecs_server
+        self._plecs: Optional[PlecsSimulationPort | PlecsRequestPort] = plecs_server
         self.batch_size = (
             batch_size or self.config.orchestration.max_concurrent_simulations
         )
@@ -472,7 +479,7 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
         try:
             if self._plecs is None:
                 raise PlecsUnavailableError("PLECS adapter was removed after submission")
-            if hasattr(self._plecs, "simulate_requests"):
+            if isinstance(self._plecs, PlecsRequestPort):
                 raw_results = await asyncio.to_thread(
                     self._plecs.simulate_requests,
                     [task.request for task in executable],
@@ -688,6 +695,7 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
 
 
 __all__ = [
+    "PlecsRequestPort",
     "PlecsSimulationPort",
     "PlecsUnavailableError",
     "SimulationOrchestrator",

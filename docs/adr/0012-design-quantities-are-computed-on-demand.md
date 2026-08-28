@@ -37,8 +37,9 @@ version, and adding one would bust every record on every analysis change.
   the declared switching frequency, anchored at the end of the run, with the
   window start interpolated between samples. A run shorter than N periods is an
   error, not a shorter window.
-- **Metrics are time-weighted** with exact piecewise-linear integration, so a
-  variable-step solver's sample density does not bias mean, RMS or power.
+- **Design Quantities are time-weighted** with exact piecewise-linear integration
+  (trapezoidal for the mean, exact quadratic for RMS and power), so a
+  variable-step solver's sample density does not bias them.
 - Consistent with ADR-0005, the quantities are reported, never judged: no
   ratings, derating or pass/fail live here.
 

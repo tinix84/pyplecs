@@ -109,7 +109,7 @@ def test_missing_signal_fails_naming_it_and_listing_the_available_ones():
 
 def test_non_monotonic_time_axis_and_failed_results_are_explicit_errors():
     frame = pd.DataFrame({"Time": [0.0, 2.0, 1.0], "x": [0.0, 0.0, 0.0]})
-    with pytest.raises(QuantityError, match="increasing"):
+    with pytest.raises(QuantityError, match="must not decrease"):
         capture_waveforms(_result(frame), ["x"])
 
     failed = SimulationResult(task_id="t", success=False, error_message="boom")
@@ -175,7 +175,8 @@ def test_power_balance_attributes_declared_losses_and_reports_the_remainder():
     assert balance.output_power == pytest.approx(42.0)
     assert balance.efficiency == pytest.approx(42.0 / 48.0)
     assert balance.total_loss == pytest.approx(6.0)
-    assert balance.component_losses == {"R_s": pytest.approx(6.0)}  # L has no voltage → not attributable
+    assert balance.component_losses == {"R_s": pytest.approx(6.0)}
+    assert balance.unattributable_components == ("L",)  # declared a current only: named, not silently dropped
     assert balance.unattributed_loss == pytest.approx(0.0)
 
 

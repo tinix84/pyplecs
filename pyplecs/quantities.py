@@ -147,6 +147,7 @@ class PowerBalance:
     total_loss: float
     component_losses: Mapping[str, float]
     unattributed_loss: float
+    unattributable_components: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -156,6 +157,7 @@ class PowerBalance:
             "total_loss": self.total_loss,
             "component_losses": dict(self.component_losses),
             "unattributed_loss": self.unattributed_loss,
+            "unattributable_components": list(self.unattributable_components),
         }
 
 
@@ -179,7 +181,7 @@ class DesignQuantities:
         }
 
 
-# --- time-weighted metrics -------------------------------------------------
+# --- time-weighted integrals -------------------------------------------------
 
 
 def time_weighted_mean(time: Sequence[float], values: Sequence[float]) -> float:
@@ -311,6 +313,7 @@ def power_balance(
         total_loss=total_loss,
         component_losses=component_losses,
         unattributed_loss=total_loss - sum(component_losses.values()),
+        unattributable_components=tuple(name for name in signal_map.components if name not in complete),
     )
 
 
@@ -431,7 +434,7 @@ def _window_columns(
     if time.size == 0:
         raise QuantityError("Simulation Result timeseries is empty")
     if np.any(np.diff(time) < 0):
-        raise QuantityError("time axis must be non-decreasing (increasing between distinct samples)")
+        raise QuantityError("time axis must not decrease (equal timestamps mark an ideal discontinuity)")
 
     columns = {name: frame[name].to_numpy(dtype=float) for name in dict.fromkeys(names)}
     if window is None:
