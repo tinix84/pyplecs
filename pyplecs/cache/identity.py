@@ -141,11 +141,11 @@ class PlecsEnvironment:
     def detect(cls, plecs_config: Any) -> "PlecsEnvironment":
         """Resolve the installed PLECS version without starting PLECS.
 
-        Order: the ``plecs.version`` configuration value, then the version
-        resource of the configured executable, then a version in the
-        executable's directory name. Anything else is unknown, and an unknown
-        environment disables caching rather than pretending two unknowns are
-        equal.
+        Order: the ``plecs.version`` configuration value, then -- for the first
+        configured executable that exists -- its version resource, then a
+        version in its directory name (the only option off Windows). Anything
+        else is unknown, and an unknown environment disables caching rather
+        than pretending two unknowns are equal.
         """
         explicit = str(getattr(plecs_config, "version", "") or "").strip()
         if explicit:
@@ -221,6 +221,46 @@ class ModelIdentity:
         }
 
 
+@dataclass(frozen=True)
+class ModelDescription:
+    """The environment-independent part of an identity: what the model file says."""
+
+    topology_id: str
+    solver_id: str
+    topology: Optional[TopologyDocument]
+    mode: str  # "canonical" | "bytes" | "missing"
+    solver: dict[str, Any]
+    initialization_commands: str
+
+
+def describe(model_file: str) -> ModelDescription:
+    """Canonicalize a model file, degrading whole when it cannot be parsed or read."""
+    text = _read_model_text(model_file)
+    if text is None:
+        # Nothing can be proven about a file that is not there; the path is
+        # the only identity left.
+        missing_id = "missing-" + digest(canonical_json({"missing": str(model_file)}))
+        return ModelDescription(missing_id, missing_id, None, "missing", {}, "")
+    try:
+        document = parse_plecs_text(text)
+        topology = canonicalize_document(document)
+    except (PlecsParseError, ValueError) as error:
+        # Whole-file degrade: the normalized bytes are the identity.
+        logger.warning("Canonicalization of %s failed (%s); keying on file bytes", model_file, error)
+        bytes_id = "bytes-" + digest(text)
+        return ModelDescription(bytes_id, bytes_id, None, "bytes", {}, "")
+    root = document["Plecs"]
+    solver = solver_bindings(root)
+    return ModelDescription(
+        topology.topology_id,
+        digest(canonical_json(solver)),
+        topology,
+        "canonical",
+        solver,
+        str(root.get("InitializationCommands", "")),
+    )
+
+
 def identify(
     model_file: str,
     parameters: dict[str, Any],
@@ -235,60 +275,23 @@ def identify(
     runtime = {
         key: _value_text(value) for key, value in sorted(parameters.items()) if key not in exclude_fields
     }
-    text = _read_model_text(model_file)
-    if text is None:
-        # Nothing can be proven about a file that is not there; the path is
-        # the only identity left.
-        marker = {"missing": str(model_file)}
-        return ModelIdentity(
-            key=CacheKey(
-                topology_id="missing-" + digest(canonical_json(marker)),
-                params_id=digest(canonical_json(runtime)),
-                solver_id="missing-" + digest(canonical_json(marker)),
-                environment_id=environment_id,
-            ),
-            environment=environment,
-            topology=None,
-            mode="missing",
-            solver={},
-            params=runtime,
-        )
-
-    try:
-        document = parse_plecs_text(text)
-        topology = canonicalize_document(document)
-    except (PlecsParseError, ValueError) as error:
-        # Whole-file degrade: the normalized bytes are the identity.
-        logger.warning("Canonicalization of %s failed (%s); keying on file bytes", model_file, error)
-        bytes_id = "bytes-" + digest(text)
-        return ModelIdentity(
-            key=CacheKey(
-                topology_id=bytes_id,
-                params_id=digest(canonical_json(runtime)),
-                solver_id=bytes_id,
-                environment_id=environment_id,
-            ),
-            environment=environment,
-            topology=None,
-            mode="bytes",
-            solver={},
-            params=runtime,
-        )
-
-    root = document["Plecs"]
-    solver = solver_bindings(root)
-    params = parameter_bindings(str(root.get("InitializationCommands", "")), runtime)
+    description = describe(model_file)
+    params = (
+        parameter_bindings(description.initialization_commands, runtime)
+        if description.mode == "canonical"
+        else runtime
+    )
     return ModelIdentity(
         key=CacheKey(
-            topology_id=topology.topology_id,
+            topology_id=description.topology_id,
             params_id=digest(canonical_json(params)),
-            solver_id=digest(canonical_json(solver)),
+            solver_id=description.solver_id,
             environment_id=environment_id,
         ),
         environment=environment,
-        topology=topology,
-        mode="canonical",
-        solver=solver,
+        topology=description.topology,
+        mode=description.mode,
+        solver=description.solver,
         params=params,
     )
 
@@ -360,8 +363,10 @@ __all__ = [
     "SOLVER_FIELDS",
     "TOPOLOGY_FIELDS",
     "CacheKey",
+    "ModelDescription",
     "ModelIdentity",
     "PlecsEnvironment",
+    "describe",
     "identify",
     "parameter_bindings",
     "solver_bindings",

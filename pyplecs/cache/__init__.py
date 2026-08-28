@@ -19,7 +19,7 @@ import yaml
 from pyplecs.contracts import SimulationCacheBase
 
 from ..config import CacheConfig, get_config
-from .identity import CacheKey, ModelIdentity, PlecsEnvironment, identify
+from .identity import CacheKey, ModelIdentity, PlecsEnvironment, describe, identify
 from .topology import TopologyDocument
 
 logger = logging.getLogger(__name__)
@@ -249,16 +249,16 @@ class SimulationCache(SimulationCacheBase):
         identity = self.identify(model_file, parameters)
         return identity.key if identity is not None else None
 
-    def topology_document(self, model_file: str) -> Optional[TopologyDocument]:
-        """The canonical topology document of a model, or ``None`` if it degraded to bytes."""
-        identity = identify(model_file, {}, PlecsEnvironment("probe"))
-        return identity.topology if identity is not None else None
+    @staticmethod
+    def topology_document(model_file: str) -> Optional[TopologyDocument]:
+        """The canonical topology document of a model; ``None`` when it is missing or unparseable."""
+        return describe(model_file).topology
 
     def explain_miss(self, model_file: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """Say why a lookup would miss: which of the four ids has no live record."""
         identity = self.identify(model_file, parameters)
         if identity is None:
-            return {"hit": False, "reason": "environment unknown", "differences": ["environment"]}
+            return {"hit": False, "key": None, "differences": ["environment"], "candidates": 0}
         key = identity.key
         candidates = [
             CacheKey(**{name: manifest["key"][name] for name in CacheKey.__dataclass_fields__})
@@ -328,7 +328,6 @@ class SimulationCache(SimulationCacheBase):
                 created_at + self.config.ttl if self.config.ttl and self.config.ttl > 0 else None
             )
             manifest = {
-                "simulation_hash": key.record_id,
                 **identity.to_dict(),
                 "model_file": model_file,
                 "parameters": parameters,
@@ -423,7 +422,7 @@ class SimulationCache(SimulationCacheBase):
             if expires_at is not None and self._clock() >= expires_at:
                 self._delete_record(record_dir)
                 return None
-            if manifest.get("simulation_hash") != record_dir.name:
+            if manifest["key"]["record_id"] != record_dir.name:
                 raise ValueError("Cache Record identity does not match its directory")
             return manifest
         except (OSError, ValueError, TypeError, json.JSONDecodeError):

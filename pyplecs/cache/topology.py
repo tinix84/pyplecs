@@ -13,6 +13,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..converter.parser import blocks
+
 FORMAT = "pyplecs-topology/1"
 
 # Fields on any Component block that only describe how it is drawn.
@@ -155,7 +157,7 @@ def canonicalize_document(document: dict[str, Any]) -> TopologyDocument:
     schematic = root.get("Schematic")
     if not isinstance(schematic, dict):
         raise ValueError("PLECS document must contain a 'Schematic' block")
-    return canonicalize_schematic(schematic, _blocks(root.get("Terminal")))
+    return canonicalize_schematic(schematic, blocks(root.get("Terminal")))
 
 
 def canonicalize_schematic(schematic: dict[str, Any], terminals: list[dict[str, Any]]) -> TopologyDocument:
@@ -164,13 +166,19 @@ def canonicalize_schematic(schematic: dict[str, Any], terminals: list[dict[str, 
     nodes: dict[str, dict[str, Any]] = {}
     teleports: dict[str, dict[str, list[str]]] = {"Goto": {}, "From": {}}
 
-    for block in _blocks(schematic.get("Component")):
+    schematic_degraded: dict[str, Any] = {}
+    for block in blocks(schematic.get("Component")):
         component_type = str(block.get("Type", ""))
         name = block.get("Name")
-        if component_type in ANNOTATION_TYPES or name is None:
+        if component_type in ANNOTATION_TYPES:
+            continue
+        coverage.nodes_total += 1
+        if name is None:
+            coverage.nodes_degraded += 1
+            coverage.note("node", f"<unnamed {component_type}>", "component without a Name")
+            schematic_degraded.setdefault("unnamed", []).append(_normalized(block))
             continue
         name = str(name)
-        coverage.nodes_total += 1
         node = _node_record(block, component_type, name, coverage, subsystems)
         nodes[name] = node
         if component_type in teleports and node.get("degraded") is None:
@@ -178,9 +186,11 @@ def canonicalize_schematic(schematic: dict[str, Any], terminals: list[dict[str, 
             tag = node["parameters"].get("Tag", "")
             if visibility == _LOCAL_VISIBILITY and tag:
                 teleports[component_type].setdefault(tag, []).append(name)
+            else:
+                coverage.note("node", name, f"{component_type} tag {tag!r} is not local")
 
     nets = _NetBuilder(coverage)
-    for connection in _blocks(schematic.get("Connection")):
+    for connection in blocks(schematic.get("Connection")):
         nets.add_connection(connection)
 
     _collapse_teleports(nodes, nets, teleports, coverage)
@@ -189,8 +199,9 @@ def canonicalize_schematic(schematic: dict[str, Any], terminals: list[dict[str, 
         if key in ("Component", "Connection") or key in COSMETIC_SCHEMATIC_FIELDS:
             continue
         coverage.note("schematic", key, "unrecognised schematic field")
-        nodes.setdefault("", {"name": "", "type": "", "parameters": {}, "degraded": {}})
-        nodes[""]["degraded"][key] = _normalized(schematic[key])
+        schematic_degraded[key] = _normalized(schematic[key])
+    if "unnamed" in schematic_degraded:
+        schematic_degraded["unnamed"].sort(key=canonical_json)
 
     content = {
         "format": FORMAT,
@@ -200,6 +211,8 @@ def canonicalize_schematic(schematic: dict[str, Any], terminals: list[dict[str, 
         "subsystems": subsystems,
         "coverage": coverage.to_dict(),
     }
+    if schematic_degraded:
+        content["degraded"] = schematic_degraded
     text = canonical_json(content)
     return TopologyDocument(content=content, topology_id=digest(text))
 
@@ -214,7 +227,7 @@ def _node_record(
     record: dict[str, Any] = {"name": name, "type": component_type, "parameters": {}}
     degraded: dict[str, Any] = {}
 
-    for parameter in _blocks(block.get("Parameter")):
+    for parameter in blocks(block.get("Parameter")):
         variable = parameter.get("Variable")
         if variable is None:
             degraded[f"Parameter[{len(degraded)}]"] = _normalized(parameter)
@@ -231,17 +244,17 @@ def _node_record(
                     "path": str(probe.get("Path", "")),
                     "signals": _normalized(probe.get("Signals", "")),
                 }
-                for probe in _blocks(block.get("Probe"))
+                for probe in blocks(block.get("Probe"))
             ),
             key=canonical_json,
         )
     if "Schematic" in block:
-        child = canonicalize_schematic(_first_block(block["Schematic"]), _blocks(block.get("Terminal")))
+        child = canonicalize_schematic(_first_block(block["Schematic"]), blocks(block.get("Terminal")))
         subsystems[child.topology_id] = child.content
         record["topology_id"] = child.topology_id
         record["interface"] = child.content["interface"]
     elif "Terminal" in block:
-        record["interface"] = [str(terminal.get("Type", "")) for terminal in _blocks(block.get("Terminal"))]
+        record["interface"] = [str(terminal.get("Type", "")) for terminal in blocks(block.get("Terminal"))]
 
     for key, value in block.items():
         if key in _MODELLED_COMPONENT_FIELDS or key in COSMETIC_COMPONENT_FIELDS:
@@ -327,6 +340,8 @@ class _NetBuilder:
             if len(live) < 2:
                 continue
             kinds = sorted({self._kind[pin] for pin in pins})
+            if len(kinds) != 1:
+                self._coverage.note("connection", live[0][0], "net mixes electrical and signal pins")
             nets.append(
                 {
                     "kind": kinds[0] if len(kinds) == 1 else "mixed",
@@ -350,20 +365,30 @@ def _collapse_teleports(
         froms = teleports["From"].get(tag, [])
         if len(gotos) != 1:
             for name in gotos + froms:
-                coverage.note("node", name, f"ambiguous Goto tag {tag!r}")
-                nodes[name]["degraded"] = {"Tag": tag}
+                _degrade(nodes[name], coverage, "Tag", tag, f"ambiguous Goto tag {tag!r}")
             continue
-        pins = nets.pins_of(gotos[0]) + [pin for name in froms for pin in nets.pins_of(name)]
-        if pins:
-            nets.union_all(pins, "signal")
+        goto_pins = nets.pins_of(gotos[0])
+        if not goto_pins:
+            for name in gotos + froms:
+                _degrade(nodes[name], coverage, "Tag", tag, f"Goto tag {tag!r} is not wired")
+            continue
+        nets.union_all(goto_pins + [pin for name in froms for pin in nets.pins_of(name)], "signal")
         for name in [gotos[0]] + froms:
             del nodes[name]
     for tag, froms in teleports["From"].items():
         if tag in teleports["Goto"]:
             continue
         for name in froms:
-            coverage.note("node", name, f"From tag {tag!r} has no local Goto")
-            nodes[name]["degraded"] = {"Tag": tag}
+            _degrade(nodes[name], coverage, "Tag", tag, f"From tag {tag!r} has no local Goto")
+
+
+def _degrade(node: dict[str, Any], coverage: Coverage, key: str, value: Any, reason: str) -> None:
+    """Fold one more field of a node into its degraded region, counting the node once."""
+    if "degraded" not in node:
+        node["degraded"] = {}
+        coverage.nodes_degraded += 1
+    node["degraded"][key] = _normalized(value)
+    coverage.note("node", node["name"], reason)
 
 
 def _connection_pins(connection: dict[str, Any]) -> tuple[list[tuple[str, int]], bool]:
@@ -379,7 +404,7 @@ def _connection_pins(connection: dict[str, Any]) -> tuple[list[tuple[str, int]],
                     pins.append((str(node[component_key]), int(node[terminal_key])))
                 except (KeyError, TypeError, ValueError):
                     complete = False
-        for branch in _blocks(node.get("Branch")):
+        for branch in blocks(node.get("Branch")):
             visit(branch)
 
     visit(connection)
@@ -407,19 +432,9 @@ def _text(value: Any) -> Any:
     return value
 
 
-def _blocks(value: Any) -> list[dict[str, Any]]:
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return [item for item in value if isinstance(item, dict)]
-    if isinstance(value, dict):
-        return [value]
-    return []
-
-
 def _first_block(value: Any) -> dict[str, Any]:
-    blocks = _blocks(value)
-    return blocks[0] if blocks else {}
+    found = blocks(value)
+    return found[0] if found else {}
 
 
 __all__ = [

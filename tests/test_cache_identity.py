@@ -220,7 +220,35 @@ def test_from_without_local_goto_is_kept_as_a_degraded_node():
     topology = canonicalize_document(document)
     names = {node["name"] for node in topology.content["nodes"]}
     assert {"Goto1", "From1"} <= names
+    assert topology.coverage["nodes_degraded"] == 1
     assert {"kind": "node", "name": "From1", "reason": "From tag 'vo' has no local Goto"} in topology.coverage["degraded"]
+    assert {"kind": "node", "name": "Goto1", "reason": "Goto tag 'vo' is not local"} in topology.coverage["degraded"]
+
+
+def test_unwired_goto_does_not_invent_connectivity():
+    document = _document(FIXTURES / "subsystem_goto.plecs")
+    connections = document["Plecs"]["Schematic"]["Connection"]
+    connections.remove(next(c for c in connections if c.get("DstComponent") == "Goto1"))
+
+    topology = canonicalize_document(document)
+    names = {node["name"] for node in topology.content["nodes"]}
+    assert {"Goto1", "From1"} <= names
+    assert topology.coverage["nodes_degraded"] == 2
+    assert not any("Filter:1" in net.get("pins", []) and "Vm1:3" in net["pins"] for net in topology.content["nets"])
+    assert topology.topology_id != _topology_id(_document(FIXTURES / "subsystem_goto.plecs"))
+
+
+def test_unnamed_component_degrades_instead_of_vanishing():
+    document = _document(FIXTURES / "subsystem_goto.plecs")
+    baseline = canonicalize_document(document)
+    document["Plecs"]["Schematic"]["Component"].append(
+        {"Type": "Resistor", "Position": (1, 1), "Parameter": {"Variable": "R", "Value": "1", "Show": False}}
+    )
+
+    topology = canonicalize_document(document)
+    assert topology.topology_id != baseline.topology_id
+    assert topology.coverage["nodes_degraded"] == 1
+    assert topology.content["degraded"]["unnamed"] == [{"Parameter": {"Value": "1", "Variable": "R"}, "Type": "Resistor"}]
 
 
 # -- Merkle hierarchy -----------------------------------------------------------------
@@ -353,4 +381,4 @@ def test_canonicalization_cost_is_negligible_against_a_simulation():
     started = time.perf_counter()
     for _ in range(5):
         canonicalize_document(parse_plecs_text(text))
-    assert (time.perf_counter() - started) / 5 < 0.5
+    assert (time.perf_counter() - started) / 5 < 0.05

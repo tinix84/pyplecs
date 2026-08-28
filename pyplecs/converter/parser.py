@@ -45,14 +45,14 @@ def parse_plecs(path: str | Path) -> Circuit:
     if not isinstance(schematic, dict):
         raise PlecsParseError("PLECS schematic must contain a 'Schematic' block")
 
-    raw_component_blocks = _blocks(schematic.get("Component"))
+    raw_component_blocks = blocks(schematic.get("Component"))
     all_component_types = {
         str(block.get("Name")): str(block.get("Type", ""))
         for block in raw_component_blocks
         if block.get("Name") is not None
     }
     components = [component for block in raw_component_blocks if (component := _component(block)) is not None]
-    nets = _build_nets(_blocks(schematic.get("Connection")), components, all_component_types)
+    nets = _build_nets(blocks(schematic.get("Connection")), components, all_component_types)
 
     name = str(root.get("Name") or source.stem)
     raw_params = _parse_initialization_commands(str(root.get("InitializationCommands", "")))
@@ -206,7 +206,8 @@ def _append_brace_list_continuation(data: dict[str, Any], key: str, line: str, l
         data[key] = _BraceList(value[:-1] + line[1:])
 
 
-def _blocks(value: Any) -> list[dict[str, Any]]:
+def blocks(value: Any) -> list[dict[str, Any]]:
+    """Normalize a parsed field to its list of block mappings (PLECS repeats keys for lists)."""
     if value is None:
         return []
     if isinstance(value, list):
@@ -223,7 +224,7 @@ def _component(block: dict[str, Any]) -> Optional[Component]:
         return None
 
     parameters: dict[str, str] = {}
-    for parameter in _blocks(block.get("Parameter")):
+    for parameter in blocks(block.get("Parameter")):
         variable = parameter.get("Variable")
         if variable is not None:
             parameters[str(variable)] = str(parameter.get("Value", ""))
@@ -343,7 +344,7 @@ def _connection_pins(connection: dict[str, Any]) -> list[Pin]:
         destination = _pin(node, "DstComponent", "DstTerminal")
         if destination is not None:
             pins.append(destination)
-        for branch in _blocks(node.get("Branch")):
+        for branch in blocks(node.get("Branch")):
             visit(branch)
 
     visit(connection)
