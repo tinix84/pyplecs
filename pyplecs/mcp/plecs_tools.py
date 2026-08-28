@@ -192,21 +192,52 @@ class ToolCatalogue:
     def dispatch(
         self, name: str, arguments: Optional[Mapping[str, Any]] = None
     ) -> ToolDispatchResult:
+        """Dispatch a synchronous handler; coroutine handlers need ``dispatch_async``."""
+        prepared = self._prepare(name, arguments)
+        if isinstance(prepared, ToolDispatchResult):
+            return prepared
+        definition, validated = prepared
+        try:
+            value = definition.handler(**validated)
+        except Exception as error:
+            return ToolDispatchResult(error=f"tool '{name}' execution error: {error}")
+        if inspect.isawaitable(value):
+            if inspect.iscoroutine(value):
+                value.close()
+            return ToolDispatchResult(
+                error=f"tool '{name}' is async and requires the async dispatch"
+            )
+        return ToolDispatchResult(value=value)
+
+    async def dispatch_async(
+        self, name: str, arguments: Optional[Mapping[str, Any]] = None
+    ) -> ToolDispatchResult:
+        """Dispatch either kind of handler, awaiting coroutine results."""
+        prepared = self._prepare(name, arguments)
+        if isinstance(prepared, ToolDispatchResult):
+            return prepared
+        definition, validated = prepared
+        try:
+            value = definition.handler(**validated)
+            if inspect.isawaitable(value):
+                value = await value
+        except Exception as error:
+            return ToolDispatchResult(error=f"tool '{name}' execution error: {error}")
+        return ToolDispatchResult(value=value)
+
+    def _prepare(
+        self, name: str, arguments: Optional[Mapping[str, Any]]
+    ) -> ToolDispatchResult | tuple[ToolDefinition, dict[str, Any]]:
         definition = self._by_name.get(name)
         if definition is None:
             return ToolDispatchResult(error=f"unknown tool: {name}")
-
         try:
             validated = self._validate(
                 definition, {} if arguments is None else arguments
             )
         except ValueError as error:
             return ToolDispatchResult(error=f"tool '{name}' validation error: {error}")
-
-        try:
-            return ToolDispatchResult(value=definition.handler(**validated))
-        except Exception as error:
-            return ToolDispatchResult(error=f"tool '{name}' execution error: {error}")
+        return definition, validated
 
     @staticmethod
     def _validate(
@@ -227,11 +258,43 @@ class ToolCatalogue:
         validated = dict(arguments)
         for argument_name, value in validated.items():
             schema = properties[argument_name]
-            if schema.get("type") == "string" and not isinstance(value, str):
-                raise ValueError(f"argument '{argument_name}' must be a string")
-            if schema.get("minLength") and not value:
-                raise ValueError(f"argument '{argument_name}' must not be empty")
+            _check_type(argument_name, schema, value)
         return validated
+
+
+_JSON_TYPES: dict[str, tuple[type, ...]] = {
+    "string": (str,),
+    "object": (Mapping,),
+    "array": (list, tuple),
+    "boolean": (bool,),
+    "number": (int, float),
+    "integer": (int,),
+}
+
+
+def _check_type(argument_name: str, schema: Mapping[str, Any], value: Any) -> None:
+    expected = schema.get("type")
+    if expected in _JSON_TYPES:
+        accepted = _JSON_TYPES[expected]
+        numeric_bool = expected in {"number", "integer"} and isinstance(value, bool)
+        if numeric_bool or not isinstance(value, accepted):
+            raise ValueError(f"argument '{argument_name}' must be a {expected}")
+    if expected == "string" and schema.get("minLength") and not value:
+        raise ValueError(f"argument '{argument_name}' must not be empty")
+    if "enum" in schema and value not in schema["enum"]:
+        raise ValueError(
+            f"argument '{argument_name}' must be one of: {', '.join(map(str, schema['enum']))}"
+        )
+    if "minimum" in schema and value < schema["minimum"]:
+        raise ValueError(f"argument '{argument_name}' must be >= {schema['minimum']}")
+    if "maximum" in schema and value > schema["maximum"]:
+        raise ValueError(f"argument '{argument_name}' must be <= {schema['maximum']}")
+    if "exclusiveMinimum" in schema and value <= schema["exclusiveMinimum"]:
+        raise ValueError(f"argument '{argument_name}' must be > {schema['exclusiveMinimum']}")
+    if expected == "array":
+        item_type = schema.get("items", {}).get("type")
+        if item_type in _JSON_TYPES and not all(isinstance(item, _JSON_TYPES[item_type]) for item in value):
+            raise ValueError(f"argument '{argument_name}' items must be {item_type}s")
 
 
 def _string_input(name: str, description: str) -> dict[str, Any]:
