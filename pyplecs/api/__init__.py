@@ -10,7 +10,9 @@ from pydantic import BaseModel
 
 from ..config import ConfigManager, get_config
 from ..core.models import SimulationRequest, SimulationStatus
+from ..normalization import simulation_result_payload
 from ..orchestration import SimulationOrchestrator, TaskPriority
+from ..orchestration.live import LivePlecsAdapter
 from .converter import router as converter_router
 from .quantities import create_quantities_router
 from .simulation_sync import router as sync_router
@@ -50,6 +52,8 @@ class SimulationResultAPI(BaseModel):
     task_id: str
     success: bool
     timeseries_data: Optional[dict] = None
+    time: List[float] = []
+    signals: dict = {}
     metadata: dict = {}
     error_message: Optional[str] = None
     execution_time: float = 0.0
@@ -123,7 +127,7 @@ def _register_routes(
         """Initialize the orchestrator on startup."""
         global orchestrator
         orchestrator = orchestrator_instance or SimulationOrchestrator(
-            config=resolved_config
+            LivePlecsAdapter(resolved_config), config=resolved_config
         )
         await orchestrator.start()
 
@@ -231,6 +235,7 @@ def _register_routes(
             timeseries_data=task.result.timeseries_data.to_dict()
             if task.result.timeseries_data is not None
             else None,
+            **simulation_result_payload(task.result),
             metadata=task.result.metadata,
             error_message=task.result.error_message,
             execution_time=task.result.execution_time,

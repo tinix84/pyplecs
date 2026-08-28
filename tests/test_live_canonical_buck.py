@@ -7,7 +7,6 @@ import json
 
 import pytest
 
-from pyplecs.core.models import SimulationRequest
 from pyplecs.orchestration import SimulationOrchestrator
 from pyplecs.orchestration.live import LivePlecsAdapter
 
@@ -16,24 +15,13 @@ from .verification.oracle import (
     analytic_invariants,
     check_preconditions,
     compare_metrics,
-    result_payload,
+    payload_to_result,
     steady_state_metrics,
     summary_table,
 )
+from .verification.transports import through_python
 
 pytestmark = pytest.mark.live_plecs
-
-
-async def run_canonical_point(orchestrator, manifest, *, use_cache=False):
-    request = SimulationRequest(
-        model_file=str(manifest.model_file),
-        parameters=manifest.parameters,
-        output_variables=manifest.signals,
-    )
-    task_id = await orchestrator.submit_simulation(request, use_cache=use_cache)
-    snapshot = await orchestrator.wait_for_completion(task_id, timeout=120)
-    assert snapshot is not None and snapshot.status.value == "completed", snapshot
-    return snapshot.result
 
 
 @pytest.mark.asyncio
@@ -41,7 +29,8 @@ async def test_python_api_answer_holds_up_against_physics_and_the_recorded_refer
     manifest = canonical_buck
     orchestrator = SimulationOrchestrator(LivePlecsAdapter(live_config), config=live_config)
     try:
-        result = await run_canonical_point(orchestrator, manifest)
+        payload = await through_python(orchestrator, manifest)
+        result = payload_to_result(payload)
     finally:
         await orchestrator.stop()
 
@@ -60,7 +49,6 @@ async def test_python_api_answer_holds_up_against_physics_and_the_recorded_refer
     reference = json.loads(reference_path.read_text(encoding="utf-8"))
     comparison = compare_metrics(metrics, reference["metrics"], manifest)
 
-    payload = result_payload(result)
     bundle = EvidenceBundle(manifest.evidence_directory(utc_stamp()))
     bundle.write_json("manifest", manifest.data)
     bundle.write_json(
@@ -69,7 +57,6 @@ async def test_python_api_answer_holds_up_against_physics_and_the_recorded_refer
             plecs_version=manifest.plecs_version,
             endpoint="%s:%d" % manifest.endpoint,
             raw_result={"samples": len(payload["time"]), "signals": len(payload["signals"]), "time_span": [payload["time"][0], payload["time"][-1]]},
-            execution_time_s=result.execution_time,
         ),
     )
     bundle.write_json("metrics", {"window": window.to_dict(), "metrics": metrics, "invariants": invariants, "comparison": comparison})
