@@ -28,6 +28,10 @@ _Avoid_: Derived result, post-processing, metric, KPI
 The read-only MCP surface that exposes the PLECS and PyPLECS documentation catalogue. It helps an Orchestrator discover APIs and component information, but cannot create a Simulation Task.
 _Avoid_: PyPLECS MCP, live MCP
 
+**Evidence Bundle**:
+What a reviewer retains from one acceptance run: the manifest as it was, the tool versions, the metrics and their comparison, a human-readable summary and an overlay. It is the record that lets a run be signed off without being repeated.
+_Avoid_: Test output, artifacts, debug plots
+
 **Operating Point**:
 One named parameter vector describing a condition the converter is asked to run at. It carries values, not results; a set of them is what a Parametric Study expands over.
 _Avoid_: OP, test point, working point, case
