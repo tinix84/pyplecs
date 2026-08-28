@@ -331,6 +331,40 @@ def design_quantities(
     )
 
 
+def design_quantities_payload(
+    result: SimulationResult,
+    *,
+    signal_map: Mapping[str, Any],
+    window: Optional[Mapping[str, Any]] = None,
+    waveforms: Sequence[str] = (),
+) -> dict[str, Any]:
+    """The one JSON shape every transport (Python, REST, MCP) returns for a request body."""
+    if window is not None:
+        if not isinstance(window, Mapping):
+            raise QuantityError("window must be an object with switching_frequency and periods")
+        unexpected = sorted(set(window) - {"switching_frequency", "periods"})
+        if unexpected:
+            raise QuantityError(f"window has unexpected key(s): {', '.join(unexpected)}")
+        if "switching_frequency" not in window:
+            raise QuantityError("window requires switching_frequency")
+        try:
+            steady_state = SteadyStateWindow(
+                switching_frequency=float(window["switching_frequency"]),
+                periods=int(window.get("periods", 5)),
+            )
+        except QuantityError:
+            raise
+        except (TypeError, ValueError) as error:
+            raise QuantityError(f"invalid window: {error}") from error
+    else:
+        steady_state = None
+    if isinstance(waveforms, str) or not all(isinstance(name, str) for name in waveforms):
+        raise QuantityError("waveforms must be a list of signal names")
+    return design_quantities(
+        result, SignalMap.from_dict(signal_map), window=steady_state, waveforms=list(waveforms)
+    ).to_dict()
+
+
 # --- internals -------------------------------------------------------------------
 
 
@@ -435,6 +469,7 @@ __all__ = [
     "capture_waveforms",
     "component_stress",
     "design_quantities",
+    "design_quantities_payload",
     "power_balance",
     "signal_stress",
     "time_weighted_mean",

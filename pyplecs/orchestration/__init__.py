@@ -38,7 +38,11 @@ class PlecsSimulationPort(Protocol):
         """Return whether this adapter can execute a Simulation Task now."""
 
     def simulate_batch(self, parameter_list: Sequence[Dict[str, Any]]) -> Sequence[Any]:
-        """Execute one batch and return one Raw PLECS Result per parameter vector."""
+        """Execute one batch and return one Raw PLECS Result per parameter vector.
+
+        An adapter that also offers ``simulate_requests(requests)`` receives the
+        whole Simulation Requests instead, so it can route by model file.
+        """
 
 
 class _CallablePlecsAdapter:
@@ -356,6 +360,14 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
         """Query cache state without exposing cache implementation."""
         return self._cache.get_cache_stats()
 
+    def explain_cache(self, model_file: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """Say whether a request would hit and, on a miss, which Cache Key id differs."""
+        return self._cache.explain_miss(model_file, parameters)
+
+    def invalidate_cache_record(self, model_file: str, parameters: Dict[str, Any]) -> bool:
+        """Drop the one Cache Record of a request; true when a record was removed."""
+        return self._cache.invalidate_cache(model_file, parameters)
+
     def clear_cache(self) -> None:
         """Clear cache state without exposing cache implementation."""
         self._cache.clear_cache()
@@ -460,7 +472,7 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
         try:
             if self._plecs is None:
                 raise PlecsUnavailableError("PLECS adapter was removed after submission")
-            if isinstance(self._plecs, _CallablePlecsAdapter):
+            if hasattr(self._plecs, "simulate_requests"):
                 raw_results = await asyncio.to_thread(
                     self._plecs.simulate_requests,
                     [task.request for task in executable],

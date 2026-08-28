@@ -12,6 +12,7 @@ from pyplecs.mcp.simulation_tools import build_simulation_catalogue
 from pyplecs.orchestration import SimulationOrchestrator
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = REPO_ROOT / "data"
 
 DOCS_TOOL_NAMES = (
     "plecs_lookup",
@@ -235,3 +236,54 @@ def test_simulation_server_and_console_command_are_registered(tmp_path):
     assert server.get_request_handler("tools/list") is not None
     assert server.get_request_handler("tools/call") is not None
     assert project["project"]["scripts"]["pyplecs-mcp-sim"] == "pyplecs.mcp.simulation_server:main"
+
+
+@pytest.mark.asyncio
+async def test_cache_lookup_explains_misses_and_invalidate_forces_a_rerun(tmp_path):
+    adapter = InMemoryPlecsAdapter()
+    catalogue, orchestrator = _catalogue(tmp_path, adapter)
+    model = _model(tmp_path)
+    try:
+        miss = await _call(catalogue, "cache_lookup", model_file=model, parameters={"Vi": 24.0})
+        assert miss["hit"] is False and miss["differences"] == ["topology"]
+        assert set(miss["key"]) >= {"topology_id", "params_id", "solver_id", "environment_id"}
+
+        submitted = await _call(catalogue, "simulation_submit", model_file=model, parameters={"Vi": 24.0})
+        await _call(catalogue, "simulation_wait", task_id=submitted["task_id"], timeout_s=5)
+
+        hit = await _call(catalogue, "cache_lookup", model_file=model, parameters={"Vi": 24.0})
+        other = await _call(catalogue, "cache_lookup", model_file=model, parameters={"Vi": 48.0})
+        assert hit["hit"] is True and hit["differences"] == []
+        assert other["hit"] is False and other["differences"] == ["params"]
+
+        dropped = await _call(catalogue, "cache_invalidate", model_file=model, parameters={"Vi": 24.0})
+        assert dropped["invalidated"] is True
+        assert (await _call(catalogue, "cache_lookup", model_file=model, parameters={"Vi": 24.0}))["hit"] is False
+
+        again = await _call(catalogue, "simulation_submit", model_file=model, parameters={"Vi": 24.0})
+        await _call(catalogue, "simulation_wait", task_id=again["task_id"], timeout_s=5)
+        assert len(adapter.calls) == 2
+    finally:
+        await orchestrator.stop()
+
+
+@pytest.mark.asyncio
+async def test_models_list_reads_initialization_parameters_offline(tmp_path):
+    catalogue, orchestrator = _catalogue(tmp_path, InMemoryPlecsAdapter(available=False))
+    broken = tmp_path / "broken.plecs"
+    broken.write_text("Plecs {\n", encoding="utf-8")
+    try:
+        tracked = await _call(catalogue, "models_list", directory=str(DATA_DIR))
+        by_name = {Path(entry["model_file"]).name: entry for entry in tracked["models"]}
+        buck = by_name["simple_buck_prb.plecs"]
+        assert buck["name"] == "simple_buck_prb" and buck["parameters"]["Vi"] == "24"
+        assert {"Lo", "Co", "Ro"} <= set(buck["parameters"])
+
+        local = await _call(catalogue, "models_list", directory=str(tmp_path))
+        entries = {Path(entry["model_file"]).name: entry for entry in local["models"]}
+        assert "error" in entries["broken.plecs"] and "parameters" not in entries["broken.plecs"]
+        assert local["total"] == len(entries)
+
+        assert "does not exist" in await _error(catalogue, "models_list", directory=str(tmp_path / "nope"))
+    finally:
+        await orchestrator.stop()

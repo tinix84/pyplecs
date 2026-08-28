@@ -15,6 +15,7 @@ from mcp.server.stdio import stdio_server
 
 from ..config import ConfigManager, get_config
 from ..orchestration import SimulationOrchestrator
+from ..orchestration.live import LivePlecsAdapter
 from .server import build_server
 from .simulation_tools import build_simulation_catalogue
 
@@ -29,7 +30,7 @@ def build_simulation_server(orchestrator: SimulationOrchestrator) -> Server:
 def build_orchestrator(config: Optional[ConfigManager] = None) -> SimulationOrchestrator:
     """The production orchestrator behind the console command."""
     resolved = config or get_config()
-    return SimulationOrchestrator(config=resolved)
+    return SimulationOrchestrator(LivePlecsAdapter(resolved), config=resolved)
 
 
 async def _serve(config: Optional[ConfigManager] = None) -> None:

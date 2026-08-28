@@ -12,8 +12,10 @@ from typing import Any, Optional
 
 from pyplecs.contracts import TaskPriority
 
+from ..converter import parse_plecs
 from ..core.models import SimulationRequest, SimulationResult, SimulationStatus
 from ..orchestration import TERMINAL_STATUSES, SimulationOrchestrator, SimulationTaskSnapshot
+from ..quantities import design_quantities_payload
 from .plecs_tools import ToolCatalogue, ToolDefinition
 
 MAX_WAIT_SECONDS = 600.0
@@ -117,7 +119,49 @@ def build_simulation_catalogue(orchestrator: SimulationOrchestrator) -> ToolCata
         )
         return {"tasks": [snapshot_payload(snapshot) for snapshot in snapshots], "total": len(snapshots)}
 
+    def cache_lookup(model_file: str, parameters: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+        return {"model_file": model_file, **orchestrator.explain_cache(model_file, dict(parameters or {}))}
+
+    def cache_invalidate(model_file: str, parameters: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+        return {
+            "model_file": model_file,
+            "invalidated": orchestrator.invalidate_cache_record(model_file, dict(parameters or {})),
+        }
+
+    def models_list(directory: str = ".", recursive: bool = False) -> dict[str, Any]:
+        root = Path(directory)
+        if not root.is_dir():
+            raise ValueError(f"directory does not exist: {directory}")
+        paths = sorted(root.rglob("*.plecs") if recursive else root.glob("*.plecs"))
+        models = []
+        for path in paths:
+            entry: dict[str, Any] = {"model_file": str(path)}
+            try:
+                circuit = parse_plecs(path)
+                entry.update({"name": circuit.name, "parameters": dict(circuit.raw_params)})
+            except (OSError, ValueError) as error:
+                entry["error"] = str(error)
+            models.append(entry)
+        return {"directory": str(root), "models": models, "total": len(models)}
+
+    async def simulation_quantities(
+        task_id: str,
+        signal_map: Optional[dict[str, Any]] = None,
+        window: Optional[dict[str, Any]] = None,
+        waveforms: Optional[list[str]] = None,
+    ) -> dict[str, Any]:
+        snapshot = await require_snapshot(task_id)
+        if snapshot.status != SimulationStatus.COMPLETED or snapshot.result is None:
+            raise ValueError(
+                f"Simulation Task {task_id} is not completed (status: {snapshot.status.value})"
+            )
+        return design_quantities_payload(
+            snapshot.result, signal_map=signal_map or {}, window=window, waveforms=waveforms or []
+        )
+
     task_id_property = {"type": "string", "minLength": 1, "description": "Opaque Simulation Task id."}
+    model_file_property = {"type": "string", "minLength": 1, "description": "Path to a .plecs model file."}
+    parameters_property = {"type": "object", "description": "Model variable values for this Operating Point."}
 
     return ToolCatalogue(
         [
@@ -190,6 +234,67 @@ def build_simulation_catalogue(orchestrator: SimulationOrchestrator) -> ToolCata
                 description="Cancel a queued or running Simulation Task.",
                 input_schema=_schema({"task_id": task_id_property}, required=["task_id"]),
                 handler=simulation_cancel,
+            ),
+            ToolDefinition(
+                name="simulation_quantities",
+                description=(
+                    "Compute Design Quantities (waveforms, component stress, efficiency and losses) "
+                    "from a completed Simulation Task under a caller-declared signal map."
+                ),
+                input_schema=_schema(
+                    {
+                        "task_id": task_id_property,
+                        "signal_map": {
+                            "type": "object",
+                            "description": (
+                                "{'components': {name: {'voltage': col, 'current': col}}, "
+                                "'ports': {'input'/'output': {'voltage': col, 'current': col, 'sign': 1 or -1}}}"
+                            ),
+                        },
+                        "window": {
+                            "type": "object",
+                            "description": "{'switching_frequency': Hz, 'periods': N}: the last N complete periods.",
+                        },
+                        "waveforms": {"type": "array", "items": {"type": "string"}},
+                    },
+                    required=["task_id"],
+                ),
+                handler=simulation_quantities,
+            ),
+            ToolDefinition(
+                name="cache_lookup",
+                description=(
+                    "Say whether a model and parameter vector already has a Cache Record and, on a "
+                    "miss, which Cache Key id differs. Never runs PLECS."
+                ),
+                input_schema=_schema(
+                    {"model_file": model_file_property, "parameters": parameters_property},
+                    required=["model_file"],
+                ),
+                handler=cache_lookup,
+            ),
+            ToolDefinition(
+                name="cache_invalidate",
+                description="Drop the Cache Record of one model and parameter vector.",
+                input_schema=_schema(
+                    {"model_file": model_file_property, "parameters": parameters_property},
+                    required=["model_file"],
+                ),
+                handler=cache_invalidate,
+            ),
+            ToolDefinition(
+                name="models_list",
+                description=(
+                    "List .plecs models under a directory with the parameters their initialization "
+                    "commands declare, read offline through the Circuit Model parser."
+                ),
+                input_schema=_schema(
+                    {
+                        "directory": {"type": "string", "minLength": 1},
+                        "recursive": {"type": "boolean"},
+                    }
+                ),
+                handler=models_list,
             ),
             ToolDefinition(
                 name="simulation_list",
