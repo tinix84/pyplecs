@@ -1,6 +1,6 @@
 # simple_buck_prb / nominal — Python API
 
-PLECS 4.7.7; compared to recorded reference.
+PLECS 4.7.7; reference recorded.
 
 ## Analytic invariants
 
@@ -10,9 +10,9 @@ PLECS 4.7.7; compared to recorded reference.
 - ✓ i_L mean ≈ i_R mean within 2 % (value 3.9211)
 - ✓ i_L peak-to-peak within 15 % of analytic ripple (value 5.9467)
 
-## Steady-state metrics vs reference
+## Steady-state Design Quantities vs reference
 
-| signal | metric | actual | expected | error | tol | pass |
+| signal | quantity | actual | expected | error | tol | pass |
 |---|---|---|---|---|---|---|
 | v_in | mean | 24 | 24 | 0.000% | 2.0% | ✓ |
 | v_in | rms | 24 | 24 | 0.000% | 2.0% | ✓ |

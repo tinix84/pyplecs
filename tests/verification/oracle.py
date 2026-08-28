@@ -6,6 +6,7 @@ import math
 from typing import Any, Mapping
 
 import numpy as np
+import pandas as pd
 
 from pyplecs.core.models import SimulationResult
 from pyplecs.quantities import (
@@ -18,7 +19,7 @@ from pyplecs.quantities import (
 
 from .manifest import Manifest
 
-METRIC_NAMES = ("mean", "rms", "minimum", "maximum", "peak_to_peak")
+QUANTITY_FIELDS = ("mean", "rms", "minimum", "maximum", "peak_to_peak")
 
 
 class OracleError(AssertionError):
@@ -27,22 +28,12 @@ class OracleError(AssertionError):
 
 def payload_to_result(payload: Mapping[str, Any], task_id: str = "payload") -> SimulationResult:
     """Rebuild a Simulation Result from the normalized ``time`` + ``signals`` transport payload."""
-    import pandas as pd
-
     frame = pd.DataFrame({"Time": list(payload["time"]), **{k: list(v) for k, v in payload["signals"].items()}})
     return SimulationResult(task_id=task_id, success=True, timeseries_data=frame)
 
 
-def result_payload(result: SimulationResult) -> dict[str, Any]:
-    frame = result.timeseries_data
-    return {
-        "time": frame["Time"].tolist(),
-        "signals": {c: frame[c].tolist() for c in frame.columns if c != "Time"},
-    }
-
-
 def check_preconditions(result: SimulationResult, manifest: Manifest) -> SteadyStateWindow:
-    """Fail closed, naming the cause, before any metric is computed."""
+    """Fail closed, naming the cause, before any quantity is computed."""
     if not result.success or result.timeseries_data is None:
         raise OracleError(f"Simulation Result is a failure: {result.error_message}")
     frame = result.timeseries_data
@@ -81,23 +72,23 @@ def per_period_rms_spread(time: np.ndarray, values: np.ndarray, window: SteadySt
     return 0.0 if mean == 0 else float(np.std(rms_values) / mean)
 
 
-def steady_state_metrics(result: SimulationResult, manifest: Manifest, window: SteadyStateWindow) -> dict[str, dict[str, float]]:
-    """Time-weighted mean/RMS plus sampled min/max/peak-to-peak of every mapped signal over the window."""
+def steady_state_quantities(result: SimulationResult, manifest: Manifest, window: SteadyStateWindow) -> dict[str, dict[str, float]]:
+    """The Design Quantities the oracle compares: time-weighted mean/RMS and sampled min/max/peak-to-peak per mapped signal over the window."""
     present = [name for name in manifest.signals if name in result.timeseries_data.columns]
     waveforms = capture_waveforms(result, present, window=window)
-    metrics: dict[str, dict[str, float]] = {}
+    quantities: dict[str, dict[str, float]] = {}
     for name, waveform in waveforms.items():
         stress = signal_stress(name, waveform.time, waveform.values)
-        metrics[name] = {metric: float(getattr(stress, metric)) for metric in METRIC_NAMES}
-    return metrics
+        quantities[name] = {field: float(getattr(stress, field)) for field in QUANTITY_FIELDS}
+    return quantities
 
 
-def analytic_invariants(metrics: Mapping[str, Mapping[str, float]], manifest: Manifest) -> list[dict[str, Any]]:
+def analytic_invariants(quantities: Mapping[str, Mapping[str, float]], manifest: Manifest) -> list[dict[str, Any]]:
     """Physics a reader can check by hand; a wrong Signal Map fails here."""
     p = manifest.parameters
     derived = manifest.derived()
     duty, ro, ripple = derived["duty_ratio"], derived["load_resistance"], derived["inductor_ripple"]
-    v_c, v_r, i_l, i_r = (metrics[n] for n in ("v_C", "v_R", "i_L", "i_R"))
+    v_c, v_r, i_l, i_r = (quantities[n] for n in ("v_C", "v_R", "i_L", "i_R"))
     checks = [
         ("v_C mean within [0.9·D·Vi, D·Vi]", 0.9 * duty * p["Vi"] <= v_c["mean"] <= duty * p["Vi"], v_c["mean"]),
         ("v_C ≈ v_R (same node) within 0.1 %", _rel(v_c["mean"], v_r["mean"]) <= 1e-3, _rel(v_c["mean"], v_r["mean"])),
@@ -108,36 +99,41 @@ def analytic_invariants(metrics: Mapping[str, Mapping[str, float]], manifest: Ma
     return [{"check": name, "passed": bool(ok), "value": float(value)} for name, ok, value in checks]
 
 
-def compare_metrics(
+def compare_quantities(
     actual: Mapping[str, Mapping[str, float]],
     reference: Mapping[str, Mapping[str, float]],
     manifest: Manifest,
     *,
     relative: Mapping[str, float] | None = None,
+    absolute_floor: Mapping[str, float] | None = None,
 ) -> list[dict[str, Any]]:
-    """Symmetric relative error per metric with per-unit absolute floors; both-below-floor passes."""
+    """Symmetric relative error per quantity with per-unit absolute floors; both-below-floor passes.
+
+    ``relative`` and ``absolute_floor`` default to the manifest tolerances; pass ``{}`` as the floor
+    to demand the relative agreement everywhere (cross-transport equivalence does).
+    """
     tolerances = manifest.tolerances
     relative = relative or tolerances["relative"]
-    floors = tolerances["absolute_floor"]
+    floors = tolerances["absolute_floor"] if absolute_floor is None else absolute_floor
     rows = []
     for signal, expected in reference.items():
         if signal not in actual:
-            rows.append({"signal": signal, "metric": "*", "error": math.inf, "passed": False, "reason": "signal missing"})
+            rows.append({"signal": signal, "quantity": "*", "error": math.inf, "passed": False, "reason": "signal missing"})
             continue
         floor = float(floors.get(manifest.units.get(signal, ""), 0.0))
-        for metric, expected_value in expected.items():
-            value = actual[signal][metric]
+        for quantity, expected_value in expected.items():
+            value = actual[signal][quantity]
             below_floor = abs(value) < floor and abs(expected_value) < floor
             error = 0.0 if below_floor else _rel(value, expected_value)
             rows.append(
                 {
                     "signal": signal,
-                    "metric": metric,
+                    "quantity": quantity,
                     "actual": float(value),
                     "expected": float(expected_value),
                     "error": float(error),
-                    "tolerance": float(relative[metric]),
-                    "passed": bool(error <= relative[metric]),
+                    "tolerance": float(relative[quantity]),
+                    "passed": bool(error <= relative[quantity]),
                 }
             )
     return rows
@@ -149,13 +145,13 @@ def _rel(a: float, b: float) -> float:
 
 
 def summary_table(rows: list[dict[str, Any]]) -> str:
-    lines = ["| signal | metric | actual | expected | error | tol | pass |", "|---|---|---|---|---|---|---|"]
+    lines = ["| signal | quantity | actual | expected | error | tol | pass |", "|---|---|---|---|---|---|---|"]
     for r in rows:
-        if r["metric"] == "*":
+        if r["quantity"] == "*":
             lines.append(f"| {r['signal']} | * | — | — | — | — | ✗ {r['reason']} |")
             continue
         lines.append(
-            f"| {r['signal']} | {r['metric']} | {r['actual']:.6g} | {r['expected']:.6g} | "
+            f"| {r['signal']} | {r['quantity']} | {r['actual']:.6g} | {r['expected']:.6g} | "
             f"{r['error']:.3%} | {r['tolerance']:.1%} | {'✓' if r['passed'] else '✗'} |"
         )
     return "\n".join(lines)

@@ -1,4 +1,4 @@
-# ADR-0013 — Live verification is opt-in and metric-based
+# ADR-0013 — Live verification is opt-in and compares Design Quantities, never samples
 
 - **Status**: Accepted
 - **Date**: 2026-08-28
@@ -43,7 +43,7 @@ Three forces constrain how such proof can be built:
    model, the Operating Point, the Signal Map for every probe output, the
    required signals, the steady-state window, the tolerances and the observed
    PLECS facts. Every transport and the converter pack compare the same thing.
-5. **Metrics decide, samples inform.** Pass/fail rests on stable invariants —
+5. **Design Quantities decide, samples inform.** Pass/fail rests on stable invariants —
    strictly increasing time, at least five complete periods, required signals
    present and finite, per-period RMS convergence, analytic bounds a reader can
    check by hand — and on time-weighted mean/RMS/min/max/peak-to-peak of the
@@ -56,7 +56,7 @@ Three forces constrain how such proof can be built:
    export file it expected; a defect it exposes is reported on the converter
    issue, not patched around in the pack.
 7. **Every acceptance run leaves an Evidence Bundle** under the tests tree:
-   manifest snapshot, tool versions, metrics, machine-readable comparison,
+   manifest snapshot, tool versions, Design Quantities, machine-readable comparison,
    human-readable summary and overlay. Raw series and overlays are untracked;
    manifests, references and summaries are tracked so a reviewer can sign off
    without re-running.
@@ -72,7 +72,7 @@ Three forces constrain how such proof can be built:
 - Tolerances are provisional until two recorded runs on pinned PLECS and
   LTspice versions exist; the Evidence Bundle is how they are calibrated and
   then frozen in the manifest.
-- Cross-transport equivalence is asserted on metrics within 0.1 %, even though
+- Cross-transport equivalence is asserted on Design Quantities within 0.1 %, even though
   PLECS proved deterministic (max |Δsample| = 0) — determinism is evidence, not
   a contract.
 - To supersede this: a hosted, licensed PLECS reachable from CI would allow the

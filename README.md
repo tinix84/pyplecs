@@ -138,7 +138,7 @@ uv run pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_ins
 ```
 
 Live checks against the installed PLECS, and the semi-manual converter acceptance
-pack, are opt-in by marker and skip or fail with a named reason ([ADR-0013](https://github.com/tinix84/pyplecs/blob/master/docs/adr/0013-live-verification-is-opt-in-and-metric-based.md)):
+pack, are opt-in by marker and skip or fail with a named reason ([ADR-0013](https://github.com/tinix84/pyplecs/blob/master/docs/adr/0013-live-verification-is-opt-in-and-compares-design-quantities.md)):
 
 ```bash
 uv run pytest -m live_plecs             # canonical buck through Python, REST and MCP

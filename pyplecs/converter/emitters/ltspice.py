@@ -7,7 +7,7 @@ from ..mapper import (
     sanitize_identifier,
     spice_expression,
     spice_instance_name,
-    spice_parameter_value,
+    to_spice_operators,
 )
 
 SCALE_FACTOR = 2
@@ -59,7 +59,7 @@ def emit_ltspice(circuit: Circuit) -> str:
 
     directive_y = 300
     for name, value in circuit.raw_params.items():
-        lines.append(f"TEXT -32 {directive_y} Left 2 !.param {sanitize_identifier(name)}={spice_parameter_value(value)}")
+        lines.append(f"TEXT -32 {directive_y} Left 2 !.param {sanitize_identifier(name)}={to_spice_operators(value)}")
         directive_y += 24
     for directive in model_directives:
         lines.append(f"TEXT -32 {directive_y} Left 2 !{directive}")

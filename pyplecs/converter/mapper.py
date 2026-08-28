@@ -47,12 +47,13 @@ def sanitize_identifier(value: str) -> str:
     return sanitized or "unnamed"
 
 
-def spice_parameter_value(value: str) -> str:
+def to_spice_operators(value: str) -> str:
     """Translate a PLECS (MATLAB-style) expression into SPICE operators.
 
     PLECS ``^`` is power; in SPICE and LTspice ``^`` is boolean XOR, so a
     verbatim ``Ro=Vo_ref^2/Po`` silently evaluates to the wrong load. The
     converter acceptance pack exposed this on the canonical buck (#20).
+    ``**`` is folded to ``^`` first so the translation is idempotent.
     """
     return value.replace("**", "^").replace("^", "**")
 
@@ -65,8 +66,8 @@ def spice_expression(value: Optional[str], default: str = "0") -> str:
     if re.fullmatch(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?", stripped):
         return stripped
     if stripped.startswith("{") and stripped.endswith("}"):
-        return spice_parameter_value(stripped)
-    return f"{{{spice_parameter_value(stripped)}}}"
+        return to_spice_operators(stripped)
+    return f"{{{to_spice_operators(stripped)}}}"
 
 
 def model_name(component: Component, mapping: SpiceMapping) -> str:

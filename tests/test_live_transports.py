@@ -11,10 +11,11 @@ from pyplecs.orchestration.live import LivePlecsAdapter
 
 from .verification.evidence import EvidenceBundle, utc_stamp
 from .verification.oracle import (
+    QUANTITY_FIELDS,
     check_preconditions,
-    compare_metrics,
+    compare_quantities,
     payload_to_result,
-    steady_state_metrics,
+    steady_state_quantities,
     summary_table,
 )
 from .verification.transports import (
@@ -31,9 +32,9 @@ pytestmark = pytest.mark.live_plecs
 LIFECYCLE_TOOLS = {"simulation_submit", "simulation_status", "simulation_wait", "simulation_result", "simulation_cancel", "simulation_list"}
 
 
-def _metrics(payload, manifest):
+def _quantities(payload, manifest):
     result = payload_to_result(payload)
-    return steady_state_metrics(result, manifest, check_preconditions(result, manifest))
+    return steady_state_quantities(result, manifest, check_preconditions(result, manifest))
 
 
 @pytest.mark.asyncio
@@ -53,14 +54,20 @@ async def test_every_transport_returns_the_same_normalized_answer(live_config, c
     finally:
         await orchestrator.stop()
 
-    reference_metrics = _metrics(answers["python"], manifest)
+    reference = _quantities(answers["python"], manifest)
     agreement = float(manifest.tolerances["transport_agreement"])
-    tolerances = {metric: agreement for metric in ("mean", "rms", "minimum", "maximum", "peak_to_peak")}
     report, failures = {}, []
     for transport, payload in answers.items():
         assert list(payload["signals"]) == manifest.signals, (transport, list(payload["signals"]))
         assert len(payload["time"]) == len(answers["python"]["time"]), (transport, len(payload["time"]))
-        rows = compare_metrics(_metrics(payload, manifest), reference_metrics, manifest, relative=tolerances)
+        # the relative agreement applies to every quantity: no absolute floors here
+        rows = compare_quantities(
+            _quantities(payload, manifest),
+            reference,
+            manifest,
+            relative={field: agreement for field in QUANTITY_FIELDS},
+            absolute_floor={},
+        )
         max_abs_diff = max(
             float(np.max(np.abs(np.asarray(payload["signals"][name]) - np.asarray(answers["python"]["signals"][name]))))
             for name in manifest.signals
@@ -79,7 +86,7 @@ async def test_every_transport_returns_the_same_normalized_answer(live_config, c
         f"# {manifest.model_name} / {manifest.operating_point_name} — cross-transport equivalence\n\n"
         + "\n".join(
             f"- {name}: {entry['samples']} samples, max |Δsample| vs Python = {entry['max_abs_sample_diff']:.3g}, "
-            f"metrics within {agreement:.1%}: {'✓' if all(r['passed'] for r in entry['comparison']) else '✗'}"
+            f"Design Quantities within {agreement:.1%}: {'✓' if all(r['passed'] for r in entry['comparison']) else '✗'}"
             for name, entry in report.items()
         )
         + "\n",

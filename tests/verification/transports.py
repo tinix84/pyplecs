@@ -14,10 +14,10 @@ from mcp.shared.memory import create_client_server_memory_streams
 from pyplecs.api import _get_app, _register_routes, get_orchestrator
 from pyplecs.core.models import SimulationRequest
 from pyplecs.mcp.simulation_server import build_simulation_server
+from pyplecs.normalization import simulation_result_payload
 from pyplecs.orchestration import SimulationOrchestrator
 
 from .manifest import Manifest
-from .oracle import result_payload
 
 
 def canonical_request(manifest: Manifest) -> SimulationRequest:
@@ -32,7 +32,7 @@ async def through_python(orchestrator: SimulationOrchestrator, manifest: Manifes
     task_id = await orchestrator.submit_simulation(canonical_request(manifest), use_cache=use_cache)
     snapshot = await orchestrator.wait_for_completion(task_id, timeout=120)
     assert snapshot is not None and snapshot.status.value == "completed", snapshot
-    return {**result_payload(snapshot.result), "cached": snapshot.result.cached, "task_id": task_id}
+    return {**simulation_result_payload(snapshot.result), "cached": snapshot.result.cached, "task_id": task_id}
 
 
 def rest_app(orchestrator: SimulationOrchestrator, config):

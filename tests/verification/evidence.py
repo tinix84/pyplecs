@@ -18,7 +18,7 @@ def utc_stamp() -> str:
 
 
 class EvidenceBundle:
-    """A directory of tracked (json/md) and untracked (raw csv, svg) artifacts."""
+    """One directory per run: tracked json/md, untracked raw series and overlays."""
 
     def __init__(self, directory: Path):
         self.directory = directory

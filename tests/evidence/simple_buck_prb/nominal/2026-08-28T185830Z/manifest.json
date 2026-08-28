@@ -96,6 +96,49 @@
     "v_R",
     "i_R"
   ],
+  "spice": {
+    "asc_key_scalars": [
+      [
+        "v_R",
+        "mean"
+      ],
+      [
+        "i_L",
+        "rms"
+      ]
+    ],
+    "compared_signals": [
+      "v_in",
+      "i_in",
+      "v_S",
+      "i_S",
+      "v_D",
+      "i_D",
+      "i_L",
+      "v_L",
+      "v_C",
+      "i_C",
+      "v_R",
+      "i_R"
+    ],
+    "evidence_inbox": "tests/evidence/<model>/<operating point>/spice/{cir,asc}.raw \u2014 produced by `LTspice.exe -b -ascii <deck>` (helper: set PYPLECS_LTSPICE to the executable)",
+    "note": "Expressions over the LTspice export of the emitted .cir; signed sums of raw variables. Polarity: LTspice's I(Vsource) is positive into the + terminal, so the delivered source current is -I(VDCin). LTspice reports a voltage-controlled switch current opposite to PLECS' drain-to-source MOSFET current, so i_S is -I(S_FET1).",
+    "signals": {
+      "gate_S": "V(n_gate_fet1)",
+      "i_C": "I(C1)",
+      "i_D": "I(D1)",
+      "i_L": "I(L1)",
+      "i_R": "I(R1)",
+      "i_S": "-I(S_FET1)",
+      "i_in": "-I(VDCin)",
+      "v_C": "V(n003)",
+      "v_D": "-V(n001)",
+      "v_L": "V(n001)-V(n003)",
+      "v_R": "V(n003)",
+      "v_S": "V(n002)-V(n001)",
+      "v_in": "V(n002)"
+    }
+  },
   "tolerances": {
     "absolute_floor": {
       "A": 0.01,

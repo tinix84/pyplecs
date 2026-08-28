@@ -4,7 +4,7 @@
     "switching_frequency": 100000.0,
     "periods": 5
   },
-  "metrics": {
+  "quantities": {
     "v_in": {
       "mean": 24.0,
       "rms": 24.0,

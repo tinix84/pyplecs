@@ -1,10 +1,10 @@
 # simple_buck_prb / nominal — emitted .cir versus PLECS
 
-PLECS: live PLECS 4.7.7 at localhost:1080. LTspice: LTspice 26.0.1 for Windows. Window: last 5 periods at 100000 Hz.
+PLECS 4.7.7. LTspice: LTspice 26.0.1 for Windows. Window: last 5 periods at 100000 Hz.
 
-**Verdict: PASS** on steady-state metrics.
+**Verdict: PASS** on steady-state Design Quantities.
 
-| signal | metric | actual | expected | error | tol | pass |
+| signal | quantity | actual | expected | error | tol | pass |
 |---|---|---|---|---|---|---|
 | v_in | mean | 24 | 24 | 0.000% | 2.0% | ✓ |
 | v_in | rms | 24 | 24 | 0.000% | 2.0% | ✓ |

@@ -29,7 +29,7 @@ The read-only MCP surface that exposes the PLECS and PyPLECS documentation catal
 _Avoid_: PyPLECS MCP, live MCP
 
 **Evidence Bundle**:
-What a reviewer retains from one acceptance run: the manifest as it was, the tool versions, the metrics and their comparison, a human-readable summary and an overlay. It is the record that lets a run be signed off without being repeated.
+What a reviewer retains from one acceptance run: the manifest as it was, the tool versions, the Design Quantities and their comparison, a human-readable summary and an overlay. It is the record that lets a run be signed off without being repeated.
 _Avoid_: Test output, artifacts, debug plots
 
 **Operating Point**:

@@ -12,7 +12,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from .manifest import Manifest
-from .oracle import OracleError, check_preconditions, compare_metrics, payload_to_result, steady_state_metrics
+from .oracle import OracleError, check_preconditions, compare_quantities, payload_to_result, steady_state_quantities
 
 
 class MissingEvidenceError(AssertionError):
@@ -92,7 +92,7 @@ def dedupe_time(time: np.ndarray, signals: Mapping[str, np.ndarray]) -> tuple[np
 
 
 def compare_pair(plecs: Mapping[str, Any], spice: Mapping[str, Any], manifest: Manifest) -> dict[str, Any]:
-    """PLECS is the reference; steady-state metrics decide, NRMSE is advisory."""
+    """PLECS is the reference; steady-state Design Quantities decide, NRMSE is advisory."""
     reference = payload_to_result(plecs, "plecs")
     candidate = payload_to_result(spice, "spice")
     window = check_preconditions(reference, manifest)
@@ -100,14 +100,14 @@ def compare_pair(plecs: Mapping[str, Any], spice: Mapping[str, Any], manifest: M
         check_preconditions(candidate, manifest)
     except OracleError as error:
         raise OracleError(f"SPICE export failed a precondition: {error}") from error
-    plecs_metrics = steady_state_metrics(reference, manifest, window)
-    spice_metrics = steady_state_metrics(candidate, manifest, window)
-    rows = compare_metrics(spice_metrics, plecs_metrics, manifest)
+    plecs_quantities = steady_state_quantities(reference, manifest, window)
+    spice_quantities = steady_state_quantities(candidate, manifest, window)
+    rows = compare_quantities(spice_quantities, plecs_quantities, manifest)
     advisory = phase_aligned_nrmse(plecs, spice, manifest)
     return {
         "window": window.to_dict(),
-        "plecs_metrics": plecs_metrics,
-        "spice_metrics": spice_metrics,
+        "plecs_quantities": plecs_quantities,
+        "spice_quantities": spice_quantities,
         "comparison": rows,
         "passed": all(row["passed"] for row in rows),
         "advisory": advisory,
@@ -178,6 +178,18 @@ def asc_structure(asc_text: str) -> dict[str, int]:
         "wires": sum(1 for line in asc_text.splitlines() if line.startswith("WIRE ")),
         "ground_flags": sum(1 for line in asc_text.splitlines() if line.startswith("FLAG ") and line.rstrip().endswith(" 0")),
     }
+
+
+def netlist_node_count(net_text: str) -> int:
+    """Distinct nodes LTspice netlisted from a schematic (its ``.net`` file); ground counts as a net."""
+    terminals = {"R": 2, "C": 2, "L": 2, "D": 2, "V": 2, "I": 2, "S": 4, "M": 3, "Q": 3}
+    nodes: set[str] = set()
+    for line in net_text.splitlines():
+        if not line or line[0] in "*.+":
+            continue
+        fields = line.split()
+        nodes.update(fields[1 : 1 + terminals.get(fields[0][0].upper(), 2)])
+    return len(nodes)
 
 
 def run_ltspice(executable: Path, deck: Path, workdir: Path) -> tuple[Path, Path]:

@@ -7,5 +7,5 @@
   "plecs_solver": "radau, MaxStep 1e-6 (model settings)",
   "pyplecs": "1.0.0",
   "python": "3.14.0",
-  "recorded_at": "2026-08-28T18:38:44.812876+00:00"
+  "recorded_at": "2026-08-28T18:58:35.805892+00:00"
 }

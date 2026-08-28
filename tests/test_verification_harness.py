@@ -21,11 +21,12 @@ from .verification.oracle import (
     OracleError,
     analytic_invariants,
     check_preconditions,
-    compare_metrics,
-    steady_state_metrics,
+    compare_quantities,
+    steady_state_quantities,
 )
 
 LIVE_TEST_FILES = ("tests/test_live_canonical_buck.py", "tests/test_tas_live.py")
+ACCEPTANCE_TEST_FILES = ("tests/test_converter_acceptance.py",)
 
 
 def test_canonical_buck_manifest_matches_the_tracked_model():
@@ -43,12 +44,18 @@ def test_canonical_buck_manifest_matches_the_tracked_model():
     assert declared <= set(manifest.signals)
 
 
-def test_live_tests_are_deselected_by_default_and_selected_by_marker():
+def test_live_and_acceptance_tests_are_deselected_by_default_and_selected_by_marker():
     collect = [sys.executable, "-m", "pytest", "--collect-only", "-q", *LIVE_TEST_FILES]
     default = subprocess.run(collect, cwd=REPO_ROOT, capture_output=True, text=True)
     assert "deselected" in default.stdout and "::test_" not in default.stdout, default.stdout
     opted_in = subprocess.run([*collect, "-m", "live_plecs"], cwd=REPO_ROOT, capture_output=True, text=True)
     assert opted_in.stdout.count("::test_") >= 2, opted_in.stdout
+
+    collect = [sys.executable, "-m", "pytest", "--collect-only", "-q", *ACCEPTANCE_TEST_FILES]
+    default = subprocess.run(collect, cwd=REPO_ROOT, capture_output=True, text=True)
+    assert "deselected" in default.stdout and "::test_" not in default.stdout, default.stdout
+    opted_in = subprocess.run([*collect, "-m", "converter_acceptance"], cwd=REPO_ROOT, capture_output=True, text=True)
+    assert opted_in.stdout.count("::test_") == 2, opted_in.stdout
 
 
 def test_unreachable_plecs_skips_with_the_endpoint_in_the_reason():
@@ -96,14 +103,14 @@ def _synthetic_buck(manifest, *, span=1e-3, points=20001, ripple=6.0, growth=0.0
     return SimulationResult(task_id="synthetic", success=True, timeseries_data=pd.DataFrame(frame))
 
 
-def test_oracle_passes_a_settled_synthetic_buck_and_its_metrics_match_themselves():
+def test_oracle_passes_a_settled_synthetic_buck_and_its_quantities_match_themselves():
     manifest = load_manifest(CANONICAL_BUCK)
     result = _synthetic_buck(manifest)
     window = check_preconditions(result, manifest)
-    metrics = steady_state_metrics(result, manifest, window)
-    assert all(check["passed"] for check in analytic_invariants(metrics, manifest)), analytic_invariants(metrics, manifest)
-    assert metrics["i_L"]["peak_to_peak"] == pytest.approx(6.0, rel=0.02)
-    assert all(row["passed"] for row in compare_metrics(metrics, metrics, manifest))
+    quantities = steady_state_quantities(result, manifest, window)
+    assert all(check["passed"] for check in analytic_invariants(quantities, manifest)), analytic_invariants(quantities, manifest)
+    assert quantities["i_L"]["peak_to_peak"] == pytest.approx(6.0, rel=0.02)
+    assert all(row["passed"] for row in compare_quantities(quantities, quantities, manifest))
 
 
 @pytest.mark.parametrize(
@@ -127,17 +134,19 @@ def test_oracle_rejects_a_failed_simulation_result():
         check_preconditions(SimulationResult(task_id="x", success=False, error_message="boom"), manifest)
 
 
-def test_metric_comparison_uses_symmetric_error_and_per_unit_floors():
+def test_quantity_comparison_uses_symmetric_error_and_per_unit_floors():
     manifest = load_manifest(CANONICAL_BUCK)
     reference = {"i_L": {"mean": 4.0, "peak_to_peak": 6.0}, "v_in": {"peak_to_peak": 0.0}, "i_C": {"mean": 0.0}}
     actual = {"i_L": {"mean": 4.1, "peak_to_peak": 6.5}, "v_in": {"peak_to_peak": 0.04}, "i_C": {"mean": 0.009}}
-    rows = {(r["signal"], r["metric"]): r for r in compare_metrics(actual, reference, manifest)}
+    rows = {(r["signal"], r["quantity"]): r for r in compare_quantities(actual, reference, manifest)}
     assert rows[("i_L", "mean")]["error"] == pytest.approx(0.1 / 4.1) and rows[("i_L", "mean")]["passed"] is False
     assert rows[("i_L", "peak_to_peak")]["passed"] is True  # 7.7 % < 10 %
     assert rows[("v_in", "peak_to_peak")]["passed"] is True  # both below the 50 mV floor
     assert rows[("i_C", "mean")]["passed"] is True  # both below the 10 mA floor
-    missing = compare_metrics({}, reference, manifest)
+    missing = compare_quantities({}, reference, manifest)
     assert all(row["passed"] is False and row["reason"] == "signal missing" for row in missing)
+    strict = {(r["signal"], r["quantity"]): r for r in compare_quantities(actual, reference, manifest, absolute_floor={})}
+    assert strict[("i_C", "mean")]["passed"] is False  # without floors the relative rule applies everywhere
 
 
 # --- the converter acceptance pack, without LTspice --------------------------------------------
@@ -196,7 +205,7 @@ def test_comparator_passes_an_equivalent_pair_and_fails_a_drifted_one():
 
     drifted = _payload(_synthetic_buck(manifest, ripple=7.0))  # 17 % more inductor ripple than PLECS
     report = compare_pair(plecs, drifted, manifest)
-    failed = {(r["signal"], r["metric"]) for r in report["comparison"] if not r["passed"]}
+    failed = {(r["signal"], r["quantity"]) for r in report["comparison"] if not r["passed"]}
     assert not report["passed"] and ("i_L", "peak_to_peak") in failed
 
     with pytest.raises(OracleError, match="SPICE export failed a precondition"):
