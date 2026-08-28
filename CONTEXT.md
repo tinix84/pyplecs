@@ -20,6 +20,10 @@ _Avoid_: Netlist model, intermediate representation, circuit graph
 The part of a Topology Document that records which regions of a schematic the canonicalizer understood and which it folded in as normalized bytes. A degraded region can cause a miss, never a wrong hit.
 _Avoid_: Fallback list, unsupported list
 
+**Design Quantity**:
+A number or named waveform an engineer's decision turns on — stress, efficiency, loss, ripple — computed on demand from one Simulation Result under a Signal Map and an optional steady-state window. It is never stored in a Cache Record.
+_Avoid_: Derived result, post-processing, metric, KPI
+
 **Documentation MCP Server**:
 The read-only MCP surface that exposes the PLECS and PyPLECS documentation catalogue. It helps an Orchestrator discover APIs and component information, but cannot create a Simulation Task.
 _Avoid_: PyPLECS MCP, live MCP
@@ -47,6 +51,10 @@ _Avoid_: PLECS response, raw result data
 **Simulation Result**:
 The validated PyPLECS outcome of one simulation, representing either successful output or an explicit failure.
 _Avoid_: Parsed result, response payload
+
+**Signal Map**:
+The caller's declaration of which Simulation Result columns are the voltage and current of each component and port. PyPLECS infers no role from a signal name; a role not declared is not computed.
+_Avoid_: Probe convention, naming convention, channel list
 
 **Simulation MCP Server**:
 The executable MCP surface that accepts simulation requests, exposes Simulation Task progress, and returns Simulation Results. It is a transport over PyPLECS simulation behavior, not a documentation catalogue.
