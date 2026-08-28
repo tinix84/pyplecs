@@ -39,6 +39,7 @@ class RecordingPlecsAdapter:
 def _config(tmp_path, *, batch_size=8, queue_size=100):
     config = ConfigManager(search_paths=[])
     config.update("cache.directory", str(tmp_path / "cache"))
+    config.update("plecs.version", "test")
     config.update("orchestration.retry_attempts", 1)
     config.update("orchestration.retry_delay", 0)
     config.update("orchestration.max_concurrent_simulations", batch_size)

@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Sequence, runt
 
 from pyplecs.contracts import SimulationOrchestratorBase, TaskPriority
 
-from ..cache import SimulationCache
+from ..cache import PlecsEnvironment, SimulationCache
 from ..config import ConfigManager, get_config
 from ..core.models import SimulationRequest, SimulationResult, SimulationStatus
 from ..normalization import normalize_plecs_result
@@ -109,7 +109,9 @@ class SimulationOrchestrator(SimulationOrchestratorBase):
         cache: Optional[SimulationCache] = None,
     ):
         self.config = config or get_config()
-        self._cache = cache or SimulationCache(self.config.cache)
+        self._cache = cache or SimulationCache(
+            self.config.cache, environment=PlecsEnvironment.detect(self.config.plecs)
+        )
         self._plecs: Optional[PlecsSimulationPort] = plecs_server
         self.batch_size = (
             batch_size or self.config.orchestration.max_concurrent_simulations

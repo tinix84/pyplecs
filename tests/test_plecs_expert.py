@@ -154,12 +154,10 @@ def test_pyplecs_wrappers_introspectable():
 
 def test_mcp_tools_register():
     """Importing pyplecs.mcp.plecs_tools exposes the expected 8 tools."""
-    from pyplecs.mcp.plecs_tools import TOOL_REGISTRY
+    from pyplecs.mcp.plecs_tools import TOOL_CATALOGUE
 
-    assert set(TOOL_REGISTRY) == EXPECTED_MCP_TOOLS, (
-        f"tool registry mismatch: extra={set(TOOL_REGISTRY) - EXPECTED_MCP_TOOLS} "
-        f"missing={EXPECTED_MCP_TOOLS - set(TOOL_REGISTRY)}"
+    assert set(TOOL_CATALOGUE.names) == EXPECTED_MCP_TOOLS, (
+        f"tool catalogue mismatch: extra={set(TOOL_CATALOGUE.names) - EXPECTED_MCP_TOOLS} "
+        f"missing={EXPECTED_MCP_TOOLS - set(TOOL_CATALOGUE.names)}"
     )
-    # Each entry is callable
-    for name, fn in TOOL_REGISTRY.items():
-        assert callable(fn), f"{name} not callable"
+    assert all(callable(definition.handler) for definition in TOOL_CATALOGUE.definitions)

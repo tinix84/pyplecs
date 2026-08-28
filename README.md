@@ -98,7 +98,7 @@ pyplecs/
 ├── studies/            finite Parametric Study expansion and reduction
 ├── tas/                standalone TAS electrical projection and service
 ├── converter/          Circuit Model plus deterministic emitters
-├── cache/              simulation result caching
+├── cache/              result caching keyed by topology/params/solver/PLECS version
 ├── api/                REST endpoints
 ├── webgui/             dashboard
 ├── mcp/                MCP server
