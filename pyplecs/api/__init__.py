@@ -12,6 +12,7 @@ from ..config import ConfigManager, get_config
 from ..core.models import SimulationRequest, SimulationStatus
 from ..orchestration import SimulationOrchestrator, TaskPriority
 from .converter import router as converter_router
+from .quantities import create_quantities_router
 from .simulation_sync import router as sync_router
 from .tas import create_tas_router
 
@@ -98,6 +99,7 @@ def _get_app(config: Optional[ConfigManager] = None):
     _app = create_api_app(resolved_config)
     _app.include_router(sync_router, prefix=resolved_config.api.prefix)
     _app.include_router(converter_router, prefix=resolved_config.api.prefix)
+    _app.include_router(create_quantities_router(get_orchestrator), prefix=resolved_config.api.prefix)
     _app.include_router(
         create_tas_router(
             get_orchestrator,

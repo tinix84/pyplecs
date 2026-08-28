@@ -19,6 +19,8 @@ does not carry status (the issue tracker does that).
 | [0008](0008-pyproject-and-uv-own-dependencies.md) | pyproject and uv own environment and dependencies | Accepted |
 | [0009](0009-tas-is-broader-than-pyplecs-electrical-projection.md) | TAS remains broader than the PyPLECS electrical projection | Accepted |
 | [0010](0010-cache-record-identity-is-a-composite-topology-key.md) | Cache Record identity is a composite topology key that never claims equality it cannot prove | Accepted |
+| [0011](0011-two-mcp-servers-two-trust-levels.md) | The Simulation MCP Server is a second server, not a mode of the Documentation MCP Server | Accepted |
+| [0012](0012-design-quantities-are-computed-on-demand.md) | Design Quantities are computed on demand under a caller-declared Signal Map, never cached | Accepted |
 
 ## Writing one
 

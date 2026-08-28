@@ -84,7 +84,8 @@ Console entry points:
 | `pyplecs-setup configure-plecs` | Locate PLECS, write local config |
 | `pyplecs-api` | Start the REST API |
 | `pyplecs-gui` | Start the web dashboard |
-| `pyplecs-mcp` | Start the MCP server (stdio) |
+| `pyplecs-mcp` | Start the Documentation MCP Server (stdio, read-only) |
+| `pyplecs-mcp-sim` | Start the Simulation MCP Server (stdio; submits and reads simulations) |
 
 ## Where things live
 
@@ -98,10 +99,11 @@ pyplecs/
 ├── studies/            finite Parametric Study expansion and reduction
 ├── tas/                standalone TAS electrical projection and service
 ├── converter/          Circuit Model plus deterministic emitters
+├── quantities.py       Design Quantities: waveforms, stress, efficiency from a Simulation Result
 ├── cache/              result caching keyed by topology/params/solver/PLECS version
 ├── api/                REST endpoints
 ├── webgui/             dashboard
-├── mcp/                MCP server
+├── mcp/                Documentation and Simulation MCP Servers
 ├── cli/                pyplecs-setup
 └── config.py           configuration loading
 ```
@@ -120,9 +122,8 @@ layering.
 
 ## Contributing
 
-Branch off `master` (`feat/`, `fix/`, `docs/`, `test/` + short description),
-commit in [Conventional Commits](https://www.conventionalcommits.org/) form,
-open a PR. Never push to `master` directly.
+Branch off `master` (`feat/`, `fix/`, `docs/`, `test/` + short description), commit in
+[Conventional Commits](https://www.conventionalcommits.org/) form, open a PR. Never push to `master` directly.
 
 ```bash
 uv run ruff check .    # must be clean
@@ -144,7 +145,6 @@ available:
 PYPLECS_RUN_LIVE_TAS=1 uv run pytest -q tests/test_tas_live.py
 ```
 
-There is no GitHub Actions CI — a pre-push hook covers lint and the
-platform-independent tests; PLECS-dependent tests are run by hand on Windows.
+There is no GitHub Actions CI — a pre-push hook covers lint and the platform-independent tests; PLECS-dependent tests are run by hand on Windows.
 
 Licensed under the terms in [LICENSE](https://github.com/tinix84/pyplecs/blob/master/LICENSE).

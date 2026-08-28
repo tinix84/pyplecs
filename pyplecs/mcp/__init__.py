@@ -1,6 +1,8 @@
 """MCP server for PyPLECS.
 
-Exposes the plecs-expert skill content and pyplecs introspection over stdio.
+Exposes the plecs-expert skill content and pyplecs introspection over stdio
+(Documentation MCP Server), and the Simulation Task lifecycle over stdio
+(Simulation MCP Server, `pyplecs-mcp-sim`, in `pyplecs.mcp.simulation_server`).
 
 The `mcp` SDK is an OPTIONAL dependency. Importing this module raises
 ImportError when `mcp` isn't installed, which lets the top-level
