@@ -1,0 +1,176 @@
+{
+  "model_file": "data/simple_buck_prb.plecs",
+  "name": "canonical buck",
+  "operating_point": {
+    "derived": {
+      "duty_ratio": "Vo_ref / Vi",
+      "inductor_ripple": "(Vi - Vo_ref) * (Vo_ref / Vi) / (fs * Lo)",
+      "load_resistance": "Vo_ref ** 2 / (Vi * Ii_max)"
+    },
+    "name": "nominal",
+    "parameters": {
+      "Co": 0.0001,
+      "Ii_max": 2.0,
+      "Lo": 1e-05,
+      "T_sim": 0.001,
+      "Vi": 24.0,
+      "Vo_ref": 12.0,
+      "fs": 100000.0
+    }
+  },
+  "plecs": {
+    "observed": {
+      "date": "2026-08-28",
+      "executable": "D:/OneDrive/Documenti/Plexim/PLECS 4.7 (64 bit)/plecs.exe",
+      "raw_result": {
+        "keys": [
+          "Time",
+          "Values"
+        ],
+        "samples": 1205,
+        "signals": 13,
+        "time_span": [
+          0.0,
+          0.001
+        ]
+      },
+      "wall_time_s": 0.18
+    },
+    "version": "4.7.7",
+    "xmlrpc": {
+      "host": "localhost",
+      "port": 1080
+    }
+  },
+  "required_signals": [
+    "i_L",
+    "v_C"
+  ],
+  "signal_map": {
+    "components": {
+      "C1": {
+        "current": "i_C",
+        "voltage": "v_C"
+      },
+      "D1": {
+        "current": "i_D",
+        "voltage": "v_D"
+      },
+      "L1": {
+        "current": "i_L",
+        "voltage": "v_L"
+      },
+      "R1": {
+        "current": "i_R",
+        "voltage": "v_R"
+      },
+      "S1": {
+        "current": "i_S",
+        "voltage": "v_S"
+      }
+    },
+    "ports": {
+      "input": {
+        "current": "i_in",
+        "voltage": "v_in"
+      },
+      "output": {
+        "current": "i_R",
+        "voltage": "v_R"
+      }
+    }
+  },
+  "signal_order_note": "The all_prb probe emits each component's signals in the component's native order (voltage before current for the source, switch, diode, capacitor and resistor; current before voltage for the inductor; the MOSFET gate last), not in the order listed in the .plecs probe block.",
+  "signals": [
+    "v_in",
+    "i_in",
+    "v_S",
+    "i_S",
+    "gate_S",
+    "v_D",
+    "i_D",
+    "i_L",
+    "v_L",
+    "v_C",
+    "i_C",
+    "v_R",
+    "i_R"
+  ],
+  "spice": {
+    "asc_key_scalars": [
+      [
+        "v_R",
+        "mean"
+      ],
+      [
+        "i_L",
+        "rms"
+      ]
+    ],
+    "compared_signals": [
+      "v_in",
+      "i_in",
+      "v_S",
+      "i_S",
+      "v_D",
+      "i_D",
+      "i_L",
+      "v_L",
+      "v_C",
+      "i_C",
+      "v_R",
+      "i_R"
+    ],
+    "evidence_inbox": "tests/evidence/<model>/<operating point>/spice/{cir,asc}.raw \u2014 produced by `LTspice.exe -b -ascii <deck>` (helper: set PYPLECS_LTSPICE to the executable)",
+    "note": "Expressions over the LTspice export of the emitted .cir; signed sums of raw variables. Polarity: LTspice's I(Vsource) is positive into the + terminal, so the delivered source current is -I(VDCin). LTspice reports a voltage-controlled switch current opposite to PLECS' drain-to-source MOSFET current, so i_S is -I(S_FET1).",
+    "signals": {
+      "gate_S": "V(n_gate_fet1)",
+      "i_C": "I(C1)",
+      "i_D": "I(D1)",
+      "i_L": "I(L1)",
+      "i_R": "I(R1)",
+      "i_S": "-I(S_FET1)",
+      "i_in": "-I(VDCin)",
+      "v_C": "V(n003)",
+      "v_D": "-V(n001)",
+      "v_L": "V(n001)-V(n003)",
+      "v_R": "V(n003)",
+      "v_S": "V(n002)-V(n001)",
+      "v_in": "V(n002)"
+    }
+  },
+  "tolerances": {
+    "absolute_floor": {
+      "A": 0.01,
+      "V": 0.05
+    },
+    "convergence": 0.01,
+    "relative": {
+      "maximum": 0.05,
+      "mean": 0.02,
+      "minimum": 0.05,
+      "peak_to_peak": 0.1,
+      "rms": 0.02
+    },
+    "transport_agreement": 0.001
+  },
+  "units": {
+    "gate_S": "V",
+    "i_C": "A",
+    "i_D": "A",
+    "i_L": "A",
+    "i_R": "A",
+    "i_S": "A",
+    "i_in": "A",
+    "v_C": "V",
+    "v_D": "V",
+    "v_L": "V",
+    "v_R": "V",
+    "v_S": "V",
+    "v_in": "V"
+  },
+  "window": {
+    "periods": 5,
+    "switching_frequency_parameter": "fs"
+  }
+}

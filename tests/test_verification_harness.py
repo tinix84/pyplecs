@@ -72,11 +72,11 @@ def test_isolated_config_never_reads_the_machine_config(tmp_path, monkeypatch):
 # --- the oracle itself, on synthetic waveforms -----------------------------------------------
 
 
-def _synthetic_buck(manifest, *, span=1e-3, points=2001, ripple=6.0, growth=0.0, drop=(), time=None):
+def _synthetic_buck(manifest, *, span=1e-3, points=20001, ripple=6.0, growth=0.0, drop=(), time=None):
     """A settled buck at the manifest's Operating Point: triangular i_L, flat v_C, everything mapped."""
     p, d = manifest.parameters, manifest.derived()
     t = np.linspace(0.0, span, points) if time is None else np.asarray(time, dtype=float)
-    phase = (t * p["fs"]) % 1.0
+    phase = (t * p["fs"] + 1e-9) % 1.0  # nudge off the exact duty boundary so both grids classify edges alike
     tri = np.where(phase < d["duty_ratio"], phase / d["duty_ratio"], (1 - phase) / (1 - d["duty_ratio"])) - 0.5
     v_out = 0.98 * d["duty_ratio"] * p["Vi"]
     i_out = v_out / d["load_resistance"]
@@ -110,8 +110,8 @@ def test_oracle_passes_a_settled_synthetic_buck_and_its_metrics_match_themselves
     "kwargs, cause",
     [
         ({"drop": ("v_C",)}, "required signals missing"),
-        ({"time": np.r_[np.linspace(0, 5e-4, 1000), np.linspace(5e-4, 1e-3, 1001)]}, "strictly increasing"),
-        ({"span": 2e-5, "points": 41}, "window cannot be cut"),
+        ({"time": np.r_[np.linspace(0, 5e-4, 10000), np.linspace(5e-4, 1e-3, 10001)]}, "strictly increasing"),
+        ({"span": 2e-5, "points": 401}, "window cannot be cut"),
         ({"growth": 20.0}, "has not converged"),
     ],
 )
@@ -138,3 +138,84 @@ def test_metric_comparison_uses_symmetric_error_and_per_unit_floors():
     assert rows[("i_C", "mean")]["passed"] is True  # both below the 10 mA floor
     missing = compare_metrics({}, reference, manifest)
     assert all(row["passed"] is False and row["reason"] == "signal missing" for row in missing)
+
+
+# --- the converter acceptance pack, without LTspice --------------------------------------------
+
+from .verification.spice import (  # noqa: E402
+    MissingEvidenceError,
+    asc_structure,
+    compare_pair,
+    dedupe_time,
+    evaluate_expressions,
+    overlay_svg,
+    phase_aligned_nrmse,
+    read_ltspice_ascii_raw,
+)
+
+RAW_SAMPLE = REPO_ROOT / "tests" / "fixtures" / "ltspice_ascii_sample.raw"
+
+
+def test_ltspice_ascii_raw_reader_and_signed_expressions():
+    trace = read_ltspice_ascii_raw(RAW_SAMPLE)
+    assert trace.header["Plotname"] == "Transient Analysis" and list(trace.time) == [0.0, 5e-4, 1e-3]
+    mapped = evaluate_expressions(trace, {"v_S": "V(n002)-V(n001)", "i_in": "-I(VDCin)", "v_in": "v(N002)"})
+    assert list(mapped["v_S"]) == [23.0, 22.0, 21.0]
+    assert list(mapped["i_in"]) == [2.0, 3.0, 4.0]
+    assert list(mapped["v_in"]) == [24.0, 24.0, 24.0]
+    with pytest.raises(MissingEvidenceError, match="not in the export"):
+        evaluate_expressions(trace, {"x": "I(L1)"})
+    with pytest.raises(MissingEvidenceError, match="not found"):
+        read_ltspice_ascii_raw(RAW_SAMPLE.with_name("nope.raw"))
+
+
+def test_ltspice_reader_refuses_a_deck_that_did_not_run(tmp_path):
+    empty = tmp_path / "asc.raw"
+    empty.write_text(RAW_SAMPLE.read_text(encoding="utf-8").replace("No. Points:            3", "No. Points:            0"), encoding="utf-8")
+    with pytest.raises(MissingEvidenceError, match="0 points"):
+        read_ltspice_ascii_raw(empty)
+
+
+def test_repeated_spice_time_stamps_are_collapsed_to_a_strictly_increasing_axis():
+    time, signals = dedupe_time(np.array([0.0, 1.0, 1.0, 2.0]), {"x": np.array([0.0, 1.0, 5.0, 2.0])})
+    assert list(time) == [0.0, 1.0, 2.0] and list(signals["x"]) == [0.0, 5.0, 2.0]
+
+
+def _payload(result):
+    frame = result.timeseries_data
+    return {"time": frame["Time"].tolist(), "signals": {c: frame[c].tolist() for c in frame.columns if c != "Time"}}
+
+
+def test_comparator_passes_an_equivalent_pair_and_fails_a_drifted_one():
+    manifest = load_manifest(CANONICAL_BUCK)
+    plecs = _payload(_synthetic_buck(manifest))
+    spice = _payload(_synthetic_buck(manifest, points=30001))  # a denser, non-multiple grid of the same circuit
+    report = compare_pair(plecs, spice, manifest)
+    assert report["passed"], [r for r in report["comparison"] if not r["passed"]]
+    assert report["advisory"]["reference"] == "i_L" and report["advisory"]["nrmse"]["i_L"] < 0.05
+
+    drifted = _payload(_synthetic_buck(manifest, ripple=7.0))  # 17 % more inductor ripple than PLECS
+    report = compare_pair(plecs, drifted, manifest)
+    failed = {(r["signal"], r["metric"]) for r in report["comparison"] if not r["passed"]}
+    assert not report["passed"] and ("i_L", "peak_to_peak") in failed
+
+    with pytest.raises(OracleError, match="SPICE export failed a precondition"):
+        compare_pair(plecs, _payload(_synthetic_buck(manifest, drop=("v_C",))), manifest)
+
+
+def test_phase_alignment_uses_one_lag_for_every_signal():
+    manifest = load_manifest(CANONICAL_BUCK)
+    plecs = _payload(_synthetic_buck(manifest))
+    shifted = _synthetic_buck(manifest, time=np.linspace(0.0, 1e-3, 20001) + 2.5e-6)  # quarter period late
+    advisory = phase_aligned_nrmse(plecs, _payload(shifted), manifest)
+    assert advisory["lag_samples"] == pytest.approx(250, abs=2)
+    assert max(advisory["nrmse"].values()) < 0.05
+
+
+def test_overlay_and_asc_structure_are_plain_text():
+    manifest = load_manifest(CANONICAL_BUCK)
+    payload = _payload(_synthetic_buck(manifest))
+    svg = overlay_svg(payload, payload, manifest)
+    assert svg.startswith("<svg") and svg.count("<polyline") == 4
+    asc = "Version 4\nSHEET 1 880 680\nWIRE 0 0 1 1\nSYMBOL res 0 0 R0\nSYMBOL cap 0 0 R0\nFLAG 0 0 0\n"
+    assert asc_structure(asc) == {"symbols": 2, "wires": 1, "ground_flags": 1}
