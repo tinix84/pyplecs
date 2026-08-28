@@ -1,0 +1,28 @@
+* simple_buck_prb -- converted from PLECS
+.param T_sim=1e-3
+.param dt=1e-6
+.param Vi=24
+.param Ii_max=2
+.param Vo_ref=12
+.param fs=100e3
+.param Lo=10e-6
+.param Co=100e-6
+.param Ldm=1e-6
+.param Cdm=10e-6
+.param ron=100e-3
+.param Vf_d=0.05
+.param Ron_d=1e-4
+.param D=Vo_ref/Vi
+.param Po=Vi*Ii_max
+.param Ro=Vo_ref^2/Po
+VDCin N002 0 {Vi}
+R1 N003 0 {Ro}
+L1 N001 N003 {Lo} ic=0
+C1 N003 0 {Co} ic={Vo_ref}
+D1 0 N001 DMOD_D1
+S_FET1 N002 N001 N_GATE_FET1 0 SW_FET1
+V_GATE_FET1 N_GATE_FET1 0 PULSE(0 1 0 1n 1n {D/fs} {1/fs})
+.model DMOD_D1 D(Vfwd={Vf_d} Ron={Ron_d})
+.model SW_FET1 SW(Ron={ron} Roff=1e9 Vt=0.5 Vh=0)
+.tran 1e-3
+.end

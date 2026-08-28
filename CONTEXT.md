@@ -12,6 +12,10 @@ _Avoid_: Cache entry, cached payload
 The tool-neutral representation of one circuit as components and nets, produced by a parser and consumed by an emitter. It is the single seam every interchange format passes through; no format-to-format path bypasses it.
 _Avoid_: Netlist model, intermediate representation, circuit graph
 
+**Documentation MCP Server**:
+The read-only MCP surface that exposes the PLECS and PyPLECS documentation catalogue. It helps an Orchestrator discover APIs and component information, but cannot create a Simulation Task.
+_Avoid_: PyPLECS MCP, live MCP
+
 **Operating Point**:
 One named parameter vector describing a condition the converter is asked to run at. It carries values, not results; a set of them is what a Parametric Study expands over.
 _Avoid_: OP, test point, working point, case
@@ -31,6 +35,10 @@ _Avoid_: PLECS response, raw result data
 **Simulation Result**:
 The validated PyPLECS outcome of one simulation, representing either successful output or an explicit failure.
 _Avoid_: Parsed result, response payload
+
+**Simulation MCP Server**:
+The executable MCP surface that accepts simulation requests, exposes Simulation Task progress, and returns Simulation Results. It is a transport over PyPLECS simulation behavior, not a documentation catalogue.
+_Avoid_: PyPLECS MCP, docs MCP, live MCP
 
 **Simulation Task**:
 The tracked execution of one simulation request from acceptance through a terminal outcome.
