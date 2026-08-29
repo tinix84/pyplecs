@@ -98,7 +98,7 @@ pyplecs/
 ├── orchestration/      priority queue, batch execution
 ├── studies/            finite Parametric Study expansion and reduction
 ├── tas/                standalone TAS electrical projection and service
-├── converter/          Circuit Model plus deterministic emitters
+├── converter/          Circuit Model, .plecs/.asc parsers, deterministic emitters
 ├── quantities.py       Design Quantities: waveforms, stress, efficiency from a Simulation Result
 ├── cache/              result caching keyed by topology/params/solver/PLECS version
 ├── api/                REST endpoints
@@ -142,7 +142,7 @@ pack, are opt-in by marker and skip or fail with a named reason ([ADR-0013](http
 
 ```bash
 uv run pytest -m live_plecs             # canonical buck through Python, REST and MCP
-uv run pytest -m converter_acceptance   # emitted .cir/.asc versus PLECS (needs an LTspice export)
+uv run pytest -m converter_acceptance   # .cir/.asc vs PLECS, LTspice RC step imported to PLECS
 ```
 
 There is no GitHub Actions CI — a pre-push hook covers lint and the platform-independent tests; PLECS-dependent tests are run by hand on Windows.
