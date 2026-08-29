@@ -244,3 +244,12 @@ def test_parse_plecs_text_keeps_brace_list_values_across_continuation_lines():
     axis = document["Plecs"]["Schematic"]["Component"]["Axis"]
     assert axis["Signals"] == '{"Load Current", "Inductor Current", "Average Inductor Current"}'
     assert axis["SignalTypes"] == ()
+
+
+def test_plecs_power_operator_becomes_spice_power_in_every_emitted_expression():
+    """PLECS ``^`` is power; in SPICE/LTspice ``^`` is XOR, so ``Ro=Vo_ref^2/Po`` silently loaded the buck with the wrong resistor (#20)."""
+    circuit = parse_plecs(DATA_DIR / "simple_buck_prb.plecs")
+    spice = plecs_to_spice(circuit)
+    ltspice = plecs_to_ltspice(circuit)
+    assert ".param Ro=Vo_ref**2/Po" in spice and "^" not in spice
+    assert "!.param Ro=Vo_ref**2/Po" in ltspice and "^" not in ltspice

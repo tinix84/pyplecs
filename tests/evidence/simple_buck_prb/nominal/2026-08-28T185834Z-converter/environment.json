@@ -1,0 +1,11 @@
+{
+  "ltspice": "LTspice 26.0.1 for Windows",
+  "ltspice_command": "Linear Technology Corporation LTspice",
+  "ltspice_directives": ".tran 1e-3 (emitted), method trap (LTspice default)",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "plecs": "live PLECS 4.7.7 at localhost:1080",
+  "plecs_solver": "radau, MaxStep 1e-6 (model settings)",
+  "pyplecs": "1.0.0",
+  "python": "3.14.0",
+  "recorded_at": "2026-08-28T18:58:35.805892+00:00"
+}

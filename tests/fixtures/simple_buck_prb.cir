@@ -14,7 +14,7 @@
 .param Ron_d=1e-4
 .param D=Vo_ref/Vi
 .param Po=Vi*Ii_max
-.param Ro=Vo_ref^2/Po
+.param Ro=Vo_ref**2/Po
 VDCin N002 0 {Vi}
 R1 N003 0 {Ro}
 L1 N001 N003 {Lo} ic=0

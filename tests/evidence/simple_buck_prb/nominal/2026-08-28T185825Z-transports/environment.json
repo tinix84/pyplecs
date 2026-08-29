@@ -1,0 +1,8 @@
+{
+  "endpoint": "localhost:1080",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "plecs_version": "4.7.7",
+  "pyplecs": "1.0.0",
+  "python": "3.14.0",
+  "recorded_at": "2026-08-28T18:58:25.894137+00:00"
+}

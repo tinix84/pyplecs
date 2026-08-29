@@ -96,3 +96,13 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["F841"]
+
+[tool.pytest.ini_options]
+# Live checks talk to a licensed PLECS and are opt-in (ADR-0013):
+#   uv run pytest -m live_plecs
+#   uv run pytest -m converter_acceptance
+addopts = "-m 'not live_plecs and not converter_acceptance'"
+markers = [
+    "live_plecs: needs the configured PLECS XML-RPC endpoint; skips with the endpoint in the reason when unreachable",
+    "converter_acceptance: semi-manual converter acceptance pack; needs a SPICE export and fails naming the missing evidence",
+]

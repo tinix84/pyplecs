@@ -1,0 +1,6 @@
+- ✓ symbols_equal_circuit_model_components
+- ✗ has_ground_flag
+- ✗ has_gate_source
+- ✗ nets_equal_circuit_model_nets
+- ✗ loads_and_runs
+- ✗ loads and runs: D:\OneDrive\claude\pyplecs\tests\evidence\simple_buck_prb\nominal\spice\asc.raw recorded 0 points: LTspice did not run the deck (see its .log)

@@ -1,0 +1,713 @@
+{
+  "comparison": [
+    {
+      "actual": 24.0,
+      "error": 0.0,
+      "expected": 24.0,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "v_in",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 24.0,
+      "error": 0.0,
+      "expected": 24.0,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "v_in",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 24.0,
+      "error": 0.0,
+      "expected": 24.0,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "v_in",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 24.0,
+      "error": 0.0,
+      "expected": 24.0,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "v_in",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 0.0,
+      "error": 0.0,
+      "expected": 0.0,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "v_in",
+      "tolerance": 0.1
+    },
+    {
+      "actual": 1.9670900594093432,
+      "error": 0.0,
+      "expected": 1.9670900594093432,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "i_in",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 3.033509068874245,
+      "error": 0.0,
+      "expected": 3.033509068874245,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "i_in",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 0.0,
+      "error": 0.0,
+      "expected": 0.0,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "i_in",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 6.882829059624374,
+      "error": 0.0,
+      "expected": 6.882829059624374,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "i_in",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 6.882829059624374,
+      "error": 0.0,
+      "expected": 6.882829059624374,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "i_in",
+      "tolerance": 0.1
+    },
+    {
+      "actual": 12.221904406493898,
+      "error": 0.0,
+      "expected": 12.221904406493898,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "v_S",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 17.00889974777649,
+      "error": 0.0,
+      "expected": 17.00889974777649,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "v_S",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 0.09361282852807645,
+      "error": 0.0,
+      "expected": 0.09361282852807645,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "v_S",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 24.050688282905966,
+      "error": 0.0,
+      "expected": 24.050688282905966,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "v_S",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 23.95707545437789,
+      "error": 0.0,
+      "expected": 23.95707545437789,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "v_S",
+      "tolerance": 0.1
+    },
+    {
+      "actual": 1.9670900594093432,
+      "error": 0.0,
+      "expected": 1.9670900594093432,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "i_S",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 3.033509068874245,
+      "error": 0.0,
+      "expected": 3.033509068874245,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "i_S",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 0.0,
+      "error": 0.0,
+      "expected": 0.0,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "i_S",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 6.882829059624374,
+      "error": 0.0,
+      "expected": 6.882829059624374,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "i_S",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 6.882829059624374,
+      "error": 0.0,
+      "expected": 6.882829059624374,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "i_S",
+      "tolerance": 0.1
+    },
+    {
+      "actual": 0.49999999999972894,
+      "error": 0.0,
+      "expected": 0.49999999999972894,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "gate_S",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 0.707106781186028,
+      "error": 0.0,
+      "expected": 0.707106781186028,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "gate_S",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 0.0,
+      "error": 0.0,
+      "expected": 0.0,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "gate_S",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 1.0,
+      "error": 0.0,
+      "expected": 1.0,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "gate_S",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 1.0,
+      "error": 0.0,
+      "expected": 1.0,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "gate_S",
+      "tolerance": 0.1
+    },
+    {
+      "actual": -11.778095593506102,
+      "error": 0.0,
+      "expected": -11.778095593506102,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "v_D",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 16.692850539024302,
+      "error": 0.0,
+      "expected": 16.692850539024302,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "v_D",
+      "tolerance": 0.02
+    },
+    {
+      "actual": -23.906387171471923,
+      "error": 0.0,
+      "expected": -23.906387171471923,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "v_D",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 0.05068828290596557,
+      "error": 0.0,
+      "expected": 0.05068828290596557,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "v_D",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 23.95707545437789,
+      "error": 0.0,
+      "expected": 23.95707545437789,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "v_D",
+      "tolerance": 0.1
+    },
+    {
+      "actual": 1.9540054644437874,
+      "error": 0.0,
+      "expected": 1.9540054644437874,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "i_D",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 3.0169366915785223,
+      "error": 0.0,
+      "expected": 3.0169366915785223,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "i_D",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 0.0,
+      "error": 0.0,
+      "expected": 0.0,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "i_D",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 6.88282905965562,
+      "error": 0.0,
+      "expected": 6.88282905965562,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "i_D",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 6.88282905965562,
+      "error": 0.0,
+      "expected": 6.88282905965562,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "i_D",
+      "tolerance": 0.1
+    },
+    {
+      "actual": 3.92109552385313,
+      "error": 0.0,
+      "expected": 3.92109552385313,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "i_L",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 4.278327274994462,
+      "error": 0.0,
+      "expected": 4.278327274994462,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "i_L",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 0.9361282852807645,
+      "error": 0.0,
+      "expected": 0.9361282852807645,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "i_L",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 6.88282905965562,
+      "error": 0.0,
+      "expected": 6.88282905965562,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "i_L",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 5.946700774374856,
+      "error": 0.0,
+      "expected": 5.946700774374856,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "i_L",
+      "tolerance": 0.1
+    },
+    {
+      "actual": -0.004620873115519092,
+      "error": 0.0,
+      "expected": -0.004620873115519092,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "v_L",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 11.85267589440895,
+      "error": 0.0,
+      "expected": 11.85267589440895,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "v_L",
+      "tolerance": 0.02
+    },
+    {
+      "actual": -11.869762609451193,
+      "error": 0.0,
+      "expected": -11.869762609451193,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "v_L",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 12.126636288908058,
+      "error": 0.0,
+      "expected": 12.126636288908058,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "v_L",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 23.996398898359253,
+      "error": 0.0,
+      "expected": 23.996398898359253,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "v_L",
+      "tolerance": 0.1
+    },
+    {
+      "actual": 11.782716466621622,
+      "error": 0.0,
+      "expected": 11.782716466621622,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "v_C",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 11.782745250277587,
+      "error": 0.0,
+      "expected": 11.782745250277587,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "v_C",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 11.745648127588666,
+      "error": 0.0,
+      "expected": 11.745648127588666,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "v_C",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 11.819311451094059,
+      "error": 0.0,
+      "expected": 11.819311451094059,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "v_C",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 0.07366332350539295,
+      "error": 0.0,
+      "expected": 0.07366332350539295,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "v_C",
+      "tolerance": 0.1
+    },
+    {
+      "actual": -0.006476631687409741,
+      "error": 0.0,
+      "expected": -0.006476631687409741,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "i_C",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 1.7114440271673657,
+      "error": 0.0,
+      "expected": 1.7114440271673657,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "i_C",
+      "tolerance": 0.02
+    },
+    {
+      "actual": -2.990455342240524,
+      "error": 0.0,
+      "expected": -2.990455342240524,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "i_C",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 2.9548090467153525,
+      "error": 0.0,
+      "expected": 2.9548090467153525,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "i_C",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 5.945264388955876,
+      "error": 0.0,
+      "expected": 5.945264388955876,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "i_C",
+      "tolerance": 0.1
+    },
+    {
+      "actual": 11.782716466621622,
+      "error": 0.0,
+      "expected": 11.782716466621622,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "v_R",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 11.782745250277587,
+      "error": 0.0,
+      "expected": 11.782745250277587,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "v_R",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 11.745648127588666,
+      "error": 0.0,
+      "expected": 11.745648127588666,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "v_R",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 11.819311451094059,
+      "error": 0.0,
+      "expected": 11.819311451094059,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "v_R",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 0.07366332350539295,
+      "error": 0.0,
+      "expected": 0.07366332350539295,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "v_R",
+      "tolerance": 0.1
+    },
+    {
+      "actual": 3.92757215554054,
+      "error": 0.0,
+      "expected": 3.92757215554054,
+      "passed": true,
+      "quantity": "mean",
+      "signal": "i_R",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 3.9275817500925294,
+      "error": 0.0,
+      "expected": 3.9275817500925294,
+      "passed": true,
+      "quantity": "rms",
+      "signal": "i_R",
+      "tolerance": 0.02
+    },
+    {
+      "actual": 3.915216042529555,
+      "error": 0.0,
+      "expected": 3.915216042529555,
+      "passed": true,
+      "quantity": "minimum",
+      "signal": "i_R",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 3.9397704836980196,
+      "error": 0.0,
+      "expected": 3.9397704836980196,
+      "passed": true,
+      "quantity": "maximum",
+      "signal": "i_R",
+      "tolerance": 0.05
+    },
+    {
+      "actual": 0.024554441168464614,
+      "error": 0.0,
+      "expected": 0.024554441168464614,
+      "passed": true,
+      "quantity": "peak_to_peak",
+      "signal": "i_R",
+      "tolerance": 0.1
+    }
+  ],
+  "invariants": [
+    {
+      "check": "v_C mean within [0.9\u00b7D\u00b7Vi, D\u00b7Vi]",
+      "passed": true,
+      "value": 11.782716466621622
+    },
+    {
+      "check": "v_C \u2248 v_R (same node) within 0.1 %",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "i_R mean \u2248 v_R mean / Ro within 2 %",
+      "passed": true,
+      "value": 3.92757215554054
+    },
+    {
+      "check": "i_L mean \u2248 i_R mean within 2 %",
+      "passed": true,
+      "value": 3.92109552385313
+    },
+    {
+      "check": "i_L peak-to-peak within 15 % of analytic ripple",
+      "passed": true,
+      "value": 5.946700774374856
+    }
+  ],
+  "quantities": {
+    "gate_S": {
+      "maximum": 1.0,
+      "mean": 0.49999999999972894,
+      "minimum": 0.0,
+      "peak_to_peak": 1.0,
+      "rms": 0.707106781186028
+    },
+    "i_C": {
+      "maximum": 2.9548090467153525,
+      "mean": -0.006476631687409741,
+      "minimum": -2.990455342240524,
+      "peak_to_peak": 5.945264388955876,
+      "rms": 1.7114440271673657
+    },
+    "i_D": {
+      "maximum": 6.88282905965562,
+      "mean": 1.9540054644437874,
+      "minimum": 0.0,
+      "peak_to_peak": 6.88282905965562,
+      "rms": 3.0169366915785223
+    },
+    "i_L": {
+      "maximum": 6.88282905965562,
+      "mean": 3.92109552385313,
+      "minimum": 0.9361282852807645,
+      "peak_to_peak": 5.946700774374856,
+      "rms": 4.278327274994462
+    },
+    "i_R": {
+      "maximum": 3.9397704836980196,
+      "mean": 3.92757215554054,
+      "minimum": 3.915216042529555,
+      "peak_to_peak": 0.024554441168464614,
+      "rms": 3.9275817500925294
+    },
+    "i_S": {
+      "maximum": 6.882829059624374,
+      "mean": 1.9670900594093432,
+      "minimum": 0.0,
+      "peak_to_peak": 6.882829059624374,
+      "rms": 3.033509068874245
+    },
+    "i_in": {
+      "maximum": 6.882829059624374,
+      "mean": 1.9670900594093432,
+      "minimum": 0.0,
+      "peak_to_peak": 6.882829059624374,
+      "rms": 3.033509068874245
+    },
+    "v_C": {
+      "maximum": 11.819311451094059,
+      "mean": 11.782716466621622,
+      "minimum": 11.745648127588666,
+      "peak_to_peak": 0.07366332350539295,
+      "rms": 11.782745250277587
+    },
+    "v_D": {
+      "maximum": 0.05068828290596557,
+      "mean": -11.778095593506102,
+      "minimum": -23.906387171471923,
+      "peak_to_peak": 23.95707545437789,
+      "rms": 16.692850539024302
+    },
+    "v_L": {
+      "maximum": 12.126636288908058,
+      "mean": -0.004620873115519092,
+      "minimum": -11.869762609451193,
+      "peak_to_peak": 23.996398898359253,
+      "rms": 11.85267589440895
+    },
+    "v_R": {
+      "maximum": 11.819311451094059,
+      "mean": 11.782716466621622,
+      "minimum": 11.745648127588666,
+      "peak_to_peak": 0.07366332350539295,
+      "rms": 11.782745250277587
+    },
+    "v_S": {
+      "maximum": 24.050688282905966,
+      "mean": 12.221904406493898,
+      "minimum": 0.09361282852807645,
+      "peak_to_peak": 23.95707545437789,
+      "rms": 17.00889974777649
+    },
+    "v_in": {
+      "maximum": 24.0,
+      "mean": 24.0,
+      "minimum": 24.0,
+      "peak_to_peak": 0.0,
+      "rms": 24.0
+    }
+  },
+  "window": {
+    "periods": 5,
+    "switching_frequency": 100000.0
+  }
+}
