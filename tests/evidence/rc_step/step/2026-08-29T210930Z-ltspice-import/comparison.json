@@ -1,0 +1,42 @@
+{
+  "analytic_passed": true,
+  "at_time": 5e-06,
+  "checkpoints": {
+    "3tau": {
+      "analytic": 0.950212931632136,
+      "candidate": 0.9502129316321274,
+      "candidate_error": 8.659739592076221e-15,
+      "reference": 0.9502129387424342,
+      "reference_error": 7.110298128054637e-09,
+      "t": 0.003
+    },
+    "end": {
+      "analytic": 0.9932620530009145,
+      "candidate": 0.9932620530009142,
+      "candidate_error": 3.3306690738754696e-16,
+      "reference": 0.9932620558074453,
+      "reference_error": 2.806530785548489e-09,
+      "t": 0.005
+    },
+    "tau": {
+      "analytic": 0.6321205588285577,
+      "candidate": 0.6321205588284782,
+      "candidate_error": 7.949196856316121e-14,
+      "reference": 0.6321205500548944,
+      "reference_error": 8.77366324036899e-09,
+      "t": 0.001
+    }
+  },
+  "grid": {
+    "points": 2001,
+    "span": 0.005
+  },
+  "max_relative_difference": 1.062332822959755e-07,
+  "max_relative_error_vs_analytic": {
+    "candidate": 1.2468792700420783e-07,
+    "reference": 1.0623332983000083e-07
+  },
+  "passed": true,
+  "signal": "v_C",
+  "tolerance": 0.01
+}

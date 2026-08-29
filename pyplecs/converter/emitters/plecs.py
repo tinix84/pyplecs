@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Sequence
 
-from ..circuit import Circuit, Component, Net
+from ..circuit import Circuit, Component, Net, Pin, Point
 
 
 @dataclass(frozen=True)
@@ -195,6 +195,8 @@ def _connection_block(net: Net, component_types: Mapping[str, str]) -> list[str]
         or (component_types.get(pin.component) == "Mosfet" and pin.terminal == 3)
         for pin in pins
     )
+    if net.segments and all(pin in net.pin_points for pin in pins):
+        return _routed_connection_block(net, pins, signal)
     source = pins[0]
     lines = [
         "    Connection {",
@@ -221,6 +223,167 @@ def _connection_block(net: Net, component_types: Mapping[str, str]) -> list[str]
             )
     lines.append("    }")
     return lines
+
+
+def _routed_connection_block(net: Net, pins: list[Pin], signal: bool) -> list[str]:
+    """Route ``net``'s Connection block along its drawn wires instead of a flat pin list (#94)."""
+    source = pins[0]
+    attach: dict[Point, list[Pin]] = {}
+    for pin in pins:
+        attach.setdefault(net.pin_points[pin], []).append(pin)
+
+    protected = set(net.pin_points.values())
+    adjacency = _segment_graph(net.segments, protected)
+    _prune_dangling_stubs(adjacency, protected)
+
+    source_point = net.pin_points[source]
+    tree_children: dict[Point, list[Point]] = {}
+    reachable: set[Point] = set()
+    if source_point in adjacency:
+        _build_spanning_tree(adjacency, source_point, None, reachable, tree_children)
+
+    lines = [
+        "    Connection {",
+        f"      Type          {'Signal' if signal else 'Wire'}",
+        f'      SrcComponent  "{_quoted(source.component)}"',
+        f"      SrcTerminal   {source.terminal}",
+    ]
+    lines.extend(_walk_net(source_point, None, [source_point], tree_children, attach, source, 6))
+    for pin in pins[1:]:
+        if net.pin_points[pin] not in reachable:
+            lines.extend(_branch_dst(pin, 6))
+    lines.append("    }")
+    return lines
+
+
+def _segment_graph(segments: list[tuple[Point, Point]], extra_nodes: set) -> dict[Point, set]:
+    """Build the wire graph: nodes are segment endpoints plus pin attach points lying on them."""
+    all_points = set(extra_nodes)
+    for start, end in segments:
+        all_points.add(start)
+        all_points.add(end)
+    adjacency: dict[Point, set] = {}
+    for start, end in segments:
+        on_segment = [point for point in all_points if _on_segment(point, start, end)]
+        on_segment.sort(key=lambda p: (p[0] - start[0]) * (end[0] - start[0]) + (p[1] - start[1]) * (end[1] - start[1]))
+        for a, b in zip(on_segment, on_segment[1:]):
+            adjacency.setdefault(a, set()).add(b)
+            adjacency.setdefault(b, set()).add(a)
+    return adjacency
+
+
+def _on_segment(point: Point, start: Point, end: Point) -> bool:
+    (px, py), (x1, y1), (x2, y2) = point, start, end
+    if (x2 - x1) * (py - y1) != (y2 - y1) * (px - x1):
+        return False
+    return min(x1, x2) <= px <= max(x1, x2) and min(y1, y2) <= py <= max(y1, y2)
+
+
+def _prune_dangling_stubs(adjacency: dict[Point, set], protected: set) -> None:
+    """Repeatedly drop degree-<=1 nodes that carry no pin (a dangling body/ground-flag stub)."""
+    changed = True
+    while changed:
+        changed = False
+        for node in list(adjacency):
+            neighbors = adjacency.get(node)
+            if neighbors is not None and len(neighbors) <= 1 and node not in protected:
+                for neighbor in neighbors:
+                    adjacency[neighbor].discard(node)
+                del adjacency[node]
+                changed = True
+
+
+def _build_spanning_tree(
+    adjacency: dict[Point, set],
+    node: Point,
+    parent: Point | None,
+    visited: set,
+    tree_children: dict[Point, list[Point]],
+) -> None:
+    visited.add(node)
+    children = [
+        neighbor for neighbor in sorted(adjacency.get(node, ())) if neighbor != parent and neighbor not in visited
+    ]
+    for child in children:
+        visited.add(child)
+    tree_children[node] = children
+    for child in children:
+        _build_spanning_tree(adjacency, child, node, visited, tree_children)
+
+
+def _walk_net(
+    node: Point,
+    prev: Point | None,
+    run: list[Point],
+    tree_children: dict[Point, list[Point]],
+    attach: Mapping[Point, list[Pin]],
+    exclude_pin: Pin | None,
+    indent: int,
+) -> list[str]:
+    """Emit Points/Dst/Branch lines walking the spanning tree from ``node`` onward (plan step 4)."""
+    while True:
+        pins_here = [pin for pin in attach.get(node, ()) if pin != exclude_pin]
+        children = tree_children.get(node, [])
+
+        if not pins_here and not children:
+            return []
+
+        if not pins_here and len(children) == 1:
+            child = children[0]
+            if prev is not None and _run_direction(prev, node) != _run_direction(node, child):
+                run.append(node)
+            prev, node = node, child
+            continue
+
+        if len(pins_here) == 1 and not children:
+            run.append(node)
+            return _points_line(run, indent) + _dst_lines(pins_here[0], indent)
+
+        run.append(node)
+        lines = _points_line(run, indent)
+        for pin in pins_here:
+            lines.extend(_branch_dst(pin, indent))
+        for child in children:
+            lines.extend(_branch_child(child, node, tree_children, attach, indent))
+        return lines
+
+
+def _branch_child(
+    child: Point,
+    parent: Point,
+    tree_children: dict[Point, list[Point]],
+    attach: Mapping[Point, list[Pin]],
+    indent: int,
+) -> list[str]:
+    inner_indent = indent + 2
+    body = _walk_net(child, parent, [], tree_children, attach, None, inner_indent)
+    return [f"{' ' * indent}Branch {{", *body, f"{' ' * indent}}}"]
+
+
+def _branch_dst(pin: Pin, indent: int) -> list[str]:
+    inner_indent = indent + 2
+    return [f"{' ' * indent}Branch {{", *_dst_lines(pin, inner_indent), f"{' ' * indent}}}"]
+
+
+def _dst_lines(pin: Pin, indent: int) -> list[str]:
+    return [
+        f'{" " * indent}DstComponent  "{_quoted(pin.component)}"',
+        f"{' ' * indent}DstTerminal   {pin.terminal}",
+    ]
+
+
+def _points_line(run: list[Point], indent: int) -> list[str]:
+    if not run:
+        return []
+    points = "; ".join(f"{x}, {y}" for x, y in run)
+    return [f"{' ' * indent}Points        [{points}]"]
+
+
+def _run_direction(a: Point, b: Point) -> tuple[int, int]:
+    def sign(v: int) -> int:
+        return (v > 0) - (v < 0)
+
+    return (sign(b[0] - a[0]), sign(b[1] - a[1]))
 
 
 def _validate_graph(components: Iterable[Component], nets: Iterable[Net]) -> None:
