@@ -78,6 +78,13 @@ def test_malformed_or_unknown_shapes_are_explicit_failures(raw, message):
     assert message in result.error_message
 
 
+def _http_request():
+    """A request whose app carries no resolved config: the route falls back to PlecsServer defaults."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace()))
+
+
 @pytest.mark.asyncio
 async def test_synchronous_adapter_uses_shared_normalization(monkeypatch):
     class FakePlecsServer:
@@ -101,7 +108,7 @@ async def test_synchronous_adapter_uses_shared_normalization(monkeypatch):
         signal_map={0: "Vo"},
     )
 
-    response = await simulation_sync.run_simulation_sync(request)
+    response = await simulation_sync.run_simulation_sync(request, _http_request())
 
     assert response.success is True
     assert response.time == [0.0, 1.0]
@@ -128,7 +135,8 @@ async def test_synchronous_adapter_returns_failed_simulation_result(monkeypatch)
     monkeypatch.setattr(simulation_sync, "PlecsServer", FakePlecsServer)
 
     response = await simulation_sync.run_simulation_sync(
-        simulation_sync.SyncSimulationRequest(model_file="buck.plecs")
+        simulation_sync.SyncSimulationRequest(model_file="buck.plecs"),
+        _http_request(),
     )
 
     assert response.success is False

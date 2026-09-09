@@ -1,0 +1,26 @@
+Title: sample.cir
+Date: Fri Aug 28 20:25:27 2026
+Plotname: Transient Analysis
+Flags: real forward
+No. Variables: 4
+No. Points:            3
+Offset:    0.0000000000000000e+00
+Command: Linear Technology Corporation LTspice
+Variables:
+	0	time	time
+	1	V(n001)	voltage
+	2	V(n002)	voltage
+	3	I(VDCin)	device_current
+Values:
+0		0.000000000000000e+00
+	1.000000000000000e+00
+	2.400000000000000e+01
+	-2.000000000000000e+00
+1		5.000000000000000e-04
+	2.000000000000000e+00
+	2.400000000000000e+01
+	-3.000000000000000e+00
+2		1.000000000000000e-03
+	3.000000000000000e+00
+	2.400000000000000e+01
+	-4.000000000000000e+00

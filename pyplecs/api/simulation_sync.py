@@ -7,10 +7,10 @@ and returns results directly (no task queue / polling).
 import logging
 import time
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from ..normalization import normalize_plecs_result
+from ..normalization import normalize_plecs_result, simulation_result_payload
 from ..pyplecs import PlecsServer
 
 logger = logging.getLogger(__name__)
@@ -37,16 +37,22 @@ class SyncSimulationResponse(BaseModel):
 
 
 @router.post("/simulations/sync", response_model=SyncSimulationResponse)
-async def run_simulation_sync(request: SyncSimulationRequest):
+async def run_simulation_sync(request: SyncSimulationRequest, http_request: Request):
     """Run a PLECS simulation synchronously and return results.
 
     This endpoint blocks until the simulation completes. Use for
     single-shot validation runs where polling overhead is undesirable.
     """
     t_start = time.perf_counter()
+    plecs_config = getattr(getattr(http_request.app.state, "config", None), "plecs", None)
+    server_options = (
+        {"port": str(plecs_config.xmlrpc_port), "auto_launch": plecs_config.auto_launch}
+        if plecs_config is not None
+        else {}
+    )
 
     try:
-        with PlecsServer(model_file=request.model_file) as server:
+        with PlecsServer(model_file=request.model_file, **server_options) as server:
             raw = server.simulate(parameters=request.parameters or None)
     except Exception as e:
         logger.error("PLECS simulation failed: %s", e)
@@ -71,16 +77,8 @@ async def run_simulation_sync(request: SyncSimulationRequest):
             error_message=result.error_message,
         )
 
-    timeseries = result.timeseries_data
-    time_vec = timeseries["Time"].tolist() if "Time" in timeseries else []
-    signals = {
-        column: timeseries[column].tolist()
-        for column in timeseries.columns
-        if column != "Time"
-    }
     return SyncSimulationResponse(
         success=True,
-        time=time_vec,
-        signals=signals,
+        **simulation_result_payload(result),
         metadata={**result.metadata, "execution_time": round(elapsed, 4)},
     )

@@ -25,7 +25,7 @@ def _to_text(value: Any) -> str:
     return json.dumps(value, indent=2, default=str)
 
 
-def build_server(catalogue: ToolCatalogue = TOOL_CATALOGUE) -> Server:
+def build_server(catalogue: ToolCatalogue = TOOL_CATALOGUE, *, name: str = "pyplecs-mcp") -> Server:
     async def list_tools(_context: Any, _params: Any) -> ListToolsResult:
         return ListToolsResult(
             tools=[
@@ -41,7 +41,7 @@ def build_server(catalogue: ToolCatalogue = TOOL_CATALOGUE) -> Server:
     async def call_tool(
         _context: Any, params: CallToolRequestParams
     ) -> CallToolResult:
-        outcome = catalogue.dispatch(params.name, params.arguments)
+        outcome = await catalogue.dispatch_async(params.name, params.arguments)
         text = outcome.error if not outcome.success else _to_text(outcome.value)
         return CallToolResult(
             content=[TextContent(type="text", text=text)],
@@ -49,7 +49,7 @@ def build_server(catalogue: ToolCatalogue = TOOL_CATALOGUE) -> Server:
         )
 
     return Server(
-        "pyplecs-mcp",
+        name,
         on_list_tools=list_tools,
         on_call_tool=call_tool,
     )

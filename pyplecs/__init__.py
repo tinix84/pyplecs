@@ -49,6 +49,16 @@ from .core import (
 )
 from .normalization import normalize_plecs_result
 from .orchestration import SimulationOrchestrator, TaskPriority
+from .quantities import (
+    DesignQuantities,
+    SignalMap,
+    SignalPair,
+    SteadyStateWindow,
+    capture_waveforms,
+    component_stress,
+    design_quantities,
+    power_balance,
+)
 from .studies import (
     CollectResultsReducer,
     ExplicitParameterVectorStrategy,
@@ -141,6 +151,15 @@ __all__ = [
     "ParametricStudy",
     "ParametricStudyOutcome",
     "ParametricStudyStatus",
+    # Design Quantities
+    "DesignQuantities",
+    "SignalMap",
+    "SignalPair",
+    "SteadyStateWindow",
+    "capture_waveforms",
+    "component_stress",
+    "design_quantities",
+    "power_balance",
     # TAS electrical projection
     "DiagnosticSeverity",
     "TasCapture",

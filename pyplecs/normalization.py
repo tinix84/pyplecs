@@ -7,6 +7,8 @@ import pandas as pd
 
 from .core.models import SimulationResult
 
+TIME_COLUMN = "Time"
+
 
 def normalize_plecs_result(
     raw_result: Any,
@@ -54,6 +56,21 @@ def normalize_plecs_result(
             cached=cached,
             plecs_version=plecs_version,
         )
+
+
+def simulation_result_payload(result: SimulationResult) -> dict[str, Any]:
+    """The transport shape of a normalized Simulation Result: ``time`` plus named ``signals``.
+
+    REST routes and the Simulation MCP Server all call this, so signal naming
+    has exactly one locality (#46).
+    """
+    frame = result.timeseries_data
+    if frame is None:
+        return {"time": [], "signals": {}}
+    return {
+        "time": frame[TIME_COLUMN].tolist() if TIME_COLUMN in frame.columns else [],
+        "signals": {column: frame[column].tolist() for column in frame.columns if column != TIME_COLUMN},
+    }
 
 
 def _normalize_mapping(
