@@ -1,5 +1,6 @@
 """LTspice ``.asc`` import into the Circuit Model, and out again as a runnable ``.plecs`` (#43 track 1)."""
 
+import re
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,101 @@ from pyplecs.converter.ltspice_parser import (
 
 FIXTURES = Path(__file__).parent / "fixtures"
 RC_STEP = FIXTURES / "rc_step.asc"
+
+
+def _connection_block(text: str, src_component: str) -> str:
+    match = re.search(
+        rf'    Connection \{{\n(?:.*\n)*?      SrcComponent  "{re.escape(src_component)}"\n(?:.*\n)*?    \}}\n',
+        text,
+    )
+    assert match, f"no Connection block found with SrcComponent {src_component!r}"
+    return match.group(0)
+
+
+def test_rc_step_component_geometry_matches_the_authored_drawing():
+    """Position/Direction are derived from the two absolute pin points (#94); verified by hand against the fixture."""
+    circuit = parse_ltspice(RC_STEP)
+    by_name = {c.name: c for c in circuit.components}
+    assert by_name["V1"].position == (60, 85) and by_name["V1"].direction == "up"
+    assert by_name["R1"].position == (175, 60) and by_name["R1"].direction == "right"
+    assert by_name["C1"].position == (210, 80) and by_name["C1"].direction == "up"
+    assert all(not c.flipped for c in circuit.components)
+
+
+def test_rc_step_routing_follows_the_authored_wires():
+    """Connection Points/Branch geometry follows the drawn wires (#94), pruning dangling body/ground stubs."""
+    text = ltspice_to_plecs(RC_STEP)
+
+    n001 = _connection_block(text, "R1")
+    assert 'SrcTerminal   2' in n001
+    assert "Points        [150, 60; 60, 60]" in n001
+    assert 'DstComponent  "V1"' in n001 and "DstTerminal   1" in n001
+    assert "80" not in re.search(r"Points\s+\[[^\]]*\]", n001).group(0)
+
+    n002 = _connection_block(text, "C1")
+    # C1 sources both non-ground nets; pick the one destined for R1 terminal 1
+    n002_block = next(
+        block
+        for block in re.findall(r'    Connection \{\n(?:.*\n)*?    \}\n', text)
+        if 'SrcComponent  "C1"' in block and 'DstComponent  "R1"' in block
+    )
+    assert 'SrcTerminal   1' in n002_block
+    assert "Points        [210, 60; 200, 60]" in n002_block
+    assert "DstTerminal   1" in n002_block
+
+    ground_block = next(
+        block
+        for block in re.findall(r'    Connection \{\n(?:.*\n)*?    \}\n', text)
+        if 'SrcComponent  "C1"' in block and 'DstComponent  "V1"' in block
+    )
+    assert 'SrcTerminal   2' in ground_block
+    assert "Points        [210, 100; 210, 130; 60, 130; 60, 110]" in ground_block
+    assert "DstTerminal   2" in ground_block
+    assert "140" not in text  # the FLAG 96 224 0 stub (scaled y=140) is pruned
+
+
+@pytest.mark.parametrize(
+    "orient, expected_direction",
+    [
+        ("R0", "up"),
+        ("R90", "right"),
+        ("R180", "down"),
+        ("R270", "left"),
+        ("M0", "up"),
+        ("M90", "left"),
+        ("M180", "down"),
+        ("M270", "right"),
+    ],
+)
+def test_symbol_direction_reflects_which_side_terminal_one_faces(orient, expected_direction):
+    """Direction names the side terminal 1 faces (#94); Flipped is never emitted for a two-terminal part."""
+    text = (
+        f"Version 4\nSHEET 1 400 400\nSYMBOL res 100 100 {orient}\nSYMATTR InstName R1\nSYMATTR Value 1\n"
+        "TEXT 0 0 Left 2 !.tran 1m\n"
+    )
+    circuit = parse_ltspice_text(text)
+    component = circuit.components[0]
+    assert component.direction == expected_direction
+    assert component.flipped is False
+
+
+def test_pass_through_pins_emit_branches_at_the_interior_points():
+    """Four pins share one wire; the two interior ones must appear as Dst branches, not swallowed (#94)."""
+    text = (
+        "Version 4\nSHEET 1 400 400\n"
+        "WIRE 0 100 300 100\n"
+        "SYMBOL res 100 84 R90\nSYMATTR InstName R1\nSYMATTR Value 1\n"
+        "SYMBOL res 300 84 R90\nSYMATTR InstName R2\nSYMATTR Value 1\n"
+        "FLAG 150 100 mid\n"
+        "TEXT 0 0 Left 2 !.tran 1m\n"
+    )
+    circuit = parse_ltspice_text(text)
+    text_out = ltspice_to_plecs(circuit)
+    block = _connection_block(text_out, min(p.component for p in circuit.nets[0].pins))
+    # every pin ends up either as the Src, a leaf Dst, or a Branch Dst
+    for pin in circuit.nets[0].pins:
+        assert f'"{pin.component}"' in block
+    assert block.count("Branch {") >= 2
 
 
 def test_rc_step_schematic_becomes_the_circuit_model_ltspice_netlists():

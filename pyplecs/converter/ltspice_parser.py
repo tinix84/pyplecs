@@ -28,9 +28,6 @@ SYMBOL_PINS: dict[str, tuple[tuple[int, int], ...]] = {
 # LTspice symbol → PLECS component type, the inverse of the SPICE mapper table.
 SYMBOL_TYPES = {mapping.symbol: plecs_type for plecs_type, mapping in COMPONENT_MAPPINGS.items() if mapping.symbol in SYMBOL_PINS}
 
-# LTspice orientation → cosmetic PLECS direction (connections are by terminal, so this is layout only).
-_DIRECTIONS = {0: "down", 90: "left", 180: "up", 270: "right"}
-
 _SUFFIXES = {"t": "e12", "g": "e9", "meg": "e6", "k": "e3", "m": "e-3", "u": "e-6", "µ": "e-6", "n": "e-9", "p": "e-12", "f": "e-15"}
 _SUFFIXED_NUMBER = re.compile(r"(?<![\w.])(\d+\.?\d*|\.\d+)(meg|[tgkmunpfµ])(?![\w])", re.IGNORECASE)
 
@@ -87,24 +84,44 @@ def parse_ltspice_text(text: str, *, name: str = "circuit") -> Circuit:
             initial = re.search(r"\bic=(\S+)", attrs.get("SpiceLine", ""))
             if initial:
                 parameters[mapping.initial_parameter] = to_plecs_expression(initial.group(1))
-        rotation = int(symbol["orient"][1:] or 0) % 360
+        absolute_pins = [
+            (symbol["x"] + dx, symbol["y"] + dy)
+            for dx, dy in (transform_offset(symbol["orient"], *offset) for offset in SYMBOL_PINS[symbol["symbol"]])
+        ]
+        p1, p2 = absolute_pins
         components.append(
             Component(
                 name=component_name,
                 type=plecs_type,
-                position=(symbol["x"] // 2, symbol["y"] // 2),
-                direction=_DIRECTIONS[rotation],
-                flipped=symbol["orient"].startswith("M"),
+                position=_scale(((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)),
+                direction=_direction(p1, p2),
+                flipped=False,
                 parameters=parameters,
             )
         )
-        for terminal, offset in enumerate(SYMBOL_PINS[symbol["symbol"]], start=1):
-            dx, dy = transform_offset(symbol["orient"], *offset)
-            pin_points.append((Pin(component_name, terminal), (symbol["x"] + dx, symbol["y"] + dy)))
+        for terminal, point in enumerate(absolute_pins, start=1):
+            pin_points.append((Pin(component_name, terminal), point))
 
     nets = _build_nets(wires, flags, pin_points)
     raw_params = _parameters(directives)
     return Circuit(name=name, components=components, nets=nets, raw_params=raw_params)
+
+
+def _scale(point: tuple[float, float]) -> tuple[int, int]:
+    """LTspice (grid 16) → Circuit Model/PLECS (grid 10) schematic coordinates."""
+    x, y = point
+    return (round(x * 5 / 8), round(y * 5 / 8))
+
+
+def _direction(p1: tuple[int, int], p2: tuple[int, int]) -> str:
+    """PLECS Direction names the side terminal 1 (``p1``) faces, derived from the two pin points."""
+    if p1[1] < p2[1]:
+        return "up"
+    if p1[1] > p2[1]:
+        return "down"
+    if p1[0] < p2[0]:
+        return "left"
+    return "right"
 
 
 def transform_offset(orient: str, x: int, y: int) -> tuple[int, int]:
@@ -198,6 +215,11 @@ def _build_nets(
             nets[root] = Net(name=name)
             order.append(root)
         nets[root].pins.append(pin)
+        nets[root].pin_points[pin] = _scale(point)
+    for start, end in wires:  # a wire whose root owns no pin belongs to no net; drop it
+        root = find(start)
+        if root in nets:
+            nets[root].segments.append((_scale(start), _scale(end)))
     return [nets[root] for root in order]
 
 

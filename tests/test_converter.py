@@ -17,6 +17,7 @@ from pyplecs.converter import (
     plecs_to_spice,
 )
 from pyplecs.converter.cli import main as converter_main
+from pyplecs.converter.emitters import emit_plecs
 from pyplecs.converter.mapper import map_component, spice_expression
 from pyplecs.converter.parser import PlecsParseError, parse_plecs_text
 
@@ -244,6 +245,43 @@ def test_parse_plecs_text_keeps_brace_list_values_across_continuation_lines():
     axis = document["Plecs"]["Schematic"]["Component"]["Axis"]
     assert axis["Signals"] == '{"Load Current", "Inductor Current", "Average Inductor Current"}'
     assert axis["SignalTypes"] == ()
+
+
+def test_routed_connection_regression_lock_for_plecs_native_circuits():
+    """parse_plecs never populates segments/pin_points (#94); emit_plecs must stay byte-identical for such circuits."""
+    circuit = parse_plecs(DATA_DIR / "simple_buck_prb.plecs")
+    assert all(not net.segments and not net.pin_points for net in circuit.nets)
+
+    text = emit_plecs(circuit)
+
+    assert "Points" not in text
+    ground = next(net for net in circuit.nets if net.name == "0")
+    assert len(ground.pins) == 4
+    block = next(
+        m.group(0)
+        for m in re.finditer(r'    Connection \{\n(?:.*\n)*?    \}\n', text)
+        if 'SrcComponent  "C1"' in m.group(0) and 'SrcTerminal   2' in m.group(0)
+    )
+    expected = (
+        '    Connection {\n'
+        '      Type          Wire\n'
+        '      SrcComponent  "C1"\n'
+        '      SrcTerminal   2\n'
+        '      Branch {\n'
+        '        DstComponent  "D1"\n'
+        '        DstTerminal   1\n'
+        '      }\n'
+        '      Branch {\n'
+        '        DstComponent  "R1"\n'
+        '        DstTerminal   2\n'
+        '      }\n'
+        '      Branch {\n'
+        '        DstComponent  "VDCin"\n'
+        '        DstTerminal   2\n'
+        '      }\n'
+        '    }\n'
+    )
+    assert block == expected
 
 
 def test_plecs_power_operator_becomes_spice_power_in_every_emitted_expression():
