@@ -64,3 +64,8 @@ config/default.yml
 # uv-managed environment
 .venv/
 uv.lock.bak
+
+# Evidence Bundles (ADR-0013): manifests, metrics and summaries are tracked; raw series and overlays are not
+tests/evidence/**/raw/
+tests/evidence/**/*.svg
+tests/evidence/**/spice/

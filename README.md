@@ -98,7 +98,7 @@ pyplecs/
 ├── orchestration/      priority queue, batch execution
 ├── studies/            finite Parametric Study expansion and reduction
 ├── tas/                standalone TAS electrical projection and service
-├── converter/          Circuit Model plus deterministic emitters
+├── converter/          Circuit Model, .plecs/.asc parsers, deterministic emitters
 ├── quantities.py       Design Quantities: waveforms, stress, efficiency from a Simulation Result
 ├── cache/              result caching keyed by topology/params/solver/PLECS version
 ├── api/                REST endpoints
@@ -133,16 +133,16 @@ uv run pytest   # full suite: needs Windows + PLECS on port 1080
 Platform-independent subset, which is also what the pre-push gate runs:
 
 ```bash
-uv run pytest -q tests/test_installer.py tests/test_entrypoint.py \
-          tests/test_install_full.py tests/test_abc_contract.py \
-          tests/test_plecs_expert.py
+uv run pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_full.py \
+          tests/test_abc_contract.py tests/test_plecs_expert.py
 ```
 
-The Band 1 live TAS smoke is opt-in and skips clearly when PLECS XML-RPC is not
-available:
+Live checks against the installed PLECS, and the semi-manual converter acceptance
+pack, are opt-in by marker and skip or fail with a named reason ([ADR-0013](https://github.com/tinix84/pyplecs/blob/master/docs/adr/0013-live-verification-is-opt-in-and-compares-design-quantities.md)):
 
 ```bash
-PYPLECS_RUN_LIVE_TAS=1 uv run pytest -q tests/test_tas_live.py
+uv run pytest -m live_plecs             # canonical buck through Python, REST and MCP
+uv run pytest -m converter_acceptance   # .cir/.asc vs PLECS, LTspice RC step imported to PLECS
 ```
 
 There is no GitHub Actions CI — a pre-push hook covers lint and the platform-independent tests; PLECS-dependent tests are run by hand on Windows.

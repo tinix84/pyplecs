@@ -10,6 +10,7 @@ from ..mapper import (
     sanitize_identifier,
     spice_expression,
     spice_instance_name,
+    to_spice_operators,
 )
 
 
@@ -18,7 +19,7 @@ def emit_spice(circuit: Circuit) -> str:
     pin_nets = {pin: net.name for net in circuit.nets for pin in net.pins}
     lines = [f"* {circuit.name} -- converted from PLECS"]
     for name, value in circuit.raw_params.items():
-        lines.append(f".param {sanitize_identifier(name)}={value}")
+        lines.append(f".param {sanitize_identifier(name)}={to_spice_operators(value)}")
 
     model_lines: list[str] = []
     gate_lines: list[str] = []

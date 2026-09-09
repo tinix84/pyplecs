@@ -14,8 +14,9 @@ from pyplecs.contracts import TaskPriority
 
 from ..converter import parse_plecs
 from ..core.models import SimulationRequest, SimulationResult, SimulationStatus
+from ..normalization import simulation_result_payload
 from ..orchestration import TERMINAL_STATUSES, SimulationOrchestrator, SimulationTaskSnapshot
-from ..quantities import TIME_COLUMN, design_quantities_payload
+from ..quantities import design_quantities_payload
 from .plecs_tools import ToolCatalogue, ToolDefinition
 
 MAX_WAIT_SECONDS = 600.0
@@ -41,17 +42,10 @@ def snapshot_payload(snapshot: SimulationTaskSnapshot) -> dict[str, Any]:
 
 def result_payload(result: SimulationResult) -> dict[str, Any]:
     """The normalized Simulation Result: ``time`` plus named ``signals``."""
-    frame = result.timeseries_data
-    time: list[float] = []
-    signals: dict[str, list[float]] = {}
-    if frame is not None:
-        time = frame[TIME_COLUMN].tolist() if TIME_COLUMN in frame.columns else []
-        signals = {column: frame[column].tolist() for column in frame.columns if column != TIME_COLUMN}
     return {
         "task_id": result.task_id,
         "success": result.success,
-        "time": time,
-        "signals": signals,
+        **simulation_result_payload(result),
         "metadata": dict(result.metadata),
         "cached": result.cached,
         "execution_time": result.execution_time,
