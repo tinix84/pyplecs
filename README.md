@@ -84,7 +84,8 @@ Console entry points:
 | `pyplecs-setup configure-plecs` | Locate PLECS, write local config |
 | `pyplecs-api` | Start the REST API |
 | `pyplecs-gui` | Start the web dashboard |
-| `pyplecs-mcp` | Start the MCP server (stdio) |
+| `pyplecs-mcp` | Start the Documentation MCP Server (stdio, read-only) |
+| `pyplecs-mcp-sim` | Start the Simulation MCP Server (stdio; submits and reads simulations) |
 
 ## Where things live
 
@@ -97,11 +98,12 @@ pyplecs/
 ├── orchestration/      priority queue, batch execution
 ├── studies/            finite Parametric Study expansion and reduction
 ├── tas/                standalone TAS electrical projection and service
-├── converter/          Circuit Model plus deterministic emitters
-├── cache/              simulation result caching
+├── converter/          Circuit Model, .plecs/.asc parsers, deterministic emitters
+├── quantities.py       Design Quantities: waveforms, stress, efficiency from a Simulation Result
+├── cache/              result caching keyed by topology/params/solver/PLECS version
 ├── api/                REST endpoints
 ├── webgui/             dashboard
-├── mcp/                MCP server
+├── mcp/                Documentation and Simulation MCP Servers
 ├── cli/                pyplecs-setup
 └── config.py           configuration loading
 ```
@@ -120,9 +122,8 @@ layering.
 
 ## Contributing
 
-Branch off `master` (`feat/`, `fix/`, `docs/`, `test/` + short description),
-commit in [Conventional Commits](https://www.conventionalcommits.org/) form,
-open a PR. Never push to `master` directly.
+Branch off `master` (`feat/`, `fix/`, `docs/`, `test/` + short description), commit in
+[Conventional Commits](https://www.conventionalcommits.org/) form, open a PR. Never push to `master` directly.
 
 ```bash
 uv run ruff check .    # must be clean
@@ -132,19 +133,18 @@ uv run pytest   # full suite: needs Windows + PLECS on port 1080
 Platform-independent subset, which is also what the pre-push gate runs:
 
 ```bash
-uv run pytest -q tests/test_installer.py tests/test_entrypoint.py \
-          tests/test_install_full.py tests/test_abc_contract.py \
-          tests/test_plecs_expert.py
+uv run pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_full.py \
+          tests/test_abc_contract.py tests/test_plecs_expert.py
 ```
 
-The Band 1 live TAS smoke is opt-in and skips clearly when PLECS XML-RPC is not
-available:
+Live checks against the installed PLECS, and the semi-manual converter acceptance
+pack, are opt-in by marker and skip or fail with a named reason ([ADR-0013](https://github.com/tinix84/pyplecs/blob/master/docs/adr/0013-live-verification-is-opt-in-and-compares-design-quantities.md)):
 
 ```bash
-PYPLECS_RUN_LIVE_TAS=1 uv run pytest -q tests/test_tas_live.py
+uv run pytest -m live_plecs             # canonical buck through Python, REST and MCP
+uv run pytest -m converter_acceptance   # .cir/.asc vs PLECS, LTspice RC step imported to PLECS
 ```
 
-There is no GitHub Actions CI — a pre-push hook covers lint and the
-platform-independent tests; PLECS-dependent tests are run by hand on Windows.
+There is no GitHub Actions CI — a pre-push hook covers lint and the platform-independent tests; PLECS-dependent tests are run by hand on Windows.
 
 Licensed under the terms in [LICENSE](https://github.com/tinix84/pyplecs/blob/master/LICENSE).

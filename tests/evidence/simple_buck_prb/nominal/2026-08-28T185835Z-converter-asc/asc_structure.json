@@ -1,0 +1,17 @@
+{
+  "asc": {
+    "ground_flags": 0,
+    "symbols": 6,
+    "wires": 8
+  },
+  "checklist": {
+    "has_gate_source": false,
+    "has_ground_flag": false,
+    "nets_equal_circuit_model_nets": false,
+    "symbols_equal_circuit_model_components": true
+  },
+  "circuit_model": {
+    "components": 6,
+    "nets": 4
+  }
+}

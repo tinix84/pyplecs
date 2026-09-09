@@ -1,0 +1,12 @@
+{
+  "ltspice": "LTspice 26.0.1 for Windows",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "plecs": "live PLECS 4.7.7 at localhost:1080",
+  "pyplecs": "1.0.0",
+  "python": "3.14.0",
+  "recorded_at": "2026-08-29T12:29:27.216406+00:00",
+  "samples": {
+    "ltspice": 5018,
+    "plecs": 5001
+  }
+}

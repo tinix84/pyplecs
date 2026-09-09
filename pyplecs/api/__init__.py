@@ -10,7 +10,11 @@ from pydantic import BaseModel
 
 from ..config import ConfigManager, get_config
 from ..core.models import SimulationRequest, SimulationStatus
+from ..normalization import simulation_result_payload
 from ..orchestration import SimulationOrchestrator, TaskPriority
+from ..orchestration.live import LivePlecsAdapter
+from .converter import router as converter_router
+from .quantities import create_quantities_router
 from .simulation_sync import router as sync_router
 from .tas import create_tas_router
 
@@ -48,6 +52,8 @@ class SimulationResultAPI(BaseModel):
     task_id: str
     success: bool
     timeseries_data: Optional[dict] = None
+    time: List[float] = []
+    signals: dict = {}
     metadata: dict = {}
     error_message: Optional[str] = None
     execution_time: float = 0.0
@@ -96,6 +102,8 @@ def _get_app(config: Optional[ConfigManager] = None):
     resolved_config = config or get_config()
     _app = create_api_app(resolved_config)
     _app.include_router(sync_router, prefix=resolved_config.api.prefix)
+    _app.include_router(converter_router, prefix=resolved_config.api.prefix)
+    _app.include_router(create_quantities_router(get_orchestrator), prefix=resolved_config.api.prefix)
     _app.include_router(
         create_tas_router(
             get_orchestrator,
@@ -119,7 +127,7 @@ def _register_routes(
         """Initialize the orchestrator on startup."""
         global orchestrator
         orchestrator = orchestrator_instance or SimulationOrchestrator(
-            config=resolved_config
+            LivePlecsAdapter(resolved_config), config=resolved_config
         )
         await orchestrator.start()
 
@@ -227,6 +235,7 @@ def _register_routes(
             timeseries_data=task.result.timeseries_data.to_dict()
             if task.result.timeseries_data is not None
             else None,
+            **simulation_result_payload(task.result),
             metadata=task.result.metadata,
             error_message=task.result.error_message,
             execution_time=task.result.execution_time,

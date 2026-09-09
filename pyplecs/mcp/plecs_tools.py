@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import inspect
 import re
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Optional
 
 # Resolve skill root: <repo>/.claude/skills/plecs-expert/
 # __file__              = <repo>/pyplecs/mcp/plecs_tools.py
@@ -147,17 +149,255 @@ def plecs_rpc(function: str) -> dict[str, Any]:
     return body
 
 
-# Registry consumed by server.py and the test
-TOOL_REGISTRY: dict[str, Any] = {
-    "plecs_lookup": plecs_lookup,
-    "plecs_search": plecs_search,
-    "plecs_xml": plecs_xml,
-    "plecs_url": plecs_url,
-    "plecs_component": plecs_component,
-    "plecs_rpc": plecs_rpc,
-    "pyplecs_wrappers": pyplecs_wrappers,
-    "pyplecs_rpc_surface": pyplecs_rpc_surface,
+@dataclass(frozen=True)
+class ToolDefinition:
+    """One explicit MCP tool interface and its in-process implementation."""
+
+    name: str
+    description: str
+    input_schema: dict[str, Any]
+    handler: Callable[..., Any]
+
+
+@dataclass(frozen=True)
+class ToolDispatchResult:
+    """Catalogue-owned success or explicit tool error."""
+
+    value: Any = None
+    error: Optional[str] = None
+
+    @property
+    def success(self) -> bool:
+        return self.error is None
+
+
+class ToolCatalogue:
+    """Own MCP listing, schemas, validation, dispatch, and error semantics."""
+
+    def __init__(self, definitions: list[ToolDefinition]):
+        names = [definition.name for definition in definitions]
+        if len(names) != len(set(names)):
+            raise ValueError("MCP tool names must be unique")
+        self._definitions = tuple(definitions)
+        self._by_name = {definition.name: definition for definition in definitions}
+
+    @property
+    def definitions(self) -> tuple[ToolDefinition, ...]:
+        return self._definitions
+
+    @property
+    def names(self) -> tuple[str, ...]:
+        return tuple(definition.name for definition in self._definitions)
+
+    def dispatch(
+        self, name: str, arguments: Optional[Mapping[str, Any]] = None
+    ) -> ToolDispatchResult:
+        """Dispatch a synchronous handler; coroutine handlers need ``dispatch_async``."""
+        prepared = self._prepare(name, arguments)
+        if isinstance(prepared, ToolDispatchResult):
+            return prepared
+        definition, validated = prepared
+        try:
+            value = definition.handler(**validated)
+        except Exception as error:
+            return ToolDispatchResult(error=f"tool '{name}' execution error: {error}")
+        if inspect.isawaitable(value):
+            if inspect.iscoroutine(value):
+                value.close()
+            return ToolDispatchResult(
+                error=f"tool '{name}' is async and requires the async dispatch"
+            )
+        return ToolDispatchResult(value=value)
+
+    async def dispatch_async(
+        self, name: str, arguments: Optional[Mapping[str, Any]] = None
+    ) -> ToolDispatchResult:
+        """Dispatch either kind of handler, awaiting coroutine results."""
+        prepared = self._prepare(name, arguments)
+        if isinstance(prepared, ToolDispatchResult):
+            return prepared
+        definition, validated = prepared
+        try:
+            value = definition.handler(**validated)
+            if inspect.isawaitable(value):
+                value = await value
+        except Exception as error:
+            return ToolDispatchResult(error=f"tool '{name}' execution error: {error}")
+        return ToolDispatchResult(value=value)
+
+    def _prepare(
+        self, name: str, arguments: Optional[Mapping[str, Any]]
+    ) -> ToolDispatchResult | tuple[ToolDefinition, dict[str, Any]]:
+        definition = self._by_name.get(name)
+        if definition is None:
+            return ToolDispatchResult(error=f"unknown tool: {name}")
+        try:
+            validated = self._validate(
+                definition, {} if arguments is None else arguments
+            )
+        except ValueError as error:
+            return ToolDispatchResult(error=f"tool '{name}' validation error: {error}")
+        return definition, validated
+
+    @staticmethod
+    def _validate(
+        definition: ToolDefinition, arguments: Mapping[str, Any]
+    ) -> dict[str, Any]:
+        if not isinstance(arguments, Mapping):
+            raise ValueError("arguments must be an object")
+
+        properties = definition.input_schema.get("properties", {})
+        required = definition.input_schema.get("required", [])
+        unexpected = sorted(set(arguments) - set(properties))
+        if unexpected:
+            raise ValueError(f"unexpected argument(s): {', '.join(unexpected)}")
+        missing = [name for name in required if name not in arguments]
+        if missing:
+            raise ValueError(f"missing required argument(s): {', '.join(missing)}")
+
+        validated = dict(arguments)
+        for argument_name, value in validated.items():
+            schema = properties[argument_name]
+            _check_type(argument_name, schema, value)
+        return validated
+
+
+_JSON_TYPES: dict[str, tuple[type, ...]] = {
+    "string": (str,),
+    "object": (Mapping,),
+    "array": (list, tuple),
+    "boolean": (bool,),
+    "number": (int, float),
+    "integer": (int,),
 }
 
 
-__all__ = ["TOOL_REGISTRY", *TOOL_REGISTRY.keys()]
+def _check_type(argument_name: str, schema: Mapping[str, Any], value: Any) -> None:
+    expected = schema.get("type")
+    if expected in _JSON_TYPES:
+        accepted = _JSON_TYPES[expected]
+        numeric_bool = expected in {"number", "integer"} and isinstance(value, bool)
+        if numeric_bool or not isinstance(value, accepted):
+            raise ValueError(f"argument '{argument_name}' must be a {expected}")
+    if expected == "string" and schema.get("minLength") and not value:
+        raise ValueError(f"argument '{argument_name}' must not be empty")
+    if "enum" in schema and value not in schema["enum"]:
+        raise ValueError(
+            f"argument '{argument_name}' must be one of: {', '.join(map(str, schema['enum']))}"
+        )
+    if "minimum" in schema and value < schema["minimum"]:
+        raise ValueError(f"argument '{argument_name}' must be >= {schema['minimum']}")
+    if "maximum" in schema and value > schema["maximum"]:
+        raise ValueError(f"argument '{argument_name}' must be <= {schema['maximum']}")
+    if "exclusiveMinimum" in schema and value <= schema["exclusiveMinimum"]:
+        raise ValueError(f"argument '{argument_name}' must be > {schema['exclusiveMinimum']}")
+    if expected == "array":
+        item_type = schema.get("items", {}).get("type")
+        if item_type in _JSON_TYPES and not all(isinstance(item, _JSON_TYPES[item_type]) for item in value):
+            raise ValueError(f"argument '{argument_name}' items must be {item_type}s")
+
+
+def _string_input(name: str, description: str) -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            name: {
+                "type": "string",
+                "minLength": 1,
+                "description": description,
+            }
+        },
+        "required": [name],
+        "additionalProperties": False,
+    }
+
+
+def _no_input() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": False,
+    }
+
+
+TOOL_CATALOGUE = ToolCatalogue(
+    [
+        ToolDefinition(
+            name="plecs_lookup",
+            description="Read one offline PLECS reference by topic name or Markdown filename.",
+            input_schema=_string_input(
+                "topic", "Offline reference topic, with or without the .md suffix."
+            ),
+            handler=plecs_lookup,
+        ),
+        ToolDefinition(
+            name="plecs_search",
+            description="Search every offline PLECS reference and return file-and-line matches.",
+            input_schema=_string_input(
+                "query", "Case-insensitive text to find in the offline references."
+            ),
+            handler=plecs_search,
+        ),
+        ToolDefinition(
+            name="plecs_xml",
+            description="Look up a PLECS schematic-format element in the offline grammar.",
+            input_schema=_string_input(
+                "element", "PLECS schematic element or key, such as Component or Type."
+            ),
+            handler=plecs_xml,
+        ),
+        ToolDefinition(
+            name="plecs_url",
+            description="Resolve a PLECS documentation topic to its docs.plexim.com URL.",
+            input_schema=_string_input(
+                "topic", "Topic text to match in the offline URL index."
+            ),
+            handler=plecs_url,
+        ),
+        ToolDefinition(
+            name="plecs_component",
+            description="Combine PyPLECS wrapper discovery with offline component references.",
+            input_schema=_string_input(
+                "name", "PLECS component name, such as Mosfet or Inductor."
+            ),
+            handler=plecs_component,
+        ),
+        ToolDefinition(
+            name="plecs_rpc",
+            description="Combine PlecsServer method details with offline RPC references.",
+            input_schema=_string_input(
+                "function", "PLECS or PlecsServer RPC function name."
+            ),
+            handler=plecs_rpc,
+        ),
+        ToolDefinition(
+            name="pyplecs_wrappers",
+            description="List the PLECS component wrapper classes shipped by PyPLECS.",
+            input_schema=_no_input(),
+            handler=pyplecs_wrappers,
+        ),
+        ToolDefinition(
+            name="pyplecs_rpc_surface",
+            description="List the public methods exposed by PyPLECS PlecsServer.",
+            input_schema=_no_input(),
+            handler=pyplecs_rpc_surface,
+        ),
+    ]
+)
+
+
+__all__ = [
+    "TOOL_CATALOGUE",
+    "ToolCatalogue",
+    "ToolDefinition",
+    "ToolDispatchResult",
+    "plecs_component",
+    "plecs_lookup",
+    "plecs_rpc",
+    "plecs_search",
+    "plecs_url",
+    "plecs_xml",
+    "pyplecs_rpc_surface",
+    "pyplecs_wrappers",
+]
