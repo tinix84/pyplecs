@@ -37,13 +37,17 @@ class SyncSimulationResponse(BaseModel):
 
 
 @router.post("/simulations/sync", response_model=SyncSimulationResponse)
-async def run_simulation_sync(request: SyncSimulationRequest, http_request: Request):
+def run_simulation_sync(request: SyncSimulationRequest, http_request: Request):
     """Run a PLECS simulation synchronously and return results.
 
     This endpoint blocks until the simulation completes. Use for
     single-shot validation runs where polling overhead is undesirable.
+
+    Plain ``def`` on purpose: FastAPI runs it in a worker thread, so the
+    blocking XML-RPC call does not freeze the event loop (and /health).
     """
     t_start = time.perf_counter()
+    logger.info("sync sim start: %s params=%s", request.model_file, request.parameters)
     plecs_config = getattr(getattr(http_request.app.state, "config", None), "plecs", None)
     server_options = (
         {"port": str(plecs_config.xmlrpc_port), "auto_launch": plecs_config.auto_launch}
@@ -53,12 +57,14 @@ async def run_simulation_sync(request: SyncSimulationRequest, http_request: Requ
 
     try:
         with PlecsServer(model_file=request.model_file, **server_options) as server:
+            logger.info("sync sim: model loaded, calling PLECS simulate (%.1fs)", time.perf_counter() - t_start)
             raw = server.simulate(parameters=request.parameters or None)
     except Exception as e:
-        logger.error("PLECS simulation failed: %s", e)
+        logger.error("PLECS simulation failed after %.1fs: %s", time.perf_counter() - t_start, e)
         raise HTTPException(status_code=502, detail=str(e)) from e
 
     elapsed = time.perf_counter() - t_start
+    logger.info("sync sim done: %s in %.1fs", request.model_file, elapsed)
 
     result = normalize_plecs_result(
         raw,
