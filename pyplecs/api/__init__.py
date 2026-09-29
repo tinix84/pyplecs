@@ -313,6 +313,7 @@ def main():
     """Entry point for pyplecs-api command."""
     import uvicorn
 
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     config = get_config()
     app = _get_app(config)
     _register_routes(app, config)
