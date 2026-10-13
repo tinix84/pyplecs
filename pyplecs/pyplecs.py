@@ -51,7 +51,9 @@ def save_mat_file(file_name, data):
 
 def dict_to_plecs_opts(varin: dict):
     for k, v in varin.items():
-        if not isinstance(v, (list, tuple)):
+        if isinstance(v, (list, tuple)):
+            varin[k] = [float(x) if isinstance(x, (int, float)) else x for x in v]
+        else:
             varin[k] = float(v)
     opts = {"ModelVars": varin}
     return opts
@@ -439,8 +441,13 @@ class PlecsServer(SimulationServer):
         """Read a model setting or component parameter via ``plecs.get``.
 
         Args:
-            ref: Component path in the model; None addresses the model itself
+            ref: Component path in the model; None addresses the model itself.
+                 It is the FIRST positional argument, so a model-level read
+                 is ``get(parameter="StopTime")``, not ``get("StopTime")``.
             parameter: Parameter name; None uses the one-argument form
+
+        Returns:
+            The value returned by PLECS for the addressed setting or parameter.
         """
         target = self.modelName if ref is None else self.modelName + "/" + ref
         if parameter is None:
@@ -448,7 +455,16 @@ class PlecsServer(SimulationServer):
         return self.server.plecs.get(target, parameter)
 
     def scope(self, ref, command, *args):
-        """Send a command to a scope via ``plecs.scope`` (e.g. ``SaveTraces``)."""
+        """Send a command to a scope via ``plecs.scope`` (e.g. ``SaveTraces``).
+
+        Args:
+            ref: Scope path in the model (relative to the model name)
+            command: PLECS scope command name
+            *args: Extra arguments forwarded to the command
+
+        Returns:
+            The value returned by PLECS.
+        """
         return self.server.plecs.scope(self.modelName + "/" + ref, command, *args)
 
     def is_available(self) -> bool:

@@ -50,6 +50,7 @@ def test_simulate_parameters_only_is_unchanged(server_and_calls):
     server, calls = server_and_calls
     server.simulate({"Vi": 12})
     assert calls == [("plecs.simulate", ("mdl", {"ModelVars": {"Vi": 12.0}}))]
+    assert type(calls[0][1][1]["ModelVars"]["Vi"]) is float
 
 
 def test_simulate_solver_opts_only(server_and_calls):
@@ -66,15 +67,41 @@ def test_simulate_parameters_and_solver_opts(server_and_calls):
     assert calls == [
         (
             "plecs.simulate",
-            ("mdl", {"ModelVars": {"Vi": 12.0, "Table": [1, 2.5]}, "SolverOpts": opts}),
+            ("mdl", {"ModelVars": {"Vi": 12.0, "Table": [1.0, 2.5]}, "SolverOpts": opts}),
         )
     ]
+    mv = calls[0][1][1]["ModelVars"]
+    assert type(mv["Vi"]) is float
+    assert all(type(x) is float for x in mv["Table"])
+
+
+def test_simulate_list_ints_beyond_xmlrpc_range_become_floats(server_and_calls):
+    server, calls = server_and_calls
+    server.simulate({"Big": [2**40, 1]})
+    sent = calls[0][1][1]["ModelVars"]["Big"]
+    assert sent == [float(2**40), 1.0]
+    assert all(type(x) is float for x in sent)
+
+
+def test_simulate_does_not_mutate_solver_opts(server_and_calls):
+    server, _ = server_and_calls
+    opts = {"OutputTimes": [0.0, 1e-3], "Timeout": 60}
+    server.simulate({"Vi": 12}, solver_opts=opts)
+    server.simulate_batch([{"Vi": 12}], solver_opts=opts)
+    assert opts == {"OutputTimes": [0.0, 1e-3], "Timeout": 60}
+
+
+def test_simulate_empty_parameters_sends_empty_model_vars(server_and_calls):
+    server, calls = server_and_calls
+    server.simulate({})
+    assert calls == [("plecs.simulate", ("mdl", {"ModelVars": {}}))]
 
 
 def test_simulate_batch_applies_solver_opts_to_every_struct(server_and_calls):
     server, calls = server_and_calls
     opts = {"Timeout": 5}
     server.simulate_batch([{"Vi": 12}, {"Vi": 24}], solver_opts=opts)
+    assert type(calls[0][1][1][0]["ModelVars"]["Vi"]) is float
     assert calls == [
         (
             "plecs.simulate",

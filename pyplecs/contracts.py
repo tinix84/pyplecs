@@ -45,7 +45,6 @@ _source = _resolve_source()
 
 if _source == "pypi":
     try:
-        # StructuredLoggerBase is missing from upstream __all__; import directly:
         from pycircuitsim_core import (  # type: ignore[import-not-found]
             ConfigManagerBase,
             SimulationCacheBase,
@@ -58,6 +57,8 @@ if _source == "pypi":
             SyncSimulationResponse,
             TaskPriority,
         )
+
+        # StructuredLoggerBase is missing from upstream __all__; import directly:
         from pycircuitsim_core.logging import StructuredLoggerBase  # type: ignore[import-not-found]
     except ImportError:
         # External pycircuitsim_core is importable as a package but one or

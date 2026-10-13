@@ -1,10 +1,10 @@
 # rpc-api
 
-PLECS exposes an XML-RPC interface on `localhost:1080` (default). pyplecs wraps a curated subset via `pyplecs.PlecsServer`. Methods on that wrapper: `close`, `health_check`, `is_available`, `load_modelvars`, `run_sim_with_datastream`, `run_sim_with_mat_file`, `set_value`, `simulate`, `simulate_batch`, `simulate_raw`. Anything else use `plecs_rpc(...)` for live introspection.
+PLECS exposes an XML-RPC interface on `localhost:1080` (default). pyplecs wraps a curated subset via `pyplecs.PlecsServer`. Methods on that wrapper: `close`, `get`, `health_check`, `is_available`, `load_modelvars`, `run_sim_with_datastream`, `run_sim_with_mat_file`, `scope`, `set_value`, `simulate`, `simulate_batch`, `simulate_raw`. Anything else use `plecs_rpc(...)` for live introspection.
 
 ## Scope export — bitmap options
 
-Field bag passed to `plecs.scope.SaveAsImage` and similar. Not wrapped — call via `plecs_rpc('plecs.scope.SaveAsImage', ...)`.
+Field bag passed to `plecs.scope.SaveAsImage` and similar. `SaveAsImage` has no dedicated wrapper — send it through `PlecsServer.scope(ref, 'SaveAsImage', ...)`, or call `plecs_rpc('plecs.scope.SaveAsImage', ...)`.
 
 <!-- BEGIN VERBATIM TABLE: scripting-table-0 -->
 

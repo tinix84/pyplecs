@@ -232,11 +232,13 @@
     ],
     "rpc_methods": [
       "close",
+      "get",
       "health_check",
       "is_available",
       "load_modelvars",
       "run_sim_with_datastream",
       "run_sim_with_mat_file",
+      "scope",
       "set_value",
       "simulate",
       "simulate_batch",
