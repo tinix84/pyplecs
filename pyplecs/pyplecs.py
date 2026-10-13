@@ -50,8 +50,11 @@ def save_mat_file(file_name, data):
 
 
 def dict_to_plecs_opts(varin: dict):
-    for k, _ in varin.items():
-        varin[k] = float(varin[k])
+    for k, v in varin.items():
+        if isinstance(v, (list, tuple)):
+            varin[k] = [float(x) if isinstance(x, (int, float)) else x for x in v]
+        else:
+            varin[k] = float(v)
     opts = {"ModelVars": varin}
     return opts
 
@@ -332,8 +335,8 @@ class PlecsServer(SimulationServer):
         if load:
             self.server.plecs.load(self.sim_path + "//" + self.sim_name)
 
-    def simulate(self, parameters=None):
-        """Run simulation with optional ModelVars parameters.
+    def simulate(self, parameters=None, solver_opts=None):
+        """Run simulation with optional ModelVars parameters and SolverOpts.
 
         This is the primary simulation method. It handles parameter conversion
         and invokes PLECS native simulate() function.
@@ -341,6 +344,9 @@ class PlecsServer(SimulationServer):
         Args:
             parameters: Dict of model variables (e.g., {"Vi": 12.0, "Vo": 5.0})
                        If None, runs simulation with default model parameters.
+                       Numeric lists are passed through uncoerced.
+            solver_opts: Optional dict sent as PLECS ``SolverOpts``
+                         (e.g., {"OutputTimes": [...], "Timeout": 60}).
 
         Returns:
             Simulation results from PLECS (structure depends on model outputs)
@@ -348,14 +354,15 @@ class PlecsServer(SimulationServer):
         Example:
             results = server.simulate({"Vi": 250, "Vo_ref": 25})
         """
-        if parameters is None:
+        if parameters is None and solver_opts is None:
             return self.server.plecs.simulate(self.modelName)
 
-        # Convert parameters to PLECS ModelVars format
-        opts = dict_to_plecs_opts(parameters)
+        opts = {} if parameters is None else dict_to_plecs_opts(parameters)
+        if solver_opts is not None:
+            opts["SolverOpts"] = solver_opts
         return self.server.plecs.simulate(self.modelName, opts)
 
-    def simulate_batch(self, parameter_list):
+    def simulate_batch(self, parameter_list, solver_opts=None):
         """Run batch simulations using PLECS native parallel API.
 
         CRITICAL: This leverages PLECS' native parallel execution.
@@ -367,6 +374,7 @@ class PlecsServer(SimulationServer):
         Args:
             parameter_list: List of parameter dicts
                            e.g., [{"Vi": 12.0}, {"Vi": 24.0}, {"Vi": 48.0}]
+            solver_opts: Optional ``SolverOpts`` dict applied to every opt struct
 
         Returns:
             List of simulation results (one per parameter set)
@@ -377,6 +385,9 @@ class PlecsServer(SimulationServer):
             # PLECS runs these in parallel across available CPU cores
         """
         opt_structs = [dict_to_plecs_opts(params) for params in parameter_list]
+        if solver_opts is not None:
+            for opts in opt_structs:
+                opts["SolverOpts"] = solver_opts
         return self.server.plecs.simulate(self.modelName, opt_structs)
 
     def run_sim_with_mat_file(self, mat_file_path):
@@ -425,6 +436,36 @@ class PlecsServer(SimulationServer):
             value: Parameter value
         """
         self.server.plecs.set(self.modelName + "/" + ref, parameter, str(value))
+
+    def get(self, ref=None, parameter=None):
+        """Read a model setting or component parameter via ``plecs.get``.
+
+        Args:
+            ref: Component path in the model; None addresses the model itself.
+                 It is the FIRST positional argument, so a model-level read
+                 is ``get(parameter="StopTime")``, not ``get("StopTime")``.
+            parameter: Parameter name; None uses the one-argument form
+
+        Returns:
+            The value returned by PLECS for the addressed setting or parameter.
+        """
+        target = self.modelName if ref is None else self.modelName + "/" + ref
+        if parameter is None:
+            return self.server.plecs.get(target)
+        return self.server.plecs.get(target, parameter)
+
+    def scope(self, ref, command, *args):
+        """Send a command to a scope via ``plecs.scope`` (e.g. ``SaveTraces``).
+
+        Args:
+            ref: Scope path in the model (relative to the model name)
+            command: PLECS scope command name
+            *args: Extra arguments forwarded to the command
+
+        Returns:
+            The value returned by PLECS.
+        """
+        return self.server.plecs.scope(self.modelName + "/" + ref, command, *args)
 
     def is_available(self) -> bool:
         """Check if PLECS XML-RPC server is reachable."""
