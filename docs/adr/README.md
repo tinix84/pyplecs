@@ -22,6 +22,8 @@ does not carry status (the issue tracker does that).
 | [0011](0011-two-mcp-servers-two-trust-levels.md) | The Simulation MCP Server is a second server, not a mode of the Documentation MCP Server | Accepted |
 | [0012](0012-design-quantities-are-computed-on-demand.md) | Design Quantities are computed on demand under a caller-declared Signal Map, never cached | Accepted |
 | [0013](0013-live-verification-is-opt-in-and-compares-design-quantities.md) | Live verification is opt-in by marker and compares Design Quantities, never samples; it never gates a push | Accepted |
+| [0014](0014-result-receipts-outlive-cache-records.md) | Result Receipts outlive Cache Records | Accepted |
+| [0015](0015-pyplecs-does-not-import-ltspice-schematics.md) | PyPLECS does not import LTspice schematics; the merged LTspice export and reference check stay, frozen | Accepted |
 
 ## Writing one
 
