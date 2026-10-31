@@ -4,6 +4,10 @@ PyPLECS executes and coordinates PLECS simulations, preserving their requests an
 
 ## Language
 
+**Answer Traceability**:
+The share of successful Simulation Results carrying complete Result Provenance. Band 2 requires every fresh, cached and coalesced success to be traceable.
+_Avoid_: Provenance coverage, traceability rate, auditable result rate
+
 **Cache Key**:
 The composite identity of a Cache Record: a topology id, a params id, a solver id and an environment id, each computed independently. A hit requires all four to match, so a miss can name the one that differed.
 _Avoid_: Simulation hash, model hash, cache hash
@@ -32,6 +36,10 @@ _Avoid_: PyPLECS MCP, live MCP
 What a reviewer retains from one acceptance run: the manifest as it was, the tool versions, the Design Quantities and their comparison, a human-readable summary and an overlay. It is the record that lets a run be signed off without being repeated.
 _Avoid_: Test output, artifacts, debug plots
 
+**Output Label Map**:
+The caller's mapping from Raw PLECS Result column positions to names used in a delivered Simulation Result. It changes how an answer is named, not which simulation produces it.
+_Avoid_: Output variables, signal selection, Signal Map
+
 **Operating Point**:
 One named parameter vector describing a condition the converter is asked to run at. It carries values, not results; a set of them is what a Parametric Study expands over.
 _Avoid_: OP, test point, working point, case
@@ -52,6 +60,18 @@ _Avoid_: PLECS install, runtime, host
 The unvalidated outcome returned by PLECS for one simulation. Its shape depends on the simulated model and requested outputs.
 _Avoid_: PLECS response, raw result data
 
+**Repeat-work Rate**:
+The share of successful Simulation Results delivered without a new simulator execution. Cache hits and coalesced followers count as avoided work; rejected, failed and cancelled tasks are excluded.
+_Avoid_: Cache hit rate, reuse rate, saved runs
+
+**Result Provenance**:
+The immutable, inspectable description of the inputs, environment and toolchain that produced a successful Simulation Result, including its Cache Key, creation time, PyPLECS version and producing schema versions. It is independent of the delivery task and caller-supplied metadata.
+_Avoid_: Result metadata, cache metadata, provenance metadata
+
+**Result Receipt**:
+The durable record that a successful Simulation Result was delivered for a Simulation Task, how it was resolved, and which Result Provenance produced it. It does not contain the result payload.
+_Avoid_: Task history, audit log, delivery metadata
+
 **Simulation Result**:
 The validated PyPLECS outcome of one simulation, representing either successful output or an explicit failure.
 _Avoid_: Parsed result, response payload
@@ -59,6 +79,10 @@ _Avoid_: Parsed result, response payload
 **Signal Map**:
 The caller's declaration of which Simulation Result columns are the voltage and current of each component and port. PyPLECS infers no role from a signal name; a role not declared is not computed.
 _Avoid_: Probe convention, naming convention, channel list
+
+**Simulation Execution**:
+One physical invocation of PLECS for one producing identity. It may fulfill one Simulation Task or several coalesced Simulation Tasks.
+_Avoid_: Run, job, task
 
 **Simulation MCP Server**:
 The executable MCP surface that accepts simulation requests, exposes Simulation Task progress, and returns Simulation Results. It is a transport over PyPLECS simulation behavior, not a documentation catalogue.
