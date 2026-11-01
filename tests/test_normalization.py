@@ -85,8 +85,7 @@ def _http_request():
     return SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace()))
 
 
-@pytest.mark.asyncio
-async def test_synchronous_adapter_uses_shared_normalization(monkeypatch):
+def test_synchronous_adapter_uses_shared_normalization(monkeypatch):
     class FakePlecsServer:
         def __init__(self, model_file):
             self.model_file = model_file
@@ -108,7 +107,7 @@ async def test_synchronous_adapter_uses_shared_normalization(monkeypatch):
         signal_map={0: "Vo"},
     )
 
-    response = await simulation_sync.run_simulation_sync(request, _http_request())
+    response = simulation_sync.run_simulation_sync(request, _http_request())
 
     assert response.success is True
     assert response.time == [0.0, 1.0]
@@ -117,8 +116,7 @@ async def test_synchronous_adapter_uses_shared_normalization(monkeypatch):
     assert response.metadata["n_signals"] == 1
 
 
-@pytest.mark.asyncio
-async def test_synchronous_adapter_returns_failed_simulation_result(monkeypatch):
+def test_synchronous_adapter_returns_failed_simulation_result(monkeypatch):
     class FakePlecsServer:
         def __init__(self, model_file):
             pass
@@ -134,7 +132,7 @@ async def test_synchronous_adapter_returns_failed_simulation_result(monkeypatch)
 
     monkeypatch.setattr(simulation_sync, "PlecsServer", FakePlecsServer)
 
-    response = await simulation_sync.run_simulation_sync(
+    response = simulation_sync.run_simulation_sync(
         simulation_sync.SyncSimulationRequest(model_file="buck.plecs"),
         _http_request(),
     )
