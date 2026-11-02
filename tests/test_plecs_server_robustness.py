@@ -38,6 +38,22 @@ def test_string_scalar_and_list_element_agree():
     assert opts["ModelVars"]["l"] == [1.5]
 
 
+def test_non_numeric_strings_pass_through():
+    opts = dict_to_plecs_opts({"s": "abc", "l": ["abc", "2"]})
+    assert opts["ModelVars"]["s"] == "abc"
+    assert opts["ModelVars"]["l"] == ["abc", 2.0]
+    xmlrpc.client.dumps((opts,))
+
+
+def test_numpy_array_becomes_nested_float_list():
+    np = pytest.importorskip("numpy")
+    opts = dict_to_plecs_opts({"m": np.array([[1, 2], [3, 4]]), "s": np.array(5)})
+    assert opts["ModelVars"]["m"] == [[1.0, 2.0], [3.0, 4.0]]
+    assert all(type(x) is float for row in opts["ModelVars"]["m"] for x in row)
+    assert opts["ModelVars"]["s"] == 5.0
+    xmlrpc.client.dumps((opts,))
+
+
 def test_caller_dict_not_mutated():
     params = {"x": 1, "y": [1, 2], "z": [[3]]}
     snapshot = {"x": 1, "y": [1, 2], "z": [[3]]}

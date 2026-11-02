@@ -51,19 +51,27 @@ def save_mat_file(file_name, data):
 
 
 def _to_plecs_value(v):
+    if hasattr(v, "tolist") and not isinstance(v, numbers.Real):
+        v = v.tolist()
     if isinstance(v, (list, tuple)):
         return [_to_plecs_value(x) for x in v]
-    if isinstance(v, (numbers.Real, str)):
+    if isinstance(v, numbers.Real):
         return float(v)
+    if isinstance(v, str):
+        try:
+            return float(v)
+        except ValueError:
+            return v
     return v
 
 
 def dict_to_plecs_opts(varin: dict):
     """Build the PLECS ``ModelVars`` options from ``varin`` without mutating it.
 
-    Every real number (including numpy scalars) and every string, as a scalar
-    or at any depth inside a list or tuple, is converted with ``float()``.
-    Other element types pass through unchanged.
+    Every real number (including numpy scalars) and every numeric string, as a
+    scalar or at any depth inside a list or tuple, is converted with ``float()``.
+    Numpy arrays become nested lists first. Non-numeric strings and other
+    element types pass through unchanged, because PLECS accepts string values.
     """
     return {"ModelVars": {k: _to_plecs_value(v) for k, v in varin.items()}}
 
@@ -367,7 +375,7 @@ class PlecsServer(SimulationServer):
         Args:
             parameters: Dict of model variables (e.g., {"Vi": 12.0, "Vo": 5.0})
                        If None, runs simulation with default model parameters.
-                       Numeric lists are passed through uncoerced.
+                       Values are coerced by ``dict_to_plecs_opts``.
             solver_opts: Optional dict sent as PLECS ``SolverOpts``
                          (e.g., {"OutputTimes": [...], "Timeout": 60}).
 
