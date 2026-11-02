@@ -1,4 +1,5 @@
 import logging
+import numbers
 import subprocess
 import time
 import xmlrpc.client
@@ -49,14 +50,30 @@ def save_mat_file(file_name, data):
     sio.savemat(file_name, data, format="5")
 
 
+def _to_plecs_value(v):
+    if hasattr(v, "tolist") and not isinstance(v, numbers.Real):
+        v = v.tolist()
+    if isinstance(v, (list, tuple)):
+        return [_to_plecs_value(x) for x in v]
+    if isinstance(v, numbers.Real):
+        return float(v)
+    if isinstance(v, str):
+        try:
+            return float(v)
+        except ValueError:
+            return v
+    return v
+
+
 def dict_to_plecs_opts(varin: dict):
-    for k, v in varin.items():
-        if isinstance(v, (list, tuple)):
-            varin[k] = [float(x) if isinstance(x, (int, float)) else x for x in v]
-        else:
-            varin[k] = float(v)
-    opts = {"ModelVars": varin}
-    return opts
+    """Build the PLECS ``ModelVars`` options from ``varin`` without mutating it.
+
+    Every real number (including numpy scalars) and every numeric string, as a
+    scalar or at any depth inside a list or tuple, is converted with ``float()``.
+    Numpy arrays become nested lists first. Non-numeric strings and other
+    element types pass through unchanged, because PLECS accepts string values.
+    """
+    return {"ModelVars": {k: _to_plecs_value(v) for k, v in varin.items()}}
 
 
 # DEPRECATED: File-based variant generation removed in v1.0.0
@@ -100,11 +117,25 @@ def _get_plecs_executable() -> str:
     )
 
 
+class _TimeoutTransport(xmlrpc.client.Transport):
+    """XML-RPC transport whose connection uses a socket timeout."""
+
+    def __init__(self, timeout: float):
+        super().__init__()
+        self._timeout = timeout
+
+    def make_connection(self, host):
+        conn = super().make_connection(host)
+        conn.timeout = self._timeout
+        return conn
+
+
 def _is_plecs_xmlrpc_alive(host: str = "localhost", port: int = 1080, timeout: float = 3.0) -> bool:
-    """Check if PLECS XML-RPC server is responding."""
+    """Check if PLECS XML-RPC server is responding within ``timeout`` seconds."""
     try:
         server = xmlrpc.client.ServerProxy(
             f"http://{host}:{port}/RPC2",
+            transport=_TimeoutTransport(timeout),
         )
         # PLECS XML-RPC supports system.listMethods
         server.system.listMethods()
@@ -344,7 +375,7 @@ class PlecsServer(SimulationServer):
         Args:
             parameters: Dict of model variables (e.g., {"Vi": 12.0, "Vo": 5.0})
                        If None, runs simulation with default model parameters.
-                       Numeric lists are passed through uncoerced.
+                       Values are coerced by ``dict_to_plecs_opts``.
             solver_opts: Optional dict sent as PLECS ``SolverOpts``
                          (e.g., {"OutputTimes": [...], "Timeout": 60}).
 
@@ -493,8 +524,17 @@ class PlecsServer(SimulationServer):
         return self
 
     def __exit__(self, _exc_type, _exc_val, _exc_tb):
-        """Context manager exit - close model."""
-        self.close()
+        """Context manager exit - close model.
+
+        A ``close()`` failure never replaces an exception raised by the body.
+        """
+        if _exc_type is None:
+            self.close()
+        else:
+            try:
+                self.close()
+            except Exception:
+                logger.warning("close() failed while handling %s", _exc_type.__name__, exc_info=True)
         return False
 
 
