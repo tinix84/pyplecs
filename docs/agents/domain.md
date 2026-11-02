@@ -40,7 +40,7 @@ If your output contradicts an existing ADR, surface it explicitly rather than si
 
 Not two homes for the same statement. `docs/adr/` is the **authority** — the
 reasoning, the alternatives, the consequences. The `## Decision Log` table in
-`CLAUDE.md` is an **index**: one row per ADR, so the decision is discoverable
+`AGENTS.md` is an **index**: one row per ADR, so the decision is discoverable
 from the file agents read first. A decision with a Decision Log row but no ADR
 is incomplete; an ADR with no row is invisible.
 
