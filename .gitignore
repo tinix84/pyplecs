@@ -69,3 +69,11 @@ uv.lock.bak
 tests/evidence/**/raw/
 tests/evidence/**/*.svg
 tests/evidence/**/spice/
+
+# Machine-local files: Codex mirror, WSL launcher, simulation outputs, scratch work
+AGENTS.md
+.agents/
+.codex/
+start_api_wsl.bat
+data/*.mat
+scratch_*/
