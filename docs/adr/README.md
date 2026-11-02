@@ -24,6 +24,7 @@ does not carry status (the issue tracker does that).
 | [0013](0013-live-verification-is-opt-in-and-compares-design-quantities.md) | Live verification is opt-in by marker and compares Design Quantities, never samples; it never gates a push | Accepted |
 | [0014](0014-result-receipts-outlive-cache-records.md) | Result Receipts outlive Cache Records | Accepted |
 | [0015](0015-pyplecs-does-not-import-ltspice-schematics.md) | PyPLECS does not import LTspice schematics; the merged LTspice export and reference check stay, frozen | Accepted |
+| [0016](0016-agents-md-is-the-one-agent-instruction-file.md) | `AGENTS.md` is the one agent-instruction file; `CLAUDE.md` imports it | Accepted |
 
 ## Writing one
 
@@ -44,5 +45,5 @@ What follows — including the costs accepted and what would have to change to
 supersede this.
 ```
 
-Add a row above, and a row in the Decision Log table in `CLAUDE.md`. The
+Add a row above, and a row in the Decision Log table in `AGENTS.md`. The
 Decision Log is an index; this directory is the authority.

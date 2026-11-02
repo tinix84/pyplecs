@@ -70,8 +70,7 @@ tests/evidence/**/raw/
 tests/evidence/**/*.svg
 tests/evidence/**/spice/
 
-# Machine-local files: Codex mirror, WSL launcher, simulation outputs, scratch work
-AGENTS.md
+# Machine-local files: Codex config copies, WSL launcher, simulation outputs, scratch work
 .agents/
 .codex/
 start_api_wsl.bat
