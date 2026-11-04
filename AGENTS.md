@@ -4,6 +4,8 @@
 
 ## Build & Test
 ```bash
+# Checkout lives under OneDrive: keep the venv outside it (OneDrive sets site-packages read-only, uv sync then fails).
+# PowerShell: $env:UV_PROJECT_ENVIRONMENT = "$HOME\.uv-envs\pyplecs"   # bash: export UV_PROJECT_ENVIRONMENT=~/.uv-envs/pyplecs
 uv sync --extra dev                    # env + pinned deps (ADR-0008)
 uv run pyplecs-setup configure-plecs   # locate PLECS, write config/default.yml (untracked)
 uv run ruff check .                    # lint (must be clean)
@@ -11,7 +13,7 @@ uv run pytest                          # full suite (Windows + PLECS on port 108
 uv run pytest -q tests/test_installer.py tests/test_entrypoint.py tests/test_install_full.py tests/test_abc_contract.py tests/test_plecs_expert.py  # platform-independent subset
 ```
 
-Extras: `web`, `cache`, `gui`, `mcp`, `opt`, `dev`. `pyproject.toml` is the only
+Never create a `.venv` inside the checkout or in a worktree under OneDrive. Extras: `web`, `cache`, `gui`, `mcp`, `opt`, `dev`. `pyproject.toml` is the only
 place a dependency is declared — the gate rejects any `requirements*.txt` or
 `setup.py`.
 
